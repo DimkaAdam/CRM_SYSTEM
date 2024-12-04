@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сделки</title>
+</head>
+<body>
+    <h1>DEALS</h1>
+    <ul>
+        {% for deal in deals %}
+            <li>
+                <strong>{{ deal.title }}</strong> -
+                {{ deal.client.name }} -
+                {{ deal.amount }} ₽ -
+                {% if deal.status == 'open' %}
+                    Open
+                {% elif deal.status == 'in_progress' %}
+                    In Progress
+                {% else %}
+                    Close
+                {% endif %}
+            </li>
+        {% empty %}
+            <li>No Deals</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'index' %}">BACK</a>
+</body>
+</html>
