@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pipelines</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+</head>
+<body>
+    <h1>My Pipelines</h1>
+    <ul>
+        {% for pipeline in pipelines %}
+            <li>
+                <h3>{{ pipeline.name }}</h3>
+                <p>{{ pipeline.description }}</p>
+                <p><strong>Stage:</strong> {{ pipeline.stage }}</p>
+                <p><small>Created: {{ pipeline.created_at }}</small></p>
+            </li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'index' %}">Back</a>
+</body>
+</html>

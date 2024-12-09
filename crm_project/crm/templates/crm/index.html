@@ -1,7 +1,40 @@
-<h1> ADAMCRM </h1>
-<ul>
-    <li><a href="{% url 'client_list' %}">CUSTOMERS</a></li>
-    <li><a href="{% url 'deal_list' %}">DEALS</a></li>
-    <li><a href="{% url 'task_list' %}">TASKS</a></li>
-</ul>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.8">
+    <title>CRM System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+</head>
+<body>
+    <!--upper panel -->
+    <header class="header">
+        <div class="logo">CRM</div>
+        <nav class="nav">
+            <a href="#">Reports</a>
+        </nav>
+    </header>
+
+    <!--Main body-->
+    <div class="layout">
+        <!--navigation menu-->
+        <nav class="sidebar">
+            <ul>
+                <li><a href="{% url 'client_list' %}">Clients</a></li>
+                <li><a href="{% url 'deal_list' %}">Deals</a></li>
+                <li><a href="{% url 'task_list' %}">Tasks</a></li>
+                <li><a href="{% url 'pipeline_list' %}">My Pipelines</a></li>
+            </ul>
+        </nav>
+
+
+          <!-- Основное содержимое -->
+        <div class="content">
+            <h1>Добро пожаловать в CRM</h1>
+            <p>Выберите раздел из меню слева.</p>
+        </div>
+    </div>
+</body>
+</html>
 

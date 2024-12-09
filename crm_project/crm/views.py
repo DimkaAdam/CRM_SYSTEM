@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import Client, Deals, Task
+from .models import Client, Deals, Task, PipeLine
 
 
 def index(request):
@@ -17,4 +17,6 @@ def task_list(request):
     tasks = Task.objects.all()
     return render(request, 'crm/task_list.html', {'tasks': tasks})
 
-
+def pipeline_list(request):
+    pipelines = PipeLine.objects.all()
+    return render(request, 'crm/pipeline_list.html', {'pipelines': pipelines})

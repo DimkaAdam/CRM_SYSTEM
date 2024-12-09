@@ -35,3 +35,13 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+class PipeLine(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Sellers")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    stage = models.CharField(max_length=100,verbose_name="Stage")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created')
+    updated_at = models.DateTimeField(auto_now=True,verbose_name='Updated')
+
+    def __str__(self):
+        return self.name
