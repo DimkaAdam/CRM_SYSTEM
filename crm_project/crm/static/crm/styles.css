@@ -73,3 +73,195 @@ body {
     margin: 20px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
+
+
+/* Боковая панель */
+.sidebar-form {
+    height: 100%; /* Высота панели */
+    width: 0; /* Начальная ширина - 0 (скрыта) */
+    position: fixed; /* Фиксированная позиция */
+    top: 0;
+    right: 0; /* Панель появляется справа */
+    background-color: #f4f4f4; /* Цвет фона */
+    overflow-x: hidden; /* Отключаем горизонтальный скроллинг */
+    transition: 0.3s; /* Плавное открытие */
+    padding: 20px 0;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* Тень для панели */
+}
+
+/* Заголовок боковой панели */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+/* Кнопка закрытия панели */
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+    color: #555;
+}
+
+/* Ввод данных в форму */
+.sidebar-form input {
+    width: 80%;
+    padding: 8px;
+    margin: 10px 10%;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Кнопка для добавления клиента */
+.add-contact-btn {
+    background-color: green;   /* Зеленый цвет */
+    color: white;              /* Белый цвет текста */
+    border: none;              /* Без рамки */
+    padding: 10px 20px;        /* Отступы для кнопки */
+    font-size: 16px;           /* Размер шрифта */
+    cursor: pointer;          /* Указатель при наведении */
+    border-radius: 5px;        /* Закругленные углы */
+    transition: background-color 0.3s ease; /* Плавное изменение фона */
+}
+
+/* Эффект при наведении */
+.add-contact-btn:hover {
+    background-color: #28a745; /* Более яркий зеленый при наведении */
+}
+
+/* Форма добавления клиента */
+#addClientForm {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+/* Ввод данных */
+#addClientForm input {
+    margin-bottom: 10px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Кнопка внутри формы */
+#addClientForm button {
+    background-color: green;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+#addClientForm button:hover {
+    background-color: #28a745;
+}
+
+
+/* Кнопка для добавления клиента */
+.add-contact-btn {
+    background-color: green;   /* Зеленый цвет */
+    color: white;              /* Белый цвет текста */
+    border: none;              /* Без рамки */
+    padding: 10px 20px;        /* Отступы для кнопки */
+    font-size: 16px;           /* Размер шрифта */
+    cursor: pointer;          /* Указатель при наведении */
+    border-radius: 5px;        /* Закругленные углы */
+    transition: background-color 0.3s ease; /* Плавное изменение фона */
+}
+
+/* Эффект при наведении на Add Contact */
+.add-contact-btn:hover {
+    background-color: #28a745; /* Более яркий зеленый при наведении */
+}
+
+/* Кнопка Cancel */
+.cancel-btn {
+    background-color: grey;   /* Серый цвет */
+    color: white;              /* Белый цвет текста */
+    border: none;              /* Без рамки */
+    padding: 10px 20px;        /* Отступы для кнопки */
+    font-size: 16px;           /* Размер шрифта */
+    cursor: pointer;          /* Указатель при наведении */
+    border-radius: 5px;        /* Закругленные углы */
+    margin-left: 10px;         /* Отступ от кнопки Add Contact */
+    transition: background-color 0.3s ease; /* Плавное изменение фона */
+}
+
+/* Эффект при наведении на Cancel */
+.cancel-btn:hover {
+    background-color: #6c757d; /* Более темный серый при наведении */
+}
+
+/* Форма добавления клиента */
+#addClientForm {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+/* Ввод данных */
+#addClientForm input {
+    margin-bottom: 10px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Кнопка внутри формы */
+#addClientForm button {
+    background-color: green;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+#addClientForm button:hover {
+    background-color: #28a745;
+}
+
+
+/* Округление полей ввода и рамка при наведении */
+.sidebar-form input {
+    width: 80%;
+    padding: 8px;
+    margin: 10px 10%;
+    font-size: 14px;
+    border: 1px solid #ccc; /* Начальная рамка */
+    border-radius: 8px; /* Округление углов */
+    transition: border-color 0.3s ease; /* Плавное изменение цвета рамки */
+}
+
+/* Рамка при наведении */
+.sidebar-form input:hover,
+.sidebar-form input:focus {
+    border-color: #ADD8E6; /* Светло-синий цвет рамки */
+    border-width: 4px; /* Увеличиваем толщину рамки при наведении/фокусе */
+    outline: none; /* Убираем стандартный фокусный обвод */
+}
