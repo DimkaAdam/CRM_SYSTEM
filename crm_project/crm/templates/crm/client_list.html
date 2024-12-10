@@ -1,8 +1,13 @@
 
-<h1>CUSTOMERS</h1>
-<ul>
-    {% for client in clients %}
-        <li>{{ client.name }} ({{ client.email }})</li>
-    {% endfor %}
-</ul>
-<a href="{% url 'index' %}">Back</a>
+{% extends "crm/index.html" %}
+
+{% block title %}Список клиентов{% endblock %}
+
+{% block content %}
+    <h1>Клиенты</h1>
+    <ul>
+        {% for client in clients %}
+            <li>{{ client.name }} ({{ client.email }})</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
