@@ -232,7 +232,7 @@ body {
 }
 
 /* Кнопка внутри формы */
-#addClientForm button {
+#clientForm button {
     background-color: green;
     color: white;
     border: none;
@@ -241,7 +241,6 @@ body {
     cursor: pointer;
     border-radius: 5px;
 }
-
 #addClientForm button:hover {
     background-color: #28a745;
 }
