@@ -318,13 +318,29 @@ body {
     color: white;
 }
 
-.client-table td {
-    background-color: white;
-}
 
 .client-table td span {
     font-size: 12px;
     color: #6b7280;
+}
+
+/* Базовый стиль для строки таблицы */
+.client-table tbody tr {
+    background-color: white; /* Цвет по умолчанию */
+    transition: background-color 0.3s ease; /* Плавный переход */
+}
+
+/* Изменение цвета строки при наведении */
+.client-table tbody tr:hover {
+    background-color: #f0f0f0; /* Светло-серый цвет при наведении */
+    cursor: pointer; /* Указатель в виде руки */
+}
+
+
+/* Изменение цвета при наведении */
+.client-table tbody tr:hover {
+    background-color: #f0f0f0; /* Светло-серый цвет */
+    cursor: pointer; /* Указатель в виде руки */
 }
 
 .add-deal-btn {
