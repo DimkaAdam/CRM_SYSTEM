@@ -356,3 +356,140 @@ body {
 .add-deal-btn:hover {
     background-color: #0077b6;
 }
+
+
+/* DEALS SET UP */
+
+/* Основные стили для таблицы сделок */
+.deal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #f7f9fc;
+}
+
+.deal-table th, .deal-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Заголовки таблицы */
+.deal-table th {
+    background-color: #033870;
+    color: white;
+    font-weight: bold;
+}
+
+/* Строки таблицы */
+.deal-table td {
+    background-color: white;
+}
+
+/* Стиль для строк при наведении */
+.deal-table tbody tr:hover {
+    background-color: #e6f7ff; /* Светло-голубой цвет */
+    cursor: pointer;
+}
+
+/* Стили для боковой панели (форма для добавления сделки) */
+.sidebar-form {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 100%;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 20px;
+    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 20px;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+}
+
+.close-btn {
+    font-size: 30px;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+}
+
+/* Вводные элементы для формы добавления сделки */
+.sidebar-form input[type="text"],
+.sidebar-form input[type="number"],
+.sidebar-form input[type="date"],
+.sidebar-form input[type="tel"] {
+    width: 90%;
+    padding: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.sidebar-form button[type="submit"] {
+    background-color: #033870;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+    width: 100%;
+}
+
+/* Стиль кнопки Cancel */
+.cancel-btn {
+    background-color: #ff4d4d;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+/* При навигации на кнопки Cancel и Submit */
+.cancel-btn:hover, .submit-btn:hover {
+    background-color: #ff1a1a;
+}
+
+/* Плавные переходы для элементов */
+.sidebar-form input[type="text"],
+.sidebar-form input[type="number"],
+.sidebar-form input[type="date"],
+.sidebar-form input[type="tel"],
+.sidebar-form button[type="submit"] {
+    transition: background-color 0.3s ease;
+}
+
+/* Стиль для кнопки добавления сделки */
+.add-deal-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+/* Стили для кнопки добавления сделки при наведении */
+.add-deal-btn:hover {
+    background-color: #45a049;
+}
