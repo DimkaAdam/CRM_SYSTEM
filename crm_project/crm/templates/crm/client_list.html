@@ -1,10 +1,21 @@
 {% extends 'crm/index.html' %}
 
+{% load static %}
+
 {% block title %}Contact List{% endblock %}
 
 {% block content %}
     <div class="content">
         <h1>Contact</h1>
+
+        <!-- filter button -->
+        <div class="dropdown">
+            <select id="categorySelect">
+                <option value="all">All Clients</option>
+                <option value="supplier">Supplier</option>
+                <option value="buyer">Buyer</option>
+            </select>
+        </div>
 
         <!-- Кнопка для добавления клиента -->
         <button id="addContactBtn" class="add-contact-btn">Add Contact</button>
@@ -22,12 +33,16 @@
                 <input type="text" id="name" placeholder="Name" required><br><br>
                 <label for="email"></label>
                 <input type="email" id="email" placeholder="Email" required><br><br>
-                </label>
                 <input type="tel" id="phone" placeholder="Phone"
                        pattern="[\+][0-9]{1,3}[-][0-9]{1,4}[-][0-9]{1,4}[-][0-9]{1,4}"
                        required><br><br>
                 <label for="company"></label>
                 <input type="text" id="company" placeholder="Company" required><br><br>
+                <label for="clientType"></label>
+                <select id="clientType" required>
+                    <option value="supplier">Supplier</option>
+                    <option value="buyer">Buyer</option>
+                </select><br><br>
                 <button type="submit" class="add-btn">Add</button>
             </form>
         </div>
@@ -40,6 +55,7 @@
                     <th>Latest Deals</th>
                     <th>Company</th>
                     <th>Created</th>
+                    <th>Type</th>
                 </tr>
             </thead>
             <tbody>
@@ -49,9 +65,10 @@
                         <td>No deals <button class="add-deal-btn">Add deal</button></td>
                         <td>{{ client.company }}</td>
                         <td>{{ client.created }}</td>
+                        <td>{{ client.type|default:"Not specified" }}</td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="4">No clients</td></tr>
+                    <tr><td colspan="5">No clients</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -59,7 +76,7 @@
 
     <!-- Скрипт для обработки открытия/закрытия боковой панели -->
     <script>
-        // Обработчик для кнопки Add Contact
+        // Открыть боковую панель
         document.getElementById('addContactBtn').addEventListener('click', function () {
             document.getElementById('addClientSidebar').style.width = '300px';
             document.getElementById('cancelBtn').style.display = 'inline';
@@ -70,12 +87,6 @@
             document.getElementById('addClientSidebar').style.width = '0';
             document.getElementById('cancelBtn').style.display = 'none';
             document.getElementById('clientForm').reset();
-        });
-
-        // Открыть боковую панель
-        document.getElementById('addContactBtn').addEventListener('click', function () {
-            document.getElementById('addClientSidebar').style.width = '300px';
-            document.getElementById('cancelBtn').style.display = 'inline';
         });
 
         // Закрыть боковую панель
@@ -91,8 +102,8 @@
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const company = document.getElementById('company').value;
+            const clientType = document.getElementById('clientType').value;
 
-            // Отправка данных на API
             fetch('http://127.0.0.1:8000/api/clients/', {
                 method: 'POST',
                 headers: {
@@ -103,22 +114,22 @@
                     name: name,
                     email: email,
                     company: company,
+                    client_type: clientType, // Отправляем тип клиента
                 }),
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data) {
-                        // Добавляем нового клиента в таблицу
                         const clientTable = document.getElementById('clientTable').getElementsByTagName('tbody')[0];
                         const newRow = clientTable.insertRow();
                         newRow.innerHTML = `
-                            <td>${data.name}<br><span>${data.email}</span></td>
+                            <td>${data.name}<br><span>${data.email}</span><br><span>${data.phone || ''}</span></td>
                             <td>No deals <button class="add-deal-btn">Add deal</button></td>
                             <td>${data.company}</td>
                             <td>${data.created}</td>
+                            <td>${data.client_type || 'Not specified'}</td>
                         `;
 
-                        // Закрыть боковую панель
                         document.getElementById('addClientSidebar').style.width = '0';
                         document.getElementById('cancelBtn').style.display = 'none';
                         document.getElementById('clientForm').reset();
@@ -126,5 +137,22 @@
                 })
                 .catch(error => console.error('Error:', error));
         });
+
+        // Фильтрация клиентов по типу
+        document.getElementById('categorySelect').addEventListener('change', function () {
+            const selectedValue = this.value;
+            const rows = document.querySelectorAll('#clientTable tbody tr');
+
+            rows.forEach(row => {
+                const clientType = row.children[4].textContent.toLowerCase(); // Тип клиента из столбца
+                if (selectedValue === 'all' || clientType === selectedValue) {
+                    row.style.display = ''; // Показать строку
+                } else {
+                    row.style.display = 'none'; // Скрыть строку
+                }
+            });
+        });
     </script>
+    <!-- Подключаем JavaScript -->
+    <script src="{% static 'js/scripts.js' %}"></script>
 {% endblock %}

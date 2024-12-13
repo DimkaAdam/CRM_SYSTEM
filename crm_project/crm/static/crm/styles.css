@@ -4,6 +4,7 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f8f4f4;
 }
+
 /* upper panel */
 .header {
     background-color: #154c79  !important;
@@ -74,7 +75,6 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-
 /* Боковая панель */
 .sidebar-form {
     height: 100%; /* Высота панели */
@@ -139,9 +139,25 @@ body {
     transition: background-color 0.3s ease; /* Плавное изменение фона */
 }
 
-/* Эффект при наведении */
 .add-contact-btn:hover {
     background-color: #28a745; /* Более яркий зеленый при наведении */
+}
+
+/* Кнопка Cancel */
+.cancel-btn {
+    background-color: grey;   /* Серый цвет */
+    color: white;              /* Белый цвет текста */
+    border: none;              /* Без рамки */
+    padding: 10px 20px;        /* Отступы для кнопки */
+    font-size: 16px;           /* Размер шрифта */
+    cursor: pointer;          /* Указатель при наведении */
+    border-radius: 5px;        /* Закругленные углы */
+    margin-left: 10px;         /* Отступ от кнопки Add Contact */
+    transition: background-color 0.3s ease; /* Плавное изменение фона */
+}
+
+.cancel-btn:hover {
+    background-color: #6c757d; /* Более темный серый при наведении */
 }
 
 /* Форма добавления клиента */
@@ -177,75 +193,6 @@ body {
     background-color: #28a745;
 }
 
-
-/* Кнопка для добавления клиента */
-.add-contact-btn {
-    background-color: green;   /* Зеленый цвет */
-    color: white;              /* Белый цвет текста */
-    border: none;              /* Без рамки */
-    padding: 10px 20px;        /* Отступы для кнопки */
-    font-size: 16px;           /* Размер шрифта */
-    cursor: pointer;          /* Указатель при наведении */
-    border-radius: 5px;        /* Закругленные углы */
-    transition: background-color 0.3s ease; /* Плавное изменение фона */
-}
-
-/* Эффект при наведении на Add Contact */
-.add-contact-btn:hover {
-    background-color: #28a745; /* Более яркий зеленый при наведении */
-}
-
-/* Кнопка Cancel */
-.cancel-btn {
-    background-color: grey;   /* Серый цвет */
-    color: white;              /* Белый цвет текста */
-    border: none;              /* Без рамки */
-    padding: 10px 20px;        /* Отступы для кнопки */
-    font-size: 16px;           /* Размер шрифта */
-    cursor: pointer;          /* Указатель при наведении */
-    border-radius: 5px;        /* Закругленные углы */
-    margin-left: 10px;         /* Отступ от кнопки Add Contact */
-    transition: background-color 0.3s ease; /* Плавное изменение фона */
-}
-
-/* Эффект при наведении на Cancel */
-.cancel-btn:hover {
-    background-color: #6c757d; /* Более темный серый при наведении */
-}
-
-/* Форма добавления клиента */
-#addClientForm {
-    margin-top: 20px;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-}
-
-/* Ввод данных */
-#addClientForm input {
-    margin-bottom: 10px;
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-/* Кнопка внутри формы */
-#clientForm button {
-    background-color: green;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 5px;
-}
-#addClientForm button:hover {
-    background-color: #28a745;
-}
-
-
 /* Округление полей ввода и рамка при наведении */
 .sidebar-form input {
     width: 80%;
@@ -272,8 +219,6 @@ body {
     object-fit: contain; /* Уменьшает логотип, сохраняя содержимое */
     display: block;
 }
-
-
 
 /* Общий контейнер для всех клиентов */
 .clients-container {
@@ -318,7 +263,6 @@ body {
     color: white;
 }
 
-
 .client-table td span {
     font-size: 12px;
     color: #6b7280;
@@ -335,7 +279,6 @@ body {
     background-color: #f0f0f0; /* Светло-серый цвет при наведении */
     cursor: pointer; /* Указатель в виде руки */
 }
-
 
 /* Изменение цвета при наведении */
 .client-table tbody tr:hover {
@@ -356,7 +299,6 @@ body {
 .add-deal-btn:hover {
     background-color: #0077b6;
 }
-
 
 /* DEALS SET UP */
 
@@ -451,18 +393,6 @@ body {
     width: 100%;
 }
 
-/* Стиль кнопки Cancel */
-.cancel-btn {
-    background-color: #ff4d4d;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-left: 10px;
-}
-
 /* При навигации на кнопки Cancel и Submit */
 .cancel-btn:hover, .submit-btn:hover {
     background-color: #ff1a1a;
@@ -492,4 +422,59 @@ body {
 /* Стили для кнопки добавления сделки при наведении */
 .add-deal-btn:hover {
     background-color: #45a049;
+}
+
+/* filter button*/
+.dropdown {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.dropdown select {
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.contact-list {
+    display: none; /* Скрываем блоки изначально */
+}
+
+.contact-list.active {
+    display: block; /* Отображаем только выбранный блок */
+}
+
+
+/* Обновление стиля для полей ввода */
+.sidebar-form input[type="text"],
+.sidebar-form input[type="email"],
+.sidebar-form input[type="tel"],
+.sidebar-form input[type="number"],
+.sidebar-form input[type="date"] {
+    width: 80%;
+    padding: 8px;
+    margin: 10px 10%;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    transition: border-color 0.3s ease; /* Плавное изменение цвета рамки */
+}
+
+/* Рамка при наведении */
+.sidebar-form input[type="text"]:hover,
+.sidebar-form input[type="email"]:hover,
+.sidebar-form input[type="tel"]:hover,
+.sidebar-form input[type="number"]:hover,
+.sidebar-form input[type="date"]:hover,
+.sidebar-form input[type="text"]:focus,
+.sidebar-form input[type="email"]:focus,
+.sidebar-form input[type="tel"]:focus,
+.sidebar-form input[type="number"]:focus,
+.sidebar-form input[type="date"]:focus {
+    border-color: #ADD8E6; /* Светло-синий цвет рамки */
+    border-width: 4px; /* Увеличиваем толщину рамки при наведении/фокусе */
+    outline: none; /* Убираем стандартный фокусный обвод */
 }

@@ -3,11 +3,17 @@ from django.utils import timezone
 
 
 class Client(models.Model):
+    contact_type = [
+        ('suppliers', 'Suppliers'),
+        ("buyers","Buyers")
+    ]
+
     name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15, blank=True,null=True)
     company = models.CharField(max_length=200, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    type = models.CharField(max_length=10,choices=contact_type, default='suppliers')
 
     def __str__(self):
         return self.name

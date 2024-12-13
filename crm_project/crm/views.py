@@ -12,7 +12,15 @@ def index(request):
 
 def client_list(request):
     clients = Client.objects.all()
-    return render(request, 'crm/client_list.html', {'clients': clients})
+
+    supplier = clients.filter(type='suppliers')
+    buyer = clients.filter(type = 'buyers')
+
+    return render(request, 'crm/client_list.html', {
+        'clients': clients,
+        'suppliers': supplier,
+        'buyers': buyer,
+    })
 
 def deal_list(request):
     deals = Deals.objects.all()
