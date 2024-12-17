@@ -83,6 +83,13 @@
     </div>
 
     <script>
+        const iconPath = '{% static 'crm/images/icons/name.png'%}';
+        const iconPath_1 = '{% static 'crm/images/icons/phone.png'%}';
+        const iconPath_2 = '{% static 'crm/images/icons/company.png'%}';
+        const iconPath_3 = '{% static 'crm/images/icons/email.png'%}';
+        const iconPath_4 = '{% static 'crm/images/icons/type.png'%}';
+
+
         // Open Add Client Sidebar
         document.getElementById('addContactBtn').addEventListener('click', function () {
             document.getElementById('addClientSidebar').style.width = '300px';
@@ -176,11 +183,11 @@
                     .then(response => response.json())
                     .then(data => {
                         content.innerHTML = `
-                            <p><strong>Name:</strong> ${data.name}</p>
-                            <p><strong>Email:</strong> ${data.email}</p>
-                            <p><strong>Phone:</strong> ${data.phone || 'Not provided'}</p>
-                            <p><strong>Company:</strong> ${data.company}</p>
-                            <p><strong>Type:</strong> ${data.client_type || 'Not specified'}</p>
+                            <p><strong><img src="${iconPath}" alt="Logo" class="logo-img"> </strong> ${data.name}</p>
+                           <p><strong><img src="${iconPath_3}" alt="Logo" class="logo-img"> </strong> ${data.email}</p>
+                            <p><strong><img src="${iconPath_1}" alt="Logo" class="logo-img"> </strong> ${data.phone || 'Not provided'}</p>
+                            <p><strong><img src="${iconPath_2}" alt="Logo" class="logo-img"> </strong> ${data.company}</p>
+                            <p><strong><img src="${iconPath_4}" alt="Logo" class="logo-img"> </strong> ${data.client_type || 'Not specified'}</p>
                             <p><strong>Created:</strong> ${data.created}</p>
                         `;
                         sidebar.style.width = '300px';

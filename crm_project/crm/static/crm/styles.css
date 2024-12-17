@@ -479,3 +479,7 @@ body {
     outline: none; /* Убираем стандартный фокусный обвод */
 }
 
+.logo-img{
+    width: 20px;
+    height: auto;
+}
