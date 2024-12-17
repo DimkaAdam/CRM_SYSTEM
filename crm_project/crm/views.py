@@ -13,8 +13,8 @@ def index(request):
 def client_list(request):
     clients = Client.objects.all()
 
-    supplier = clients.filter(type='suppliers')
-    buyer = clients.filter(type = 'buyers')
+    supplier = clients.filter(client_type='suppliers')
+    buyer = clients.filter(client_type = 'buyers')
 
     return render(request, 'crm/client_list.html', {
         'clients': clients,
