@@ -479,7 +479,26 @@ body {
     outline: none; /* Убираем стандартный фокусный обвод */
 }
 
+/* Contact panel settings */
+
+/* Стиль для общего контейнера */
+.client-details-container {
+    border: 1px solid #ddd; /* Тонкая рамка */
+    border-radius: 8px; /* Скругленные углы */
+    padding: 10px; /* Отступы внутри рамки */
+    margin-bottom: 10px; /* Отступ между блоками */
+    background-color: #f9f9f9; /* Светлый фон */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Небольшая тень */
+}
+
+
 .logo-img{
-    width: 20px;
+    width: 30px;
     height: auto;
+}
+
+.client-details-container p {
+    margin: 0; /* Убрать отступы у параграфов */
+    line-height: 1.6; /* Интервал между строками */
+    font-size: 14px; /* Размер шрифта */
 }

@@ -183,12 +183,24 @@
                     .then(response => response.json())
                     .then(data => {
                         content.innerHTML = `
-                            <p><strong><img src="${iconPath}" alt="Logo" class="logo-img"> </strong> ${data.name}</p>
-                           <p><strong><img src="${iconPath_3}" alt="Logo" class="logo-img"> </strong> ${data.email}</p>
-                            <p><strong><img src="${iconPath_1}" alt="Logo" class="logo-img"> </strong> ${data.phone || 'Not provided'}</p>
-                            <p><strong><img src="${iconPath_2}" alt="Logo" class="logo-img"> </strong> ${data.company}</p>
-                            <p><strong><img src="${iconPath_4}" alt="Logo" class="logo-img"> </strong> ${data.client_type || 'Not specified'}</p>
-                            <p><strong>Created:</strong> ${data.created}</p>
+                            <div class="client-details-container">
+                                <p><strong><img src="${iconPath}" alt="Logo" class="logo-img"> </strong> ${data.name}</p>
+                            </div>
+                            <div class="client-details-container">
+                               <p><strong><img src="${iconPath_3}" alt="Logo" class="logo-img"> </strong> ${data.email}</p>
+                            </div>
+                            <div class="client-details-container">
+                                <p><strong><img src="${iconPath_1}" alt="Logo" class="logo-img"> </strong> ${data.phone || 'Not provided'}</p>
+                            </div>
+                            <div class="client-details-container">
+                                <p><strong><img src="${iconPath_2}" alt="Logo" class="logo-img"> </strong> ${data.company}</p>
+                            </div>
+                            <div class="client-details-container">
+                                <p><strong><img src="${iconPath_4}" alt="Logo" class="logo-img"> </strong> ${data.client_type || 'Not specified'}</p>
+                            </div>
+                            <div class="client-details-container">
+                                <p><strong>Created:</strong> ${data.created}</p>
+                            </div>
                         `;
                         sidebar.style.width = '300px';
                     })
