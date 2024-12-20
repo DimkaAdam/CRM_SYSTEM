@@ -1,11 +1,13 @@
 from django.urls import path, include
-from .import views
-from .views import ClientCreateAPIView
-from .views import ClientViewSet
+from . import views
+from .views import ClientCreateAPIView, DealCreateAPIView
+from .views import ClientViewSet, DealViewSet
 from rest_framework.routers import DefaultRouter
 
+# Создаем один роутер для обоих ViewSet
 router = DefaultRouter()
 router.register(r'clients', ClientViewSet, basename='client')
+router.register(r'deals', DealViewSet, basename='deal')
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -13,8 +15,7 @@ urlpatterns = [
     path('deals/', views.deal_list, name='deal_list'),
     path('tasks/', views.task_list, name='task_list'),
     path('pipelines/', views.pipeline_list, name='pipeline_list'),
-    path('api/clients/', ClientCreateAPIView.as_view(), name='api_add_client'),
-    path('api/', include(router.urls)), # connecting routers to the API
-
-
+    path('api/clients/', ClientCreateAPIView.as_view(), name='api_add_client'),  # Создание клиента через API
+    path('api/deals/create/', DealCreateAPIView.as_view(), name='deal-create'),  # Создание сделки через API
+    path('api/', include(router.urls)),  # Подключаем маршруты для ViewSets (клиенты и сделки)
 ]
