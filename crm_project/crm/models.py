@@ -40,6 +40,18 @@ class Deals(models.Model):
     transport_company = models.CharField(max_length=255, blank=True, null=True)  # Название транспортной компании (может быть пустым)
     total_income_loss = models.DecimalField(max_digits=10, decimal_places=2,default=0)  # Общий доход/убыток
 
+    def save(self, *args, **kwargs):
+        self.total_amount = self.received_quantity * self.buyer_price
+
+        self.total_income_loss = (self.buyer_price - self.supplier_price) * self.received_quantity
+
+        if self.supplier_price is not None and self.received_quantity is not None:
+            self.supplier_total = self.received_quantity * self.supplier_price
+
+        super().save(*args, **kwargs)
+
+
+
     def __str__(self):
         return f"Deal: {self.date} - {self.supplier} to {self.buyer}"
 

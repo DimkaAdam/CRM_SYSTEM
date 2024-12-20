@@ -49,8 +49,8 @@
                 <label for="transport_cost"></label>
                 <input type="number" id="transport_cost" step="0.01" placeholder="Transport Cost" required><br><br>
 
-                <label for="Transport Company"></label>
-                <input type="text" id="Transport Company" placeholder="Transport Company" required><br><br>
+                <label for="transport_company"></label>
+                <input type="text" id="transport_company" placeholder="Transport Company" required><br><br>
 
                 <button type="submit" class="submit-btn">Submit Deal</button>
             </form>
@@ -67,6 +67,7 @@
                     <th>Shipped (Qty/Pallets)</th>
                     <th>Received (Qty/Pallets)</th>
                     <th>Supplier Price</th>
+                    <th>Supplier Total</th>  <!-- Изменено на Supplier Total -->
                     <th>Buyer Price</th>
                     <th>Total Amount</th>
                     <th>Transport $</th>
@@ -84,6 +85,7 @@
                     <td>{{ deal.shipped_quantity }} / {{ deal.shipped_pallets }}</td>
                     <td>{{ deal.received_quantity }} / {{ deal.received_pallets }}</td>
                     <td>{{ deal.supplier_price }} {{ deal.supplier_currency }}</td>
+                    <td>{{ deal.supplier_total }} {{ deal.supplier_currency }}</td>  <!-- Используем supplier_total -->
                     <td>{{ deal.buyer_price }} {{ deal.buyer_currency }}</td>
                     <td>{{ deal.total_amount }}</td>
                     <td>{{ deal.transport_cost }}</td>
@@ -113,6 +115,23 @@
         document.getElementById('dealForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
+            // Проверяем, существуют ли элементы перед тем, как получить их значения
+            const receivedQuantityElement = document.getElementById('received_quantity');
+            const buyerPriceElement = document.getElementById('buyer_price');
+            const supplierPriceElement = document.getElementById('supplier_price');
+
+            if (!receivedQuantityElement || !buyerPriceElement) {
+                console.error('Элементы формы не найдены!');
+                return; // Выходим из функции, если элементы не найдены
+            }
+
+            const received_quantity = parseFloat(receivedQuantityElement.value);
+            const buyer_price = parseFloat(buyerPriceElement.value);
+            const supplier_price = parseFloat(supplierPriceElement.value);
+
+            const total_amount = received_quantity * buyer_price;
+            const supplier_total = received_quantity * supplier_price;  // Расчет supplier_total
+
             const data = {
                 date: document.getElementById('date').value,
                 supplier: document.getElementById('supplier').value,
@@ -120,15 +139,17 @@
                 grade: document.getElementById('grade').value,
                 shipped_quantity: document.getElementById('shipped_quantity').value,
                 shipped_pallets: document.getElementById('shipped_pallets').value,
-                received_quantity: document.getElementById('received_quantity').value,
+                received_quantity: received_quantity,
                 received_pallets: document.getElementById('received_pallets').value,
-                supplier_price: document.getElementById('supplier_price').value,
-                buyer_price: document.getElementById('buyer_price').value,
+                supplier_price: supplier_price,
+                buyer_price: buyer_price,
                 transport_cost: document.getElementById('transport_cost').value,
                 transport_company: document.getElementById('transport_company').value,
+                total_amount: total_amount,
+                supplier_total: supplier_total  // Добавляем supplier_total в данные
             };
 
-            // Отправить данные на сервер
+            // Отправляем данные на сервер
             fetch('http://127.0.0.1:8000/api/deals/', {
                 method: 'POST',
                 headers: {
@@ -150,6 +171,7 @@
                     <td>${data.shipped_quantity} / ${data.shipped_pallets}</td>
                     <td>${data.received_quantity} / ${data.received_pallets}</td>
                     <td>${data.supplier_price} ${data.supplier_currency}</td>
+                    <td>${data.supplier_total} ${data.supplier_currency}</td>  <!-- Supplier Total -->
                     <td>${data.buyer_price} ${data.buyer_currency}</td>
                     <td>${data.total_amount}</td>
                     <td>${data.transport_cost}</td>
@@ -159,6 +181,7 @@
 
                 // Закрыть боковую панель
                 document.getElementById('dealFormSidebar').style.width = '0';
+                // Очистить форму
                 document.getElementById('dealForm').reset();
             })
             .catch(error => console.error('Error:', error));

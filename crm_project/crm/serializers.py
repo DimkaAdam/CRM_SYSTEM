@@ -12,3 +12,6 @@ class DealSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deals
         fields = '__all__'
+
+    def get_total_amount(self, obj):
+        return obj.received_quantity * obj.buyer_price
