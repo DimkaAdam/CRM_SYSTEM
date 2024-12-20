@@ -502,3 +502,14 @@ body {
     line-height: 1.6; /* Интервал между строками */
     font-size: 14px; /* Размер шрифта */
 }
+
+/* deals panel settings*/
+.deal-details-container{
+    border: 1px solid #ddd; /* Тонкая рамка */
+    border-radius: 8px; /* Скругленные углы */
+    padding: 10px; /* Отступы внутри рамки */
+    margin-bottom: 10px; /* Отступ между блоками */
+    background-color: #f9f9f9; /* Светлый фон */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Небольшая тень */
+}
+
