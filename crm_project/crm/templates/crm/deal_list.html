@@ -16,38 +16,41 @@
                 <button id="closeSidebarBtn" class="close-btn">&times;</button>
             </div>
             <form id="dealForm">
-                <label for="date">Date:</label>
+                <label for="date"></label>
                 <input type="date" id="date" required><br><br>
 
-                <label for="supplier">Supplier:</label>
-                <input type="text" id="supplier" required><br><br>
+                <label for="supplier"></label>
+                <input type="text" id="supplier" placeholder="Supplier" required><br><br>
 
-                <label for="buyer">Buyer:</label>
-                <input type="text" id="buyer" required><br><br>
+                <label for="buyer"></label>
+                <input type="text" id="buyer" placeholder="Buyer" required><br><br>
 
-                <label for="grade">Grade:</label>
-                <input type="text" id="grade" required><br><br>
+                <label for="grade"></label>
+                <input type="text" id="grade" placeholder="Grade" required><br><br>
 
-                <label for="shipped_quantity">Shipped Quantity:</label>
-                <input type="number" id="shipped_quantity" step="0.01" required><br><br>
+                <label for="shipped_quantity"></label>
+                <input type="number" id="shipped_quantity" step="0.01" placeholder="Shipped Quantity" required><br><br>
 
-                <label for="shipped_pallets">Shipped Pallets:</label>
-                <input type="number" id="shipped_pallets" required><br><br>
+                <label for="shipped_pallets"></label>
+                <input type="number" id="shipped_pallets" placeholder="Shipped Pallets" required><br><br>
 
-                <label for="received_quantity">Received Quantity:</label>
-                <input type="number" id="received_quantity" step="0.01" required><br><br>
+                <label for="received_quantity"></label>
+                <input type="number" id="received_quantity" step="0.01" placeholder="Received Quantity" required><br><br>
 
-                <label for="received_pallets">Received Pallets:</label>
-                <input type="number" id="received_pallets" required><br><br>
+                <label for="received_pallets"></label>
+                <input type="number" id="received_pallets" placeholder="Received Pallets" required><br><br>
 
-                <label for="supplier_price">Supplier Price:</label>
-                <input type="number" id="supplier_price" step="0.01"><br><br>
+                <label for="supplier_price"></label>
+                <input type="number" id="supplier_price" placeholder="Supplier Price" step="0.01"><br><br>
 
-                <label for="buyer_price">Buyer Price:</label>
-                <input type="number" id="buyer_price" step="0.01" required><br><br>
+                <label for="buyer_price"></label>
+                <input type="number" id="buyer_price" step="0.01" placeholder="Buyer Price" required><br><br>
 
-                <label for="transport_cost">Transport Cost:</label>
-                <input type="number" id="transport_cost" step="0.01" required><br><br>
+                <label for="transport_cost"></label>
+                <input type="number" id="transport_cost" step="0.01" placeholder="Transport Cost" required><br><br>
+
+                <label for="Transport Company"></label>
+                <input type="text" id="Transport Company" placeholder="Transport Company" required><br><br>
 
                 <button type="submit" class="submit-btn">Submit Deal</button>
             </form>
@@ -121,7 +124,8 @@
                 received_pallets: document.getElementById('received_pallets').value,
                 supplier_price: document.getElementById('supplier_price').value,
                 buyer_price: document.getElementById('buyer_price').value,
-                transport_cost: document.getElementById('transport_cost').value
+                transport_cost: document.getElementById('transport_cost').value,
+                transport_company: document.getElementById('transport_company').value,
             };
 
             // Отправить данные на сервер
