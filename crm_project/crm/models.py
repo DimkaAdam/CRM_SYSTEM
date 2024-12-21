@@ -43,7 +43,7 @@ class Deals(models.Model):
     def save(self, *args, **kwargs):
         self.total_amount = self.received_quantity * self.buyer_price
 
-        self.total_income_loss = (self.buyer_price - self.supplier_price) * self.received_quantity
+        self.total_income_loss = self.total_amount- (self.transport_cost + self.supplier_total)
 
         if self.supplier_price is not None and self.received_quantity is not None:
             self.supplier_total = self.received_quantity * self.supplier_price

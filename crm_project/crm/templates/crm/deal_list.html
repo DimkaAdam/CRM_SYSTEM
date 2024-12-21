@@ -17,7 +17,6 @@
             </div>
             <form id="dealForm">
                 <!-- Form Fields for the Deal -->
-                <!-- Similar to the original deal creation form -->
                 <label for="date"></label>
                 <input type="date" id="date" required><br><br>
                 <label for="supplier"></label>
@@ -120,7 +119,9 @@
             const receivedQuantityElement = document.getElementById('received_quantity');
             const buyerPriceElement = document.getElementById('buyer_price');
             const supplierPriceElement = document.getElementById('supplier_price');
-            if (!receivedQuantityElement || !buyerPriceElement) {
+            const transportCostElement = document.getElementById('transport_cost'); // Добавление транспортных расходов
+
+            if (!receivedQuantityElement || !buyerPriceElement || !supplierPriceElement || !transportCostElement) {
                 console.error('Элементы формы не найдены!');
                 return;
             }
@@ -128,9 +129,12 @@
             const received_quantity = parseFloat(receivedQuantityElement.value);
             const buyer_price = parseFloat(buyerPriceElement.value);
             const supplier_price = parseFloat(supplierPriceElement.value);
-            const total_amount = received_quantity * buyer_price;
-            const supplier_total = received_quantity * supplier_price;
-            const total_income_loss = total_amount - (supplier_total + transport_cost)
+            const transport_cost = parseFloat(transportCostElement.value);
+
+            // Вычисление общих сумм
+            const total_amount = received_quantity * buyer_price; // Общая сумма от покупателя
+            const supplier_total = received_quantity * supplier_price; // Общая сумма для поставщика
+            const total_income_loss = total_amount - supplier_total - transport_cost; // Убыток/прибыль
 
             const data = {
                 date: document.getElementById('date').value,
@@ -143,10 +147,11 @@
                 received_pallets: document.getElementById('received_pallets').value,
                 supplier_price: supplier_price,
                 buyer_price: buyer_price,
-                transport_cost: document.getElementById('transport_cost').value,
+                transport_cost: transport_cost,
                 transport_company: document.getElementById('transport_company').value,
                 total_amount: total_amount,
-                supplier_total: supplier_total
+                supplier_total: supplier_total,
+                total_income_loss: total_income_loss // Добавление переменной для Income/Loss
             };
 
             // Отправляем данные на сервер
@@ -175,7 +180,7 @@
                     <td>${data.total_amount}</td>
                     <td>${data.transport_cost}</td>
                     <td>${data.transport_company}</td>
-                    <td>${data.total_income_loss}</td>
+                    <td>${data.total_income_loss}</td> <!-- Теперь корректно отображается прибыль/убыток -->
                 `;
                 document.getElementById('dealFormSidebar').style.width = '0';
                 document.getElementById('dealForm').reset();
