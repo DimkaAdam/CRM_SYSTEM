@@ -5,6 +5,7 @@ from django.utils import timezone
 class Client(models.Model):
     contact_type = [
         ('suppliers', 'Suppliers'),
+        ('hauler','Hauler'),
         ("buyers","Buyers")
     ]
 
