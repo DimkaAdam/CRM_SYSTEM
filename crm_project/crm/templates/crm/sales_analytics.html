@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Analytics</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Подключаем Chart.js -->
+</head>
+<body>
+    <div class="layout">
+        <nav class="sidebar">
+            <ul>
+                <li><a href="{% url 'client_list' %}">Clients</a></li>
+                <li><a href="{% url 'deal_list' %}">Deals</a></li>
+                <li><a href="{% url 'task_list' %}">Tasks</a></li>
+                <li><a href="{% url 'pipeline_list' %}">My Pipelines</a></li>
+            </ul>
+        </nav>
+
+        <div class="content">
+            <h1>Sales Analytics</h1>
+            <canvas id="salesChart" width="400" height="200"></canvas>  <!-- Место для графика -->
+
+            <script>
+                // Пример графика с использованием Chart.js
+                var ctx = document.getElementById('salesChart').getContext('2d');
+                var salesChart = new Chart(ctx, {
+                    type: 'bar',  // Тип графика
+                    data: {
+                        labels: ['Deal 1', 'Deal 2', 'Deal 3'],  // Названия сделок (можно изменить на реальные данные)
+                        datasets: [{
+                            label: 'Total Sales',
+                            data: [200, 300, 400],  // Значения для каждого столбца графика
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            </script>
+        </div>
+    </div>
+</body>
+</html>

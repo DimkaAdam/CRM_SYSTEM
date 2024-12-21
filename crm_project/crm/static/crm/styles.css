@@ -529,3 +529,35 @@ body {
 .export-btn:hover {
     background-color: #218838;
 }
+
+
+/* sales analitics html settings*/
+body {
+    font-family: Arial, sans-serif;
+}
+
+.layout {
+    display: flex;
+}
+
+.sidebar {
+    width: 200px;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+canvas {
+    width: 100%;
+    max-width: 600px;
+    margin-top: 20px;
+}

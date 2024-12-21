@@ -106,3 +106,6 @@ def export_deals_to_excel(request):
 
     workbook.save(response)
     return response
+
+def sales_analytics(request):
+    return render(request, 'crm/sales_analytics.html')
