@@ -8,6 +8,9 @@ from rest_framework import status, viewsets
 from .serializers import ClientSerializer
 from .serializers import DealSerializer
 
+import openpyxl
+from django.http import HttpResponse
+from .models import Deals
 
 
 def index(request):
@@ -60,3 +63,46 @@ class DealCreateAPIView(APIView):
 class DealViewSet(viewsets.ModelViewSet):
     queryset = Deals.objects.all()
     serializer_class = DealSerializer
+
+def export_deals_to_excel(request):
+    # Создаем новый Excel-файл
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = 'Deals'
+
+    # Заголовки столбцов
+    columns = [
+        'Date', 'Supplier', 'Buyer', 'Grade', 'Shipped Quantity', 'Shipped Pallets',
+        'Received Quantity', 'Received Pallets', 'Supplier Price', 'Supplier Total','Buyer Price',
+        'Transport Cost', 'Transport Company','Total Amount', 'Total Income/Loss'
+    ]
+    for col_num, column_title in enumerate(columns, 1):
+        worksheet.cell(row=1, column=col_num, value=column_title)
+
+    # Получаем все сделки из базы данных
+    deals = Deals.objects.all()
+
+    # Добавляем строки с данными сделок
+    for row_num, deal in enumerate(deals, 2):
+        worksheet.cell(row=row_num, column=1, value=deal.date.strftime("%Y-%m-%d"))
+        worksheet.cell(row=row_num, column=2, value=deal.supplier)
+        worksheet.cell(row=row_num, column=3, value=deal.buyer)
+        worksheet.cell(row=row_num, column=4, value=deal.grade)
+        worksheet.cell(row=row_num, column=5, value=deal.shipped_quantity)
+        worksheet.cell(row=row_num, column=6, value=deal.shipped_pallets)
+        worksheet.cell(row=row_num, column=7, value=deal.received_quantity)
+        worksheet.cell(row=row_num, column=8, value=deal.received_pallets)
+        worksheet.cell(row=row_num, column=9, value=deal.supplier_price)
+        worksheet.cell(row=row_num, column=10, value=deal.supplier_total)
+        worksheet.cell(row=row_num, column=11, value=deal.buyer_price)
+        worksheet.cell(row=row_num, column=12, value=deal.transport_cost)
+        worksheet.cell(row=row_num, column=12, value=deal.transport_company)
+        worksheet.cell(row=row_num, column=13, value=deal.total_amount)
+        worksheet.cell(row=row_num, column=14, value=deal.total_income_loss)
+
+    # Настраиваем ответ для скачивания файла
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="deals.xlsx"'
+
+    workbook.save(response)
+    return response

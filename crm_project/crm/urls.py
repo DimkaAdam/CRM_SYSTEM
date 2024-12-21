@@ -18,4 +18,5 @@ urlpatterns = [
     path('api/clients/', ClientCreateAPIView.as_view(), name='api_add_client'),  # Создание клиента через API
     path('api/deals/create/', DealCreateAPIView.as_view(), name='deal-create'),  # Создание сделки через API
     path('api/', include(router.urls)),  # Подключаем маршруты для ViewSets (клиенты и сделки)
+path('deals/export/', views.export_deals_to_excel, name='export_deals_to_excel'), # Exel
 ]

@@ -513,3 +513,19 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Небольшая тень */
 }
 
+
+/* Exel Btn settings*/
+.export-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px 0;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.export-btn:hover {
+    background-color: #218838;
+}
