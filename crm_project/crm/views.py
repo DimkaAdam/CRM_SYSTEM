@@ -10,7 +10,8 @@ from .serializers import DealSerializer
 
 import openpyxl
 from django.http import HttpResponse
-from .models import Deals
+
+from django.db.models import Sum
 
 
 def index(request):
@@ -107,5 +108,18 @@ def export_deals_to_excel(request):
     workbook.save(response)
     return response
 
+
+
+
 def sales_analytics(request):
-    return render(request, 'crm/sales_analytics.html')
+    # Получаем все сделки и группируем по поставщикам
+    suppliers_income = Deals.objects.values('supplier').annotate(total_income_loss=Sum('total_income_loss'))
+
+    # Формируем словарь с доходами по поставщикам
+    suppliers_income_dict = {entry['supplier']: float(entry['total_income_loss'] or 0) for entry in suppliers_income}
+
+    # Передаем данные в шаблон
+    context = {
+        'suppliers_income': suppliers_income_dict,
+    }
+    return render(request, 'crm/sales_analytics.html', context)

@@ -21,18 +21,35 @@
 
         <div class="content">
             <h1>Sales Analytics</h1>
-            <canvas id="salesChart" width="400" height="200"></canvas>  <!-- Место для графика -->
+
+            {% if suppliers_income %}
+                <canvas id="salesChart" width="400" height="200"></canvas>  <!-- Место для графика -->
+            {% else %}
+                <p>No data available for sales analytics.</p>
+            {% endif %}
 
             <script>
-                // Пример графика с использованием Chart.js
+                // Получаем данные о доходах и поставщиках из контекста
+                const suppliersIncome = {{ suppliers_income|safe }};
+
+                // Проверяем, есть ли данные
+                if (!suppliersIncome || Object.keys(suppliersIncome).length === 0) {
+                    console.error('No data available for sales analytics');
+                    alert('No data available for sales analytics.');
+                }
+
+                // Данные для графика
+                const labels = Object.keys(suppliersIncome);  // Список поставщиков
+                const data = Object.values(suppliersIncome);  // Список доходов/убытков
+
                 var ctx = document.getElementById('salesChart').getContext('2d');
                 var salesChart = new Chart(ctx, {
                     type: 'bar',  // Тип графика
                     data: {
-                        labels: ['Deal 1', 'Deal 2', 'Deal 3'],  // Названия сделок (можно изменить на реальные данные)
+                        labels: labels,  // Поставщики
                         datasets: [{
-                            label: 'Total Sales',
-                            data: [200, 300, 400],  // Значения для каждого столбца графика
+                            label: 'Income/Loss',
+                            data: data,  // Доходы/убытки
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             borderColor: 'rgba(75, 192, 192, 1)',
                             borderWidth: 1
