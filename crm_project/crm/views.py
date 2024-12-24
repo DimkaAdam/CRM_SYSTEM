@@ -1,6 +1,7 @@
 from django.core.serializers import serialize
 from django.shortcuts import render, redirect
 from .models import Client, Deals, Task, PipeLine
+from django.db.models import Sum
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -110,16 +111,21 @@ def export_deals_to_excel(request):
 
 
 
-
 def sales_analytics(request):
-    # Получаем все сделки и группируем по поставщикам
+    # Получаем данные по сделкам
     suppliers_income = Deals.objects.values('supplier').annotate(total_income_loss=Sum('total_income_loss'))
 
-    # Формируем словарь с доходами по поставщикам
     suppliers_income_dict = {entry['supplier']: float(entry['total_income_loss'] or 0) for entry in suppliers_income}
 
-    # Передаем данные в шаблон
+    # Общие статистики
+    total_deals = Deals.objects.count()
+    total_income = Deals.objects.filter(total_income_loss__gt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
+    total_loss = Deals.objects.filter(total_income_loss__lt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
+
     context = {
         'suppliers_income': suppliers_income_dict,
+        'total_deals': total_deals,
+        'total_income': total_income,
+        'total_loss': total_loss,
     }
     return render(request, 'crm/sales_analytics.html', context)

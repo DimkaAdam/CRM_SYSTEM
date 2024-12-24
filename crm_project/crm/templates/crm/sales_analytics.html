@@ -7,6 +7,33 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Подключаем Chart.js -->
+    <style>
+        .analytics-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .chart-container, .stats-container {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stats-container {
+            font-family: Arial, sans-serif;
+        }
+    </style>
 </head>
 <body>
     <div class="layout">
@@ -21,15 +48,30 @@
 
         <div class="content">
             <h1>Sales Analytics</h1>
+            <div class="analytics-container">
+                <!-- График -->
+                <div class="chart-container">
+                    {% if suppliers_income %}
+                        <canvas id="salesChart" width="300" height="150"></canvas> <!-- Место для графика -->
+                    {% else %}
+                        <p>No data available for sales analytics.</p>
+                    {% endif %}
+                </div>
 
-            {% if suppliers_income %}
-                <canvas id="salesChart" width="400" height="200"></canvas>  <!-- Место для графика -->
-            {% else %}
-                <p>No data available for sales analytics.</p>
-            {% endif %}
+                <!-- Статистика -->
+                <div class="stats-container">
+                    <h2>Other Statistics</h2>
+                    <ul>
+                        <li>Total Deals: <strong>{{ total_deals }}</strong></li>
+                        <li>Total Income: <strong>{{ total_income }}</strong></li>
+                        <li>Total Loss: <strong>{{ total_loss }}</strong></li>
+                        <!-- Добавьте другие показатели, если нужно -->
+                    </ul>
+                </div>
+            </div>
 
             <script>
-                // Получаем данные о доходах и поставщиках из контекста
+                // Данные для графика
                 const suppliersIncome = {{ suppliers_income|safe }};
 
                 // Проверяем, есть ли данные
@@ -38,24 +80,26 @@
                     alert('No data available for sales analytics.');
                 }
 
-                // Данные для графика
-                const labels = Object.keys(suppliersIncome);  // Список поставщиков
-                const data = Object.values(suppliersIncome);  // Список доходов/убытков
+                // Подготовка данных для Chart.js
+                const labels = Object.keys(suppliersIncome);
+                const data = Object.values(suppliersIncome);
 
                 var ctx = document.getElementById('salesChart').getContext('2d');
-                var salesChart = new Chart(ctx, {
-                    type: 'bar',  // Тип графика
+                new Chart(ctx, {
+                    type: 'bar',
                     data: {
-                        labels: labels,  // Поставщики
+                        labels: labels,
                         datasets: [{
                             label: 'Income/Loss',
-                            data: data,  // Доходы/убытки
+                            data: data,
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             borderColor: 'rgba(75, 192, 192, 1)',
                             borderWidth: 1
                         }]
                     },
                     options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
                         scales: {
                             y: {
                                 beginAtZero: true
