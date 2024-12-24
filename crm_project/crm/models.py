@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.db.models import F
 
 
 class Client(models.Model):
@@ -17,7 +18,7 @@ class Client(models.Model):
     client_type = models.CharField(max_length=10,choices=contact_type, default='suppliers')
 
     def __str__(self):
-        return self.name
+        return self.company
 
 class Deals(models.Model):
     date = models.DateTimeField(default=timezone.now)  # Дата сделки
@@ -51,6 +52,18 @@ class Deals(models.Model):
 
         super().save(*args, **kwargs)
 
+        # Обновляем палеты у компании-поставщика
+        if self.supplier:
+            CompanyPallets.objects.filter(company_name__name=self.supplier).update(
+                pallets_count=F('pallets_count') - self.shipped_pallets
+            )
+
+        # Обновляем палеты у компании-покупателя
+        if self.buyer:
+            CompanyPallets.objects.filter(company_name__name=self.buyer).update(
+                pallets_count=F('pallets_count') + self.received_pallets
+            )
+
 
 
     def __str__(self):
@@ -67,6 +80,7 @@ class Task(models.Model):
         return self.title
 
 class PipeLine(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='pipeline_clients')
     name = models.CharField(max_length=255, verbose_name="Sellers")
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     stage = models.CharField(max_length=100,verbose_name="Stage")
@@ -74,4 +88,8 @@ class PipeLine(models.Model):
     updated_at = models.DateTimeField(auto_now=True,verbose_name='Updated')
 
     def __str__(self):
-        return self.name
+        return self.company
+
+class CompanyPallets(models.Model):
+    company_name = models.ForeignKey(Client,on_delete=models.CASCADE, related_name='pallets')
+    pallets_count = models.IntegerField(default=0)

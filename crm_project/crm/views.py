@@ -1,6 +1,6 @@
 from django.core.serializers import serialize
 from django.shortcuts import render, redirect
-from .models import Client, Deals, Task, PipeLine
+from .models import Client, Deals, Task, PipeLine,CompanyPallets
 from django.db.models import Sum
 
 from rest_framework.views import APIView
@@ -112,20 +112,27 @@ def export_deals_to_excel(request):
 
 
 def sales_analytics(request):
-    # Получаем данные по сделкам
+    # Данные о сделках
     suppliers_income = Deals.objects.values('supplier').annotate(total_income_loss=Sum('total_income_loss'))
-
     suppliers_income_dict = {entry['supplier']: float(entry['total_income_loss'] or 0) for entry in suppliers_income}
 
-    # Общие статистики
     total_deals = Deals.objects.count()
     total_income = Deals.objects.filter(total_income_loss__gt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
     total_loss = Deals.objects.filter(total_income_loss__lt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
+
+    # Данные о палетах
+    company_pallets = CompanyPallets.objects.select_related('company_name')
+
+    # Сброс палет (если пользователь отправил форму)
+    if request.method == 'POST' and 'reset_pallets' in request.POST:
+        CompanyPallets.objects.update(pallets_count=0)
 
     context = {
         'suppliers_income': suppliers_income_dict,
         'total_deals': total_deals,
         'total_income': total_income,
         'total_loss': total_loss,
+        'company_pallets': company_pallets,
     }
     return render(request, 'crm/sales_analytics.html', context)
+

@@ -70,6 +70,31 @@
                 </div>
             </div>
 
+            <!-- График палет -->
+            <div class="block">
+                <h2>Pallet Analytics</h2>
+                <form method="POST">
+                    {% csrf_token %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Current Pallets</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pallet in company_pallets %}
+                            <tr>
+                                <td>{{ pallet.company_name.name }}</td>
+                                <td>{{ pallet.pallets_count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <button type="submit" name="reset_pallets" class="reset-btn">Reset All Pallets</button>
+                </form>
+            </div>
+
             <script>
                 // Данные для графика
                 const suppliersIncome = {{ suppliers_income|safe }};
