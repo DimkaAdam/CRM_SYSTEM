@@ -62,10 +62,15 @@
                 <div class="stats-container">
                     <h2>Other Statistics</h2>
                     <ul>
-                        <li>Total Deals: <strong>{{ total_deals }}</strong></li>
-                        <li>Total Income: <strong>{{ total_income }}</strong></li>
-                        <li>Total Loss: <strong>{{ total_loss }}</strong></li>
-                        <!-- Добавьте другие показатели, если нужно -->
+                       <li>Total Deals: <strong>{{ total_deals }}</strong></li>
+                        <li>Total Sale: <strong>${{ total_sale }}</strong></li>
+                        <li># of Pallets: <strong>{{ total_pallets }}</strong></li>
+                        <li>Transportation Fee: <strong>${{ transportation_fee }}</strong></li>
+                        <li>Suppliers: <strong>${{ suppliers_total }}</strong></li>
+                        <li>MT OCC11: <strong>{{ mt_occ11 }}</strong></li>
+                        <li>MT Plastic: <strong>${{ mt_plastic }}</strong></li>
+                        <li>MT Mixed-containers: <strong>{{ mt_mixed_containers }}</strong></li>
+                        <li>Income: <strong>${{ income }}</strong></li>
                     </ul>
                 </div>
             </div>
@@ -94,6 +99,7 @@
                     <button type="submit" name="reset_pallets" class="reset-btn">Reset All Pallets</button>
                 </form>
             </div>
+
 
             <script>
                 // Данные для графика

@@ -117,8 +117,15 @@ def sales_analytics(request):
     suppliers_income_dict = {entry['supplier']: float(entry['total_income_loss'] or 0) for entry in suppliers_income}
 
     total_deals = Deals.objects.count()
-    total_income = Deals.objects.filter(total_income_loss__gt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
-    total_loss = Deals.objects.filter(total_income_loss__lt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
+    total_sale = Deals.objects.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_pallets = Deals.objects.aggregate(Sum('shipped_pallets'))['shipped_pallets__sum'] or 0
+    transportation_fee = Deals.objects.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
+    suppliers_total = Deals.objects.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
+    mt_occ11 = Deals.objects.filter(grade="OCC11").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
+    mt_plastic = Deals.objects.filter(grade="Plastic").aggregate(Sum('received_quantity'))[
+                     'received_quantity__sum'] or 0
+    mt_mixed_containers = Deals.objects.filter(grade="Mixed-containers").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
+    income = Deals.objects.filter(total_income_loss__gt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
 
     # Данные о палетах
     company_pallets = CompanyPallets.objects.select_related('company_name')
@@ -130,8 +137,14 @@ def sales_analytics(request):
     context = {
         'suppliers_income': suppliers_income_dict,
         'total_deals': total_deals,
-        'total_income': total_income,
-        'total_loss': total_loss,
+        'total_sale': total_sale,
+        'total_pallets': total_pallets,
+        'transportation_fee': transportation_fee,
+        'suppliers_total': suppliers_total,
+        'mt_occ11': mt_occ11,
+        'mt_plastic': mt_plastic,
+        'mt_mixed_containers': mt_mixed_containers,
+        'income': income,
         'company_pallets': company_pallets,
     }
     return render(request, 'crm/sales_analytics.html', context)
