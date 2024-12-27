@@ -11,13 +11,13 @@
         .analytics-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 10px; /* Уменьшено расстояние между блоками */
         }
 
         .chart-container, .stats-container {
             flex: 1;
-            min-width: 300px;
-            padding: 20px;
+            min-width: 200px; /* Уменьшена минимальная ширина контейнеров */
+            padding: 10px; /* Уменьшены внутренние отступы */
             border: 1px solid #ddd;
             border-radius: 8px;
             background: #f9f9f9;
@@ -32,6 +32,47 @@
 
         .stats-container {
             font-family: Arial, sans-serif;
+        }
+
+        .stats-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px; /* Уменьшено расстояние между карточками */
+        }
+
+        .stat-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 10px; /* Уменьшены внутренние отступы */
+            text-align: center;
+            width: 130px; /* Уменьшена ширина карточек */
+            height: 130px; /* Уменьшена высота карточек */
+            flex: 1;
+            min-width: 150px; /* Уменьшена минимальная ширина карточек */
+        }
+
+        .stat-card .icon {
+            font-size: 30px; /* Уменьшен размер иконки */
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+
+        .stat-card h3 {
+            font-size: 18px; /* Уменьшен размер значения */
+            color: #333;
+            margin: 5px 0; /* Уменьшены отступы вокруг значения */
+        }
+
+        .stat-card p {
+            font-size: 14px; /* Уменьшен размер текста в подписи */
+            color: #6c757d;
+        }
+
+        .stat-card:hover {
+            background-color: #f1f1f1;
+            transform: scale(1.05);
+            transition: 0.3s ease;
         }
     </style>
 </head>
@@ -52,7 +93,7 @@
                 <!-- График -->
                 <div class="chart-container">
                     {% if suppliers_income %}
-                        <canvas id="salesChart" width="300" height="150"></canvas> <!-- Место для графика -->
+                        <canvas id="salesChart" width="200" height="100"></canvas> <!-- Уменьшены размеры графика -->
                     {% else %}
                         <p>No data available for sales analytics.</p>
                     {% endif %}
@@ -61,17 +102,71 @@
                 <!-- Статистика -->
                 <div class="stats-container">
                     <h2>Other Statistics</h2>
-                    <ul>
-                       <li>Total Deals: <strong>{{ total_deals }}</strong></li>
-                        <li>Total Sale: <strong>${{ total_sale }}</strong></li>
-                        <li># of Pallets: <strong>{{ total_pallets }}</strong></li>
-                        <li>Transportation Fee: <strong>${{ transportation_fee }}</strong></li>
-                        <li>Suppliers: <strong>${{ suppliers_total }}</strong></li>
-                        <li>MT OCC11: <strong>{{ mt_occ11 }}</strong></li>
-                        <li>MT Plastic: <strong>${{ mt_plastic }}</strong></li>
-                        <li>MT Mixed-containers: <strong>{{ mt_mixed_containers }}</strong></li>
-                        <li>Income: <strong>${{ income }}</strong></li>
-                    </ul>
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h3>{{ total_deals }}</h3>
+                            <p>Total Deals</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <h3>${{ total_sale }}</h3>
+                            <p>Total Sale</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <h3>{{ total_pallets }}</h3>
+                            <p># of Pallets</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <h3>${{ transportation_fee }}</h3>
+                            <p>Transportation Fee</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-truck-moving"></i>
+                            </div>
+                            <h3>${{ suppliers_total }}</h3>
+                            <p>Suppliers</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                            <h3>{{ mt_occ11 }}</h3>
+                            <p>MT OCC11</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                            <h3>${{ mt_plastic }}</h3>
+                            <p>MT Plastic</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                            <h3>${{ mt_mixed_containers }}</h3>
+                            <p>MT Mixed-containers</p>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <h3>${{ income }}</h3>
+                            <p>Income</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -99,7 +194,6 @@
                     <button type="submit" name="reset_pallets" class="reset-btn">Reset All Pallets</button>
                 </form>
             </div>
-
 
             <script>
                 // Данные для графика
