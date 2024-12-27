@@ -93,3 +93,6 @@ class PipeLine(models.Model):
 class CompanyPallets(models.Model):
     company_name = models.ForeignKey(Client,on_delete=models.CASCADE, related_name='pallets')
     pallets_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.company_name}: {self.pallets_count} pallets"
