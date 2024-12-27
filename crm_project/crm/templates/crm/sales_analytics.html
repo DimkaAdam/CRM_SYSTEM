@@ -16,7 +16,7 @@
 
         .chart-container, .stats-container {
             flex: 1;
-            min-width: 200px; /* Уменьшена минимальная ширина контейнеров */
+            min-width: 150px; /* Уменьшена минимальная ширина контейнеров */
             padding: 10px; /* Уменьшены внутренние отступы */
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -46,10 +46,10 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             padding: 10px; /* Уменьшены внутренние отступы */
             text-align: center;
-            width: 130px; /* Уменьшена ширина карточек */
-            height: 130px; /* Уменьшена высота карточек */
+            width: 90px; /* Уменьшена ширина карточек */
+            height: 90px; /* Уменьшена высота карточек */
             flex: 1;
-            min-width: 150px; /* Уменьшена минимальная ширина карточек */
+            min-width: 100px; /* Уменьшена минимальная ширина карточек */
         }
 
         .stat-card .icon {
@@ -142,7 +142,7 @@
                             <div class="icon">
                                 <i class="fas fa-cogs"></i>
                             </div>
-                            <h3>{{ mt_occ11 }}</h3>
+                            <h3>{{ mt_occ11|floatformat:3 }}</h3>
                             <p>MT OCC11</p>
                         </div>
                         <div class="stat-card">
