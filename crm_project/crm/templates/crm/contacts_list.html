@@ -98,12 +98,22 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'company_detail' company.id %}"><button>View Company</button></a>
+                            {% if company.contacts.first %}
+                                <!-- Редактировать контакт -->
+                                <a href="{% url 'edit_contact' company.contacts.first.id %}"><button>Edit</button></a>
+                                <!-- Удалить контакт -->
+                                <a href="{% url 'delete_contact' company.contacts.first.id %}" onclick="return confirm('Are you sure you want to delete this contact?');">
+                                    <button>Delete</button>
+                                </a>
+                            {% else %}
+                                No contact available
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
+
 
         <!-- Сайдбар для отображения информации о компании и добавления сотрудников -->
         <div id="sidebar" class="sidebar">

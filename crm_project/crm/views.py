@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets
 from .serializers import ClientSerializer
 from .serializers import DealSerializer
-
+from .forms import ContactForm
 import openpyxl
 from django.http import HttpResponse
 
@@ -58,6 +58,32 @@ def company_detail(request, company_id):
         'company': company,
         'contacts': contacts,
     })
+
+
+# Редактирование контакта
+def edit_contact(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+
+    if request.method == 'POST':
+        form = ContactForm(request.POST, instance=contact)
+        if form.is_valid():
+            form.save()
+            return redirect('company_list')  # Перенаправить на список компаний
+    else:
+        form = ContactForm(instance=contact)
+
+    return render(request, 'crm/edit_contact.html', {'form': form, 'contact': contact})
+
+
+# Удаление контакта
+def delete_contact(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+
+    # Удаляем контакт
+    contact.delete()
+
+    # Перенаправляем обратно на список компаний
+    return redirect('Contacts')  # Указываем имя маршрута для списка компаний
 
 
 def manage_employees(request, company_id):

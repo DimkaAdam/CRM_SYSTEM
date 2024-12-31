@@ -1,0 +1,15 @@
+{% extends 'crm/index.html' %}
+
+{% block title %}Edit Contact{% endblock %}
+
+{% block content %}
+    <h1>Edit Contact</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save changes</button>
+    </form>
+
+    <a href="{% url 'company_list' %}"><button>Cancel</button></a>
+{% endblock %}
