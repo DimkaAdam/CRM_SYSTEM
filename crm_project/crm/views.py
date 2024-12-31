@@ -223,8 +223,9 @@ def company_main(request):
 
 
 def deal_list(request):
-    deals = Deals.objects.all()
-    return render(request, 'crm/deal_list.html', {'deals': deals})
+    deals = Deals.objects.all()  # Получаем все сделки
+    companies = Company.objects.all()  # Получаем все компании
+    return render(request, 'crm/deal_list.html', {'deals': deals, 'companies': companies})
 
 
 def task_list(request):

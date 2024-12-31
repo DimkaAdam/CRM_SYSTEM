@@ -381,6 +381,7 @@ body {
     border-radius: 5px;
 }
 
+
 .sidebar-form button[type="submit"] {
     background-color: #033870;
     color: white;
@@ -477,6 +478,40 @@ body {
     border-color: #ADD8E6; /* Светло-синий цвет рамки */
     border-width: 4px; /* Увеличиваем толщину рамки при наведении/фокусе */
     outline: none; /* Убираем стандартный фокусный обвод */
+}
+
+/* Стилизация выпадающего списка Supplier */
+select#supplier {
+    width: 85%; /* Полная ширина */
+    margin: 10px auto;
+    padding: 10px; /* Внутренние отступы */
+    font-size: 16px; /* Размер шрифта */
+    border: 1px solid #ccc; /* Цвет рамки */
+    border-radius: 5px; /* Закругленные углы */
+    background-color: #ffffff; /* Белый фон */
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Внутренняя тень */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Плавные эффекты */
+}
+
+/* При наведении/фокусе */
+select#supplier:hover,
+select#supplier:focus {
+    border-color: #0077b6; /* Синий цвет рамки */
+    box-shadow: 0 0 5px rgba(0, 119, 182, 0.5); /* Голубое свечение */
+    outline: none; /* Убираем стандартный обвод */
+}
+
+/* Стиль для опций */
+select#supplier option {
+    padding: 10px; /* Отступы внутри опций */
+    background-color: #ffffff; /* Фон опции */
+    color: #333; /* Цвет текста */
+}
+
+/* При выборе опции */
+select#supplier option:checked {
+    background-color: #0077b6; /* Синий фон */
+    color: #ffffff; /* Белый текст */
 }
 
 /* Contact panel settings */

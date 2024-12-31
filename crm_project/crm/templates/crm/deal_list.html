@@ -10,7 +10,7 @@
         <button id="addDealBtn" class="add-deal-btn">Add New Deal</button>
 
         <a href="{% url 'export_deals_to_excel' %}" class="export-btn">
-        Export to Excel
+            Export to Excel
         </a>
 
         <!-- Форма для создания новой сделки -->
@@ -23,28 +23,46 @@
                 <!-- Form Fields for the Deal -->
                 <label for="date"></label>
                 <input type="date" id="date" required><br><br>
+
                 <label for="supplier"></label>
-                <input type="text" id="supplier" placeholder="Supplier" required><br><br>
+                <select id="supplier" required, style="w">
+                    <option value="" disabled selected>Supplier</option>
+                    {% for company in companies %}
+                        <option value="{{ company.id }}">{{ company.name }}</option>
+                    {% endfor %}
+                </select>
+                <br><br>
+
                 <label for="buyer"></label>
                 <input type="text" id="buyer" placeholder="Buyer" required><br><br>
+
                 <label for="grade"></label>
                 <input type="text" id="grade" placeholder="Grade" required><br><br>
+
                 <label for="shipped_quantity"></label>
                 <input type="number" id="shipped_quantity" step="0.01" placeholder="Shipped Quantity" required><br><br>
+
                 <label for="shipped_pallets"></label>
                 <input type="number" id="shipped_pallets" placeholder="Shipped Pallets" required><br><br>
+
                 <label for="received_quantity"></label>
                 <input type="number" id="received_quantity" step="0.01" placeholder="Received Quantity" required><br><br>
+
                 <label for="received_pallets"></label>
                 <input type="number" id="received_pallets" placeholder="Received Pallets" required><br><br>
+
                 <label for="supplier_price"></label>
                 <input type="number" id="supplier_price" placeholder="Supplier Price" step="0.01"><br><br>
+
                 <label for="buyer_price"></label>
                 <input type="number" id="buyer_price" step="0.01" placeholder="Buyer Price" required><br><br>
+
                 <label for="transport_cost"></label>
                 <input type="number" id="transport_cost" step="0.01" placeholder="Transport Cost" required><br><br>
+
                 <label for="transport_company"></label>
                 <input type="text" id="transport_company" placeholder="Transport Company" required><br><br>
+
                 <button type="submit" class="submit-btn">Submit Deal</button>
             </form>
         </div>
@@ -123,7 +141,7 @@
             const receivedQuantityElement = document.getElementById('received_quantity');
             const buyerPriceElement = document.getElementById('buyer_price');
             const supplierPriceElement = document.getElementById('supplier_price');
-            const transportCostElement = document.getElementById('transport_cost'); // Добавление транспортных расходов
+            const transportCostElement = document.getElementById('transport_cost');
 
             if (!receivedQuantityElement || !buyerPriceElement || !supplierPriceElement || !transportCostElement) {
                 console.error('Элементы формы не найдены!');
@@ -139,11 +157,13 @@
             const total_amount = received_quantity * buyer_price; // Общая сумма от покупателя
             const supplier_total = received_quantity * supplier_price; // Общая сумма для поставщика
             const total_income_loss = total_amount - supplier_total - transport_cost; // Убыток/прибыль
+            const supplierId = document.getElementById('supplier').value;
+            const buyer = document.getElementById('buyer').value;
 
             const data = {
                 date: document.getElementById('date').value,
-                supplier: document.getElementById('supplier').value,
-                buyer: document.getElementById('buyer').value,
+                supplier: supplierId,
+                buyer: buyer,
                 grade: document.getElementById('grade').value,
                 shipped_quantity: document.getElementById('shipped_quantity').value,
                 shipped_pallets: document.getElementById('shipped_pallets').value,
@@ -152,13 +172,9 @@
                 supplier_price: supplier_price,
                 buyer_price: buyer_price,
                 transport_cost: transport_cost,
-                transport_company: document.getElementById('transport_company').value,
-                total_amount: total_amount,
-                supplier_total: supplier_total,
-                total_income_loss: total_income_loss // Добавление переменной для Income/Loss
+                transport_company: document.getElementById('transport_company').value
             };
 
-            // Отправляем данные на сервер
             fetch('http://127.0.0.1:8000/api/deals/', {
                 method: 'POST',
                 headers: {
@@ -169,22 +185,25 @@
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Deal created:', data);
+
+                // Обновляем таблицу сделок
                 const dealTable = document.getElementById('dealTable').getElementsByTagName('tbody')[0];
                 const newRow = dealTable.insertRow();
                 newRow.innerHTML = `
                     <td>${data.date}</td>
-                    <td>${data.supplier}</td>
+                    <td>${data.supplier_name}</td>
                     <td>${data.buyer}</td>
                     <td>${data.grade}</td>
                     <td>${data.shipped_quantity} / ${data.shipped_pallets}</td>
                     <td>${data.received_quantity} / ${data.received_pallets}</td>
-                    <td>${data.supplier_price} ${data.supplier_currency}</td>
-                    <td>${data.supplier_total} ${data.supplier_currency}</td>
-                    <td>${data.buyer_price} ${data.buyer_currency}</td>
+                    <td>${data.supplier_price}</td>
+                    <td>${data.supplier_total}</td>
+                    <td>${data.buyer_price}</td>
                     <td>${data.total_amount}</td>
                     <td>${data.transport_cost}</td>
                     <td>${data.transport_company}</td>
-                    <td>${data.total_income_loss}</td> <!-- Теперь корректно отображается прибыль/убыток -->
+                    <td>${data.total_income_loss}</td>
                 `;
                 document.getElementById('dealFormSidebar').style.width = '0';
                 document.getElementById('dealForm').reset();
