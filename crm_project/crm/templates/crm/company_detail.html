@@ -1,0 +1,26 @@
+{% extends 'crm/index.html' %}
+
+{% block title %}Company Details{% endblock %}
+
+{% block content %}
+    <div class="content">
+        <h1>{{ company.name }}</h1>
+        <p>Unique Number: {{ company.unique_number }}</p>
+
+        <h2>Contacts</h2>
+        {% if contacts %}
+            <ul>
+                {% for contact in contacts %}
+                    <li>{{ contact.address }} - {{ contact.get_company_type_display }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No contacts available.</p>
+        {% endif %}
+
+        <a href="{% url 'add_contact' company.id %}"><button>Add Contact</button></a>
+
+        <!-- Кнопка для возврата к списку компаний -->
+        <a href="{% url 'company_list' %}"><button>Back to Company List</button></a>
+    </div>
+{% endblock %}

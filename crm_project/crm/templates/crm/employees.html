@@ -1,0 +1,22 @@
+<h4>Employees for {{ contact.company.name }}</h4>
+<ul>
+    {% for employee in employees %}
+    <li>
+        {{ employee.name }} - {{ employee.position }} - {{ employee.email }} - {{ employee.phone }}
+        <form method="post" action="{% url 'delete_employee' employee.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Delete</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+
+<form method="post" action="{% url 'add_employee' contact.id %}">
+    {% csrf_token %}
+    <h4>Add Employee</h4>
+    <label>Name:</label><input type="text" name="name" required><br>
+    <label>Email:</label><input type="email" name="email" required><br>
+    <label>Phone:</label><input type="text" name="phone"><br>
+    <label>Position:</label><input type="text" name="position"><br>
+    <button type="submit">Add Employee</button>
+</form>

@@ -20,6 +20,50 @@ class Client(models.Model):
     def __str__(self):
         return self.company
 
+class Company(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    unique_number = models.CharField(max_length=255, unique=True, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:  # Проверяем, создается ли объект впервые
+            super().save(*args, **kwargs)  # Сохраняем объект, чтобы получить pk
+            self.unique_number = f"COMP{self.pk:04d}"
+            # Обновляем только поле unique_number
+            Company.objects.filter(pk=self.pk).update(unique_number=self.unique_number)
+        else:
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+
+class Contact(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="contacts")
+    address = models.CharField(max_length=255, blank=True, null=True)
+    company_type = models.CharField(
+        max_length=10,
+        choices=[
+            ('suppliers', 'Suppliers'),
+            ('hauler', 'Hauler'),
+            ('buyers', 'Buyers'),
+        ],
+        default='suppliers'
+    )
+
+    def __str__(self):
+        return f'{self.company.name} ({self.company_type})'
+
+class Employee(models.Model):
+    contact = models.ForeignKey(Contact, related_name='employees', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=15, blank=True, null=True)
+    position = models.CharField(max_length=200, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
 class Deals(models.Model):
     date = models.DateTimeField(default=timezone.now)  # Дата сделки
     supplier = models.CharField(max_length=255,default=0)  # Поставщик

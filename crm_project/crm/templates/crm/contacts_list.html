@@ -1,0 +1,144 @@
+{% extends 'crm/index.html' %}
+
+{% block title %}Company List{% endblock %}
+
+{% block content %}
+    <div class="content">
+        <h1>Company List</h1>
+
+        <!-- Кнопка для добавления новой компании -->
+        <a href="{% url 'add_company' %}"><button>Add New Company</button></a>
+
+        <style>
+            /* Основная таблица */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            th {
+                background-color: #f4f4f4;
+            }
+
+            /* Сайдбар */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                right: -400px; /* Начальное состояние вне экрана */
+                width: 400px;
+                height: 100%;
+                background-color: #f9f9f9;
+                box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+                transition: right 0.3s ease;
+                padding: 20px;
+                overflow-y: auto;
+            }
+            .sidebar.open {
+                right: 0; /* Открытый сайдбар */
+            }
+            .sidebar h3 {
+                margin-top: 0;
+            }
+            .close-btn {
+                background: none;
+                border: none;
+                color: #333;
+                font-size: 16px;
+                cursor: pointer;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+
+            /* Модальное окно для добавления контакта */
+            #add-contact-modal {
+                display: none;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 20px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+            }
+        </style>
+
+        <h2>Company List</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Company Name</th>
+                    <th>Address</th>
+                    <th>Company Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for company in companies %}
+                    <tr>
+                        <td>{{ company.name }}</td>
+                        <td>{{ company.address }}</td>
+                        <td>
+                            {% if company.contact_set.first %}
+                                {{ company.contact_set.first.get_company_type_display }}
+                            {% else %}
+                                No contacts available
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Кнопка для открытия сайдбара и отображения информации о компании -->
+                            <button onclick="openSidebar({{ company.id }})">View Company</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Сайдбар для отображения информации о компании и добавления сотрудников -->
+        <div id="sidebar" class="sidebar">
+            <button class="close-btn" onclick="closeSidebar()">✖</button>
+            <h3 id="sidebar-title">Manage Employees</h3>
+            <div id="sidebar-content">
+                <!-- Контент будет динамически загружен через AJAX -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Функция для открытия сайдбара и загрузки информации о компании
+        function openSidebar(companyId) {
+            document.getElementById('sidebar').classList.add('open');
+
+            // Загрузить данные о сотрудниках через AJAX
+            fetch(`/company/${companyId}/employees/`)
+                .then(response => response.json())
+                .then(data => {
+                    const employeeList = data.employees.map(employee => {
+                        return `
+                            <div>
+                                <p><strong>Name:</strong> ${employee.name}</p>
+                                <p><strong>Email:</strong> ${employee.email}</p>
+                                <p><strong>Phone:</strong> ${employee.phone}</p>
+                                <p><strong>Position:</strong> ${employee.position}</p>
+                            </div>
+                        `;
+                    }).join('');
+                    document.getElementById('sidebar-content').innerHTML = employeeList;
+                })
+                .catch(error => {
+                    console.error('Error fetching employees:', error);
+                });
+        }
+
+        // Функция для закрытия сайдбара
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+        }
+    </script>
+
+{% endblock %}

@@ -18,6 +18,21 @@ urlpatterns = [
     path('api/clients/', ClientCreateAPIView.as_view(), name='api_add_client'),  # Создание клиента через API
     path('api/deals/create/', DealCreateAPIView.as_view(), name='deal-create'),  # Создание сделки через API
     path('api/', include(router.urls)),  # Подключаем маршруты для ViewSets (клиенты и сделки)
-    path('deals/export/', views.export_deals_to_excel, name='export_deals_to_excel'), # Exel
+    path('deals/export/', views.export_deals_to_excel, name='export_deals_to_excel'),  # Exel
     path('sales_analytics/', views.sales_analytics, name='sales_analytics'),
+    path('contacts/', views.contacts_view, name='contacts_list'),
+    path('employees/<int:contact_id>/', views.manage_employees, name='manage_employees'),
+    path('contacts/<int:contact_id>/employees/', views.load_employees, name='load_employees'),
+    path('contacts/<int:contact_id>/add_employee/', views.add_employee, name='add_employee'),
+    path('contacts/<int:employee_id>/delete_employee/', views.delete_employee, name='delete_employee'),
+    path('contacts/add/', views.add_contact, name='add_contact'),
+
+    # Маршруты для работы с компаниями
+    path('companies/', views.company_list, name='company_list'),  # Список компаний
+    path('companies/add/', views.add_company, name='add_company'),
+    path('contacts/add/<int:company_id>/', views.add_contact, name='add_contact'),
+    path('companies/<int:company_id>/', views.company_detail, name='company_detail'),
+    # Управление сотрудниками компании
+    path('companies/<int:company_id>/employees/<int:employee_id>/delete/', views.delete_employee,
+         name='delete_employee_from_company'),  # Удаление сотрудника из компании
 ]

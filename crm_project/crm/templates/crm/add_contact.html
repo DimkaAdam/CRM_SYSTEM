@@ -1,0 +1,29 @@
+{% extends 'crm/index.html' %}
+
+{% block title %}Add Contact{% endblock %}
+
+{% block content %}
+    <div class="content">
+        <h1>Add Contact for {{ company.name }}</h1>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div>
+                <label for="address">Address:</label>
+                <input type="text" name="address" id="address" required>
+            </div>
+            <div>
+                <label for="company_type">Company Type:</label>
+                <select name="company_type" id="company_type">
+                    <option value="suppliers">Suppliers</option>
+                    <option value="hauler">Hauler</option>
+                    <option value="buyers">Buyers</option>
+                </select>
+            </div>
+            <button type="submit">Add Contact</button>
+        </form>
+
+        <!-- Кнопка "Готово" для возврата на страницу компании -->
+        <a href="{% url 'company_detail' company.id %}"><button>Done</button></a>
+    </div>
+{% endblock %}

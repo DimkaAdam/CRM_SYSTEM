@@ -1,8 +1,8 @@
 from django.core.serializers import serialize
-from django.shortcuts import render, redirect
-from .models import Client, Deals, Task, PipeLine,CompanyPallets
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee
 from django.db.models import Sum
-
+from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
@@ -18,11 +18,12 @@ from django.db.models import Sum
 def index(request):
     return render(request, 'crm/index.html')
 
+
 def client_list(request):
     clients = Client.objects.all()
 
     supplier = clients.filter(client_type='suppliers')
-    buyer = clients.filter(client_type = 'buyers')
+    buyer = clients.filter(client_type='buyers')
 
     return render(request, 'crm/client_list.html', {
         'clients': clients,
@@ -30,17 +31,160 @@ def client_list(request):
         'buyers': buyer,
     })
 
+
+def company_list(request):
+    companies = Company.objects.all()
+    return render(request, 'crm/company_list.html', {'companies': companies})
+
+
+def add_company(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            company = Company.objects.create(name=name)
+            # Перенаправляем пользователя на страницу добавления контакта для этой компании
+            return redirect('add_contact', company_id=company.id)
+
+    return render(request, 'crm/add_company.html')
+
+def company_detail(request, company_id):
+    # Получаем объект компании по id
+    company = get_object_or_404(Company, id=company_id)
+
+    # Получаем все контакты этой компании
+    contacts = company.contacts.all()
+
+    return render(request, 'crm/company_detail.html', {
+        'company': company,
+        'contacts': contacts,
+    })
+
+
+def manage_employees(request, company_id):
+    company = get_object_or_404(Company, id=company_id)
+    contacts = company.contacts.all()
+
+    if request.method == 'POST':
+        contact_id = request.POST.get('contact_id')
+        contact = get_object_or_404(Contact, id=contact_id)
+
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        position = request.POST.get('position')
+
+        Employee.objects.create(
+            contact=contact,
+            name=name,
+            email=email,
+            phone=phone,
+            position=position
+        )
+
+        return redirect('manage_employees', company_id=company.id)
+
+    return render(request, 'crm/manage_employees.html', {'company': company, 'contacts': contacts})
+
+
+def get_employees(request, company_id):
+    company = get_object_or_404(Company, id=company_id)
+    employees = Employee.objects.filter(contact__company=company)
+
+    # Возвращаем данные сотрудников в формате JSON
+    employees_data = [
+        {
+            'name': employee.name,
+            'email': employee.email,
+            'phone': employee.phone,
+            'position': employee.position,
+        }
+        for employee in employees
+    ]
+
+    return JsonResponse({'employees': employees_data})
+
+
+def contacts_view(request):
+    companies = Company.objects.prefetch_related('contacts').all()
+    return render(request, 'crm/contacts_list.html', {'companies': companies})
+
+def add_employee(request, contact_id):
+    # Получаем контакт по id
+    contact = get_object_or_404(Contact, id=contact_id)
+
+    if request.method == 'POST':
+        # Получаем данные из формы
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        position = request.POST.get('position')
+
+        # Создаем нового сотрудника для этого контакта
+        Employee.objects.create(
+            contact=contact,
+            name=name,
+            email=email,
+            phone=phone,
+            position=position
+        )
+
+        # Перенаправляем на страницу контактов после добавления
+        return redirect('contacts_list')
+
+    return render(request, 'add_employee.html', {'contact': contact})
+
+def delete_employee(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    if request.method == 'POST':
+        employee.delete()
+        return redirect('contacts')
+
+
+def load_employees(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+    employees = contact.employees.all()
+    return render(request, 'employees.html', {'contact': contact, 'employees': employees})
+
+
+def add_contact(request, company_id):
+    company = get_object_or_404(Company, id=company_id)
+
+    if request.method == 'POST':
+        # Получаем данные из формы
+        address = request.POST.get('address')
+        company_type = request.POST.get('company_type')
+
+        # Создаем новый контакт с адресом и типом компании
+        Contact.objects.create(
+            company=company,
+            address=address,
+            company_type=company_type
+        )
+
+        # Перенаправляем на страницу компании
+        return redirect('company_detail', company_id=company.id)
+
+    return render(request, 'crm/add_contact.html', {'company': company})
+
+def company_list(request):
+    companies = Company.objects.all()
+    return render(request, 'crm/company_list.html', {'companies': companies})
+
+
 def deal_list(request):
     deals = Deals.objects.all()
     return render(request, 'crm/deal_list.html', {'deals': deals})
+
 
 def task_list(request):
     tasks = Task.objects.all()
     return render(request, 'crm/task_list.html', {'tasks': tasks})
 
+
 def pipeline_list(request):
     pipelines = PipeLine.objects.all()
     return render(request, 'crm/pipeline_list.html', {'pipelines': pipelines})
+
 
 class ClientCreateAPIView(APIView):
     def post(self, request):
@@ -50,21 +194,25 @@ class ClientCreateAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ClientViewSet(viewsets.ModelViewSet):
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
 
+
 class DealCreateAPIView(APIView):
     def post(self, request):
-        serializer = DealSerializer(data = request.data)
+        serializer = DealSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class DealViewSet(viewsets.ModelViewSet):
     queryset = Deals.objects.all()
     serializer_class = DealSerializer
+
 
 def export_deals_to_excel(request):
     # Создаем новый Excel-файл
@@ -110,7 +258,6 @@ def export_deals_to_excel(request):
     return response
 
 
-
 def sales_analytics(request):
     # Данные о сделках
     suppliers_income = Deals.objects.values('supplier').annotate(total_income_loss=Sum('total_income_loss'))
@@ -148,4 +295,3 @@ def sales_analytics(request):
         'company_pallets': company_pallets,
     }
     return render(request, 'crm/sales_analytics.html', context)
-
