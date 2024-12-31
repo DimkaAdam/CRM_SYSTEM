@@ -34,7 +34,7 @@ def client_list(request):
 
 def company_list(request):
     companies = Company.objects.all()
-    return render(request, 'crm/company_list.html', {'companies': companies})
+    return render(request, 'crm/company_ main.html', {'companies': companies})
 
 
 def add_company(request):
@@ -166,9 +166,9 @@ def add_contact(request, company_id):
 
     return render(request, 'crm/add_contact.html', {'company': company})
 
-def company_list(request):
+def company_main(request):
     companies = Company.objects.all()
-    return render(request, 'crm/company_list.html', {'companies': companies})
+    return render(request, 'crm/company_main.html', {'companies': companies})
 
 
 def deal_list(request):
