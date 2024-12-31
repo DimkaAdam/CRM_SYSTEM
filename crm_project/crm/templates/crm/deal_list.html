@@ -21,11 +21,9 @@
             </div>
             <form id="dealForm">
                 <!-- Form Fields for the Deal -->
-                <label for="date"></label>
-                <input type="date" id="date" required><br><br>
 
                 <label for="supplier"></label>
-                <select id="supplier" required, style="w">
+                <select id="supplier" required>
                     <option value="" disabled selected>Supplier</option>
                     {% for company in companies %}
                         <option value="{{ company.id }}">{{ company.name }}</option>
@@ -34,7 +32,16 @@
                 <br><br>
 
                 <label for="buyer"></label>
-                <input type="text" id="buyer" placeholder="Buyer" required><br><br>
+                <select id="buyer" required>
+                    <option value="" disabled selected>Buyer</option>
+                    {% for company in companies %}
+                        <option value="{{ company.id }}">{{ company.name }}</option>
+                    {% endfor %}
+                </select>
+                <br><br>
+
+                <label for="date"></label>
+                <input type="date" id="date" required><br><br>
 
                 <label for="grade"></label>
                 <input type="text" id="grade" placeholder="Grade" required><br><br>

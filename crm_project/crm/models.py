@@ -87,26 +87,35 @@ class Deals(models.Model):
     total_income_loss = models.DecimalField(max_digits=10, decimal_places=2,default=0)  # Общий доход/убыток
 
     def save(self, *args, **kwargs):
+        # Убедимся, что все значения корректны для расчетов
+        self.received_quantity = self.received_quantity or 0
+        self.buyer_price = self.buyer_price or 0
+        self.transport_cost = self.transport_cost or 0
+        self.supplier_total = self.supplier_total or 0
+
+        # Рассчитываем итоговую сумму сделки
         self.total_amount = self.received_quantity * self.buyer_price
 
-        self.total_income_loss = self.total_amount- (self.transport_cost + self.supplier_total)
-
+        # Если есть supplier_price, рассчитываем supplier_total
         if self.supplier_price is not None and self.received_quantity is not None:
             self.supplier_total = self.received_quantity * self.supplier_price
+
+        # Рассчитываем общий доход/убыток
+        self.total_income_loss = self.total_amount - (self.transport_cost + self.supplier_total)
 
         super().save(*args, **kwargs)
 
         # Обновляем палеты у компании-поставщика
         if self.supplier:
-            CompanyPallets.objects.filter(company_name__name=self.supplier).update(
-                pallets_count=F('pallets_count') - self.shipped_pallets
-            )
+            supplier_pallets = CompanyPallets.objects.filter(company_name__name=self.supplier)
+            if supplier_pallets.exists():
+                supplier_pallets.update(pallets_count=F('pallets_count') - self.shipped_pallets)
 
         # Обновляем палеты у компании-покупателя
         if self.buyer:
-            CompanyPallets.objects.filter(company_name__name=self.buyer).update(
-                pallets_count=F('pallets_count') + self.received_pallets
-            )
+            buyer_pallets = CompanyPallets.objects.filter(company_name__name=self.buyer)
+            if buyer_pallets.exists():
+                buyer_pallets.update(pallets_count=F('pallets_count') + self.received_pallets)
 
 
 
