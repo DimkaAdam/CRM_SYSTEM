@@ -144,7 +144,7 @@ class PipeLine(models.Model):
         return self.company
 
 class CompanyPallets(models.Model):
-    company_name = models.ForeignKey(Client,on_delete=models.CASCADE, related_name='pallets')
+    company_name = models.ForeignKey(Company,on_delete=models.CASCADE, related_name='pallets')
     pallets_count = models.IntegerField(default=0)
 
     def __str__(self):

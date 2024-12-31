@@ -9,9 +9,8 @@ from rest_framework import status, viewsets
 from .serializers import ClientSerializer
 from .serializers import DealSerializer
 from .forms import ContactForm, CompanyForm
-import openpyxl
 from django.http import HttpResponse
-
+from openpyxl import Workbook
 from django.db.models import Sum
 
 
@@ -223,10 +222,10 @@ def company_main(request):
 
 
 def deal_list(request):
-    # Получаем все сделки с предзагрузкой данных о связанных компаниях (supplier и buyer)
-    deals = Deals.objects.select_related('supplier', 'buyer').all()
-    # Отправляем сделки в шаблон
-    return render(request, 'crm/deal_list.html', {'deals': deals})
+    deals = Deals.objects.all()  # Получаем все сделки
+    companies = Company.objects.all()  # Получаем все компании
+    return render(request, 'crm/deal_list.html', {'deals': deals, 'companies': companies})
+
 
 
 def task_list(request):
@@ -268,53 +267,49 @@ class DealViewSet(viewsets.ModelViewSet):
 
 
 def export_deals_to_excel(request):
-    # Создаем новый Excel-файл
-    workbook = openpyxl.Workbook()
-    worksheet = workbook.active
-    worksheet.title = 'Deals'
+    # Создаем книгу Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Deals"
 
     # Заголовки столбцов
-    columns = [
-        'Date', 'Supplier', 'Buyer', 'Grade', 'Shipped Quantity', 'Shipped Pallets',
-        'Received Quantity', 'Received Pallets', 'Supplier Price', 'Supplier Total','Buyer Price',
-        'Transport Cost', 'Transport Company','Total Amount', 'Total Income/Loss'
-    ]
-    for col_num, column_title in enumerate(columns, 1):
-        worksheet.cell(row=1, column=col_num, value=column_title)
+    ws.append(['Date', 'Supplier', 'Buyer', 'Grade', 'Shipped Qty/Pallets', 'Received Qty/Pallets', 'Supplier Price', 'Total Amount', 'Transport Cost', 'Income/Loss'])
 
-    # Получаем все сделки из базы данных
-    deals = Deals.objects.all()
+    # Получаем все сделки
+    deals = Deals.objects.select_related('supplier', 'buyer')
 
-    # Добавляем строки с данными сделок
-    for row_num, deal in enumerate(deals, 2):
-        worksheet.cell(row=row_num, column=1, value=deal.date.strftime("%Y-%m-%d"))
-        worksheet.cell(row=row_num, column=2, value=deal.supplier)
-        worksheet.cell(row=row_num, column=3, value=deal.buyer)
-        worksheet.cell(row=row_num, column=4, value=deal.grade)
-        worksheet.cell(row=row_num, column=5, value=deal.shipped_quantity)
-        worksheet.cell(row=row_num, column=6, value=deal.shipped_pallets)
-        worksheet.cell(row=row_num, column=7, value=deal.received_quantity)
-        worksheet.cell(row=row_num, column=8, value=deal.received_pallets)
-        worksheet.cell(row=row_num, column=9, value=deal.supplier_price)
-        worksheet.cell(row=row_num, column=10, value=deal.supplier_total)
-        worksheet.cell(row=row_num, column=11, value=deal.buyer_price)
-        worksheet.cell(row=row_num, column=12, value=deal.transport_cost)
-        worksheet.cell(row=row_num, column=12, value=deal.transport_company)
-        worksheet.cell(row=row_num, column=13, value=deal.total_amount)
-        worksheet.cell(row=row_num, column=14, value=deal.total_income_loss)
+    for deal in deals:
+        # Убираем временную зону из datetime (если она есть)
+        formatted_date = deal.date.strftime('%Y-%m') if deal.date else ''
 
-    # Настраиваем ответ для скачивания файла
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="deals.xlsx"'
+        ws.append([
+            formatted_date,  # Дата без временной зоны
+            deal.supplier.name if deal.supplier else '',  # Преобразуем объект Supplier в строку
+            deal.buyer.name if deal.buyer else '',  # Преобразуем объект Buyer в строку
+            deal.grade,
+            f'{deal.shipped_quantity} / {deal.shipped_pallets}',
+            f'{deal.received_quantity} / {deal.received_pallets}',
+            deal.supplier_price,
+            deal.total_amount,
+            deal.transport_cost,
+            deal.total_income_loss
+        ])
 
-    workbook.save(response)
+    # Сохраняем файл
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = 'attachment; filename=deals.xlsx'
+    wb.save(response)
     return response
 
 
 def sales_analytics(request):
     # Данные о сделках
     suppliers_income = Deals.objects.values('supplier').annotate(total_income_loss=Sum('total_income_loss'))
-    suppliers_income_dict = {entry['supplier']: float(entry['total_income_loss'] or 0) for entry in suppliers_income}
+    suppliers_income_dict = {
+        contact.company.name: float(entry['total_income_loss'] or 0)
+        for entry in suppliers_income
+        for contact in Contact.objects.filter(company__id=entry['supplier'])
+    }
 
     total_deals = Deals.objects.count()
     total_sale = Deals.objects.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
@@ -322,8 +317,7 @@ def sales_analytics(request):
     transportation_fee = Deals.objects.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
     suppliers_total = Deals.objects.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
     mt_occ11 = Deals.objects.filter(grade="OCC11").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
-    mt_plastic = Deals.objects.filter(grade="Plastic").aggregate(Sum('received_quantity'))[
-                     'received_quantity__sum'] or 0
+    mt_plastic = Deals.objects.filter(grade="Plastic").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
     mt_mixed_containers = Deals.objects.filter(grade="Mixed-containers").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
     income = Deals.objects.filter(total_income_loss__gt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
 
