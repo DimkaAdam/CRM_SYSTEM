@@ -1,0 +1,23 @@
+{% extends 'crm/index.html' %}
+
+{% block title %}Edit {{ company.name }}{% endblock %}
+
+{% block content %}
+    <div class="content" style="padding: 20px; max-width: 600px; margin: auto; background: white; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 8px;">
+        <h1 style="text-align: center; color: #333; margin-bottom: 20px;">Edit {{ company.name }}</h1>
+        <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button type="submit" style="padding: 10px 20px; background-color: #28A745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Save Changes
+                </button>
+                <a href="{% url 'company_detail' company.id %}" style="text-decoration: none;">
+                    <button type="button" style="padding: 10px 20px; background-color: #6C757D; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Cancel
+                    </button>
+                </a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

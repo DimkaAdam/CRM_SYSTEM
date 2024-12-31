@@ -1,0 +1,12 @@
+{% extends 'crm/index.html' %}
+
+{% block title %}View Contact{% endblock %}
+
+{% block content %}
+    <div class="content">
+        <h1>Contact Details</h1>
+        <p><strong>Address:</strong> {{ contact.address }}</p>
+        <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
+        <a href="{% url 'contacts_list' %}"><button>Back to Contacts</button></a>
+    </div>
+{% endblock %}

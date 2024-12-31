@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets
 from .serializers import ClientSerializer
 from .serializers import DealSerializer
-from .forms import ContactForm
+from .forms import ContactForm, CompanyForm
 import openpyxl
 from django.http import HttpResponse
 
@@ -47,6 +47,8 @@ def add_company(request):
 
     return render(request, 'crm/add_company.html')
 
+# Редактирование компании
+
 def company_detail(request, company_id):
     # Получаем объект компании по id
     company = get_object_or_404(Company, id=company_id)
@@ -58,6 +60,24 @@ def company_detail(request, company_id):
         'company': company,
         'contacts': contacts,
     })
+
+def edit_company(request, company_id):
+    company = get_object_or_404(Company, id=company_id)
+    if request.method == 'POST':
+        form = CompanyForm(request.POST, instance=company)
+        if form.is_valid():
+            form.save()
+            return redirect('company_detail', company_id=company.id)
+    else:
+        form = CompanyForm(instance=company)
+    return render(request, 'crm/edit_company.html', {'form': form, 'company': company})
+
+def delete_company(request, company_id):
+    company = get_object_or_404(Company, id=company_id)
+    if request.method == 'POST':
+        company.delete()
+        return redirect('company_list')  # После удаления перенаправляем на список компаний
+    return render(request, 'crm/delete_company.html', {'company': company})
 
 
 # Редактирование контакта
@@ -84,6 +104,10 @@ def delete_contact(request, contact_id):
 
     # Перенаправляем обратно на список компаний
     return redirect('Contacts')  # Указываем имя маршрута для списка компаний
+
+def view_contact(request, id):
+    contact = get_object_or_404(Contact, id=id)
+    return render(request, 'crm/view_contact.html', {'contact': contact})
 
 
 def manage_employees(request, company_id):
@@ -133,6 +157,7 @@ def get_employees(request, company_id):
 def contacts_view(request):
     companies = Company.objects.prefetch_related('contacts').all()
     return render(request, 'crm/contacts_list.html', {'companies': companies})
+
 
 def add_employee(request, contact_id):
     # Получаем контакт по id

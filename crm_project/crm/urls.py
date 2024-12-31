@@ -30,11 +30,18 @@ urlpatterns = [
     # Маршруты для работы с компаниями
     path('companies/', views.company_list, name='company_list'),  # Список компаний
     path('companies/add/', views.add_company, name='add_company'),
-    path('contacts/add/<int:company_id>/', views.add_contact, name='add_contact'),
+
     path('companies/<int:company_id>/', views.company_detail, name='company_detail'),
-    path('companies/', views.company_list, name='company_list'),
+    path('company/<int:company_id>/edit/', views.edit_company, name='edit_company'),
+    path('company/<int:company_id>/delete/', views.delete_company, name='delete_company'),
+    path('companies/', views.company_list, name='company_main'),
+
+    path('contacts/add/<int:company_id>/', views.add_contact, name='add_contact'),
     path('companies/<int:contact_id>/edit/', views.edit_contact, name='edit_contact'),
     path('companies/<int:contact_id>/delete/', views.delete_contact, name='delete_contact'),
+    path('contact/view/<int:id>/', views.view_contact, name='view_contact'),
+
+
     # Управление сотрудниками компании
     path('companies/<int:company_id>/employees/<int:employee_id>/delete/', views.delete_employee,
          name='delete_employee_from_company'),  # Удаление сотрудника из компании

@@ -3,159 +3,88 @@
 {% block title %}Contacts{% endblock %}
 
 {% block content %}
-    <div class="content">
-        <h1>Company List</h1>
+    <div class="content" style="padding: 20px; max-width: 90%; margin: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 style="color: #333;">Contacts</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'company_main' %}">
+                    <button style="padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer;">Company List</button>
+                </a>
+                <a href="{% url 'add_company' %}">
+                    <button style="padding: 10px 20px; background-color: #28A745; color: white; border: none; border-radius: 5px; cursor: pointer;">Add New Company</button>
+                </a>
+            </div>
+        </div>
 
-        <!-- Кнопка для добавления новой компании -->
-        <a href="{% url 'add_company' %}"><button>Add New Company</button></a>
-
-        <style>
-            /* Основная таблица */
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            th, td {
-                border: 1px solid #ddd;
-                padding: 8px;
-            }
-            th {
-                background-color: #f4f4f4;
-            }
-
-            /* Сайдбар */
-            .sidebar {
-                position: fixed;
-                top: 0;
-                right: -400px; /* Начальное состояние вне экрана */
-                width: 400px;
-                height: 100%;
-                background-color: #f9f9f9;
-                box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-                transition: right 0.3s ease;
-                padding: 20px;
-                overflow-y: auto;
-            }
-            .sidebar.open {
-                right: 0; /* Открытый сайдбар */
-            }
-            .sidebar h3 {
-                margin-top: 0;
-            }
-            .close-btn {
-                background: none;
-                border: none;
-                color: #333;
-                font-size: 16px;
-                cursor: pointer;
-                position: absolute;
-                top: 10px;
-                right: 10px;
-            }
-
-            /* Модальное окно для добавления контакта */
-            #add-contact-modal {
-                display: none;
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                padding: 20px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                z-index: 1000;
-            }
-        </style>
-
-        <h2>Contacts</h2>
-        <table>
+        <table style="width: 100%; border-collapse: collapse; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); background-color: white; border-radius: 8px; overflow: hidden;">
             <thead>
-                <tr>
-                    <th>Company Name</th>
-                    <th>Unique Number</th>
-                    <th>Address</th>
-                    <th>Company Type</th>
-                    <th>Actions</th>
+                <tr style="background-color: #f4f4f4; text-align: left;">
+                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Company Name</th>
+                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Unique Number</th>
+                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Address</th>
+                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Company Type</th>
+                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for company in companies %}
-                    <tr>
-                        <td>{{ company.name }}</td>
-                        <td>{{ company.unique_number }}</td>
-                        <td>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 10px;">{{ company.name }}</td>
+                        <td style="padding: 10px;">{{ company.unique_number }}</td>
+                        <td style="padding: 10px;">
                             {% if company.contacts.first %}
                                 {{ company.contacts.first.address }}
                             {% else %}
-                                No contacts available
+                                <span style="color: #999;">No contacts available</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td style="padding: 10px;">
                             {% if company.contacts.first %}
                                 {{ company.contacts.first.get_company_type_display }}
                             {% else %}
-                                No contacts available
+                                <span style="color: #999;">No contacts available</span>
                             {% endif %}
-                        </td>
-                        <td>
+                       <td style="padding: 10px;">
                             {% if company.contacts.first %}
-                                <!-- Редактировать контакт -->
-                                <a href="{% url 'edit_contact' company.contacts.first.id %}"><button>Edit</button></a>
-                                <!-- Удалить контакт -->
-                                <a href="{% url 'delete_contact' company.contacts.first.id %}" onclick="return confirm('Are you sure you want to delete this contact?');">
-                                    <button>Delete</button>
-                                </a>
+                                <div style="display: flex; gap: 10px;">
+                                    <a href="{% url 'view_contact' company.contacts.first.id %}">
+                                        <button style="padding: 5px 10px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                            View Contact
+                                        </button>
+                                    </a>
+                                </div>
                             {% else %}
-                                No contact available
+                                <span style="color: #999;">No contact available</span>
                             {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-
-
-        <!-- Сайдбар для отображения информации о компании и добавления сотрудников -->
-        <div id="sidebar" class="sidebar">
-            <button class="close-btn" onclick="closeSidebar()">✖</button>
-            <h3 id="sidebar-title">Manage Employees</h3>
-            <div id="sidebar-content">
-                <!-- Контент будет динамически загружен через AJAX -->
-            </div>
-        </div>
-
     </div>
 
+    <!-- Optional JavaScript for Sidebar -->
     <script>
-        // Функция для открытия сайдбара и загрузки информации о компании
         function openSidebar(companyId) {
             document.getElementById('sidebar').classList.add('open');
-
-            // Загрузить данные о сотрудниках через AJAX
             fetch(`/company/${companyId}/employees/`)
                 .then(response => response.json())
                 .then(data => {
-                    const employeeList = data.employees.map(employee => {
-                        return `
-                            <div>
-                                <p><strong>Name:</strong> ${employee.name}</p>
-                                <p><strong>Email:</strong> ${employee.email}</p>
-                                <p><strong>Phone:</strong> ${employee.phone}</p>
-                                <p><strong>Position:</strong> ${employee.position}</p>
-                            </div>
-                        `;
-                    }).join('');
+                    const employeeList = data.employees.map(employee => `
+                        <div>
+                            <p><strong>Name:</strong> ${employee.name}</p>
+                            <p><strong>Email:</strong> ${employee.email}</p>
+                            <p><strong>Phone:</strong> ${employee.phone}</p>
+                            <p><strong>Position:</strong> ${employee.position}</p>
+                        </div>
+                    `).join('');
                     document.getElementById('sidebar-content').innerHTML = employeeList;
                 })
-                .catch(error => {
-                    console.error('Error fetching employees:', error);
-                });
+                .catch(error => console.error('Error fetching employees:', error));
         }
 
-        // Функция для закрытия сайдбара
         function closeSidebar() {
             document.getElementById('sidebar').classList.remove('open');
         }
     </script>
-
 {% endblock %}
