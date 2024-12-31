@@ -110,8 +110,8 @@
                 {% for deal in deals %}
                 <tr class="deal-row" data-id="{{ deal.id }}">
                     <td>{{ deal.date }}</td>
-                    <td>{{ deal.supplier }}</td>
-                    <td>{{ deal.buyer }}</td>
+                     <td>{{ deal.supplier.name }}</td>
+                    <td>{{ deal.buyer.name }}</td>
                     <td>{{ deal.grade }}</td>
                     <td>{{ deal.shipped_quantity }} / {{ deal.shipped_pallets }}</td>
                     <td>{{ deal.received_quantity }} / {{ deal.received_pallets }}</td>

@@ -66,8 +66,8 @@ class Employee(models.Model):
 
 class Deals(models.Model):
     date = models.DateTimeField(default=timezone.now)  # Дата сделки
-    supplier = models.CharField(max_length=255,default=0)  # Поставщик
-    buyer = models.CharField(max_length=255, null=True, blank=True)  # Покупатель (может быть пустым)
+    supplier = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='deals_as_supplier')
+    buyer = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='deals_as_buyer', null=True, blank=True)
     grade = models.CharField(max_length=50, default='A')  # Класс материала (по умолчанию 'A')
     shipped_quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Отправленный объем (тонны, паллеты и т.д.)
     shipped_pallets = models.PositiveIntegerField(default=0)  # Количество паллет (по умолчанию 0)

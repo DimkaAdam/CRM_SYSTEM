@@ -223,9 +223,10 @@ def company_main(request):
 
 
 def deal_list(request):
-    deals = Deals.objects.all()  # Получаем все сделки
-    companies = Company.objects.all()  # Получаем все компании
-    return render(request, 'crm/deal_list.html', {'deals': deals, 'companies': companies})
+    # Получаем все сделки с предзагрузкой данных о связанных компаниях (supplier и buyer)
+    deals = Deals.objects.select_related('supplier', 'buyer').all()
+    # Отправляем сделки в шаблон
+    return render(request, 'crm/deal_list.html', {'deals': deals})
 
 
 def task_list(request):
