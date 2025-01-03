@@ -128,6 +128,50 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <div style="margin-top: 20px;">
+            <p><strong>Total Income/Loss:</strong> {{ totals.total_income_loss|default:"0.00" }}</p>
+            <p><strong>Total Amount:</strong> {{ totals.total_amount|default:"0.00" }}</p>
+        </div>
+    </div>
+
+    <!-- Filter by month form -->
+    <div style="margin-bottom: 20px;">
+        <form method="get" action="{% url 'deal_list' %}" style="display: flex; gap: 10px;">
+            <label for="month">Month:</label>
+            <select name="month" id="month" style="padding: 5px;">
+                <option value="" {% if not month %}selected{% endif %}>All</option>
+                {% for m in months %}
+                    {% with m|stringformat:'02d' as formatted_month %}
+                        <option value="{{ formatted_month }}" {% if month == formatted_month %}selected{% endif %}>
+                            {{ formatted_month }}
+                        </option>
+                    {% endwith %}
+                {% endfor %}
+            </select>
+
+            <label for="year">Year:</label>
+            <select name="year" id="year" style="padding: 5px;">
+                <option value="" {% if not year %}selected{% endif %}>All</option>
+                    {% for y in years %}
+                        {% with y|stringformat:"04d" as formatted_year %}
+                            <option value="{{ formatted_year }}" {% if formatted_year == year %}selected{% endif %}>
+                                {{ formatted_year }}
+                            </option>
+                        {% endwith %}
+                {% endfor %}
+            </select>
+
+            <button type="submit" style="
+                    padding: 5px;
+                    background-color: #007BFF;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;">
+                Filter
+            </button>
+        </form>
     </div>
 
     <!-- Скрипт для обработки открытия/закрытия боковой панели -->

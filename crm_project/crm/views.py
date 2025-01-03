@@ -11,7 +11,9 @@ from .serializers import DealSerializer
 from .forms import ContactForm, CompanyForm
 from django.http import HttpResponse
 from openpyxl import Workbook
-from django.db.models import Sum
+from datetime import datetime
+from django.db.models.functions import ExtractYear
+from django.utils.translation import gettext_lazy as _
 
 
 def index(request):
@@ -222,10 +224,68 @@ def company_main(request):
 
 
 def deal_list(request):
-    deals = Deals.objects.all()  # Получаем все сделки
-    companies = Company.objects.all()  # Получаем все компании
-    return render(request, 'crm/deal_list.html', {'deals': deals, 'companies': companies})
+    # Получаем текущий месяц и год
+    today = datetime.today()
+    current_month = today.month
+    current_year = today.year
 
+    # Получаем базовый набор данных
+    deals = Deals.objects.all()
+    companies = Company.objects.all()
+
+    # Получаем параметры фильтра из запроса
+    month = request.GET.get('month', str(current_month).zfill(2))  # Устанавливаем текущий месяц как дефолт
+    year = request.GET.get('year', str(current_year))  # Устанавливаем текущий год как дефолт
+
+    # Применяем фильтры только если месяц и год указаны
+    if month and year:
+        deals = deals.filter(date__month=int(month), date__year=int(year))
+    elif month:  # Если указан только месяц
+        deals = deals.filter(date__month=int(month))
+    elif year:  # Если указан только год
+        deals = deals.filter(date__year=int(year))
+
+    # Подсчёт итогов по отфильтрованным сделкам
+    totals = deals.aggregate(
+        total_income_loss=Sum('total_income_loss'),
+        total_amount=Sum('total_amount'),
+    )
+
+    # Получаем доступные года из базы данных
+    years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()
+
+    # Список месяцев для фильтрации (с добавлением пустого значения для "Все")
+    months = range(1, 13)  # Месяцы с 1 по 12
+
+    month_names = {
+        '01': _('January'),
+        '02': _('February'),
+        '03': _('March'),
+        '04': _('April'),
+        '05': _('May'),
+        '06': _('June'),
+        '07': _('July'),
+        '08': _('August'),
+        '09': _('September'),
+        '10': _('October'),
+        '11': _('November'),
+        '12': _('December'),
+    }
+
+    # Контекст для шаблона
+    context = {
+        'deals': deals,
+        'companies': companies,
+        'month': month,
+        'year': year,
+        'totals': totals,
+        'years': sorted(years),  # Сортируем список лет для удобства
+        'month_names': month_names,
+        'months': months,  # Месяцы для выпадающего списка
+    }
+
+    # Рендерим страницу с переданным контекстом
+    return render(request, 'crm/deal_list.html', context)
 
 
 def task_list(request):
