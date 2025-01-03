@@ -582,7 +582,7 @@ select#supplier option:checked {
 /* filter btn settings*/
 .filter-button {
     padding: 10px;
-    background-color: #007BFF;
+    background-color: #033870;
     color: white;
     border: none;
     border-radius: 5px;
@@ -703,4 +703,30 @@ table tr:hover {
     outline: none;
 }
 
-/* contacts list
+
+.filter-form {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;  /* Расстояние между элементами */
+    max-width: 600px;  /* Устанавливаем максимальную ширину формы */
+    margin-left: auto; /* Выравниваем по центру */
+    margin-right: auto; /* Выравниваем по центру */
+    justify-content: flex-start;  /* Располагаем элементы слева */
+    align-items: center;  /* Выравнивание по вертикали */
+}
+
+.filter-form select,
+.filter-form button {
+    width: 120px; /* Ограничиваем ширину элементов */
+    height: 30px;
+    padding: 5px;
+}
+
+.filter-form button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
