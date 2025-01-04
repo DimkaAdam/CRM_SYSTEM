@@ -241,11 +241,14 @@ def deal_list(request):
 
     # Получаем базовый набор данных
     deals = Deals.objects.all()
-    companies = Company.objects.all()
+
+    # Фильтруем компании по типу через связанные контакты
+    suppliers = Company.objects.filter(contacts__company_type="suppliers").distinct()  # Только поставщики
+    buyers = Company.objects.filter(contacts__company_type="buyers").distinct()  # Только покупатели
 
     # Получаем параметры фильтра из запроса
-    month = request.GET.get('month', str(current_month).zfill(2))  # Устанавливаем текущий месяц как дефолт
-    year = request.GET.get('year', str(current_year))  # Устанавливаем текущий год как дефолт
+    month = request.GET.get('month', str(current_month).zfill(2))  # Текущий месяц по умолчанию
+    year = request.GET.get('year', str(current_year))  # Текущий год по умолчанию
 
     # Применяем фильтры только если месяц и год указаны
     if month and year:
@@ -285,7 +288,8 @@ def deal_list(request):
     # Контекст для шаблона
     context = {
         'deals': deals,
-        'companies': companies,
+        'suppliers': suppliers,  # Только поставщики
+        'buyers': buyers,  # Только покупатели, если нужно
         'month': month,
         'year': year,
         'totals': totals,
