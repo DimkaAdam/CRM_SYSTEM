@@ -7,6 +7,18 @@
         <h1>Contact Details</h1>
         <p><strong>Address:</strong> {{ contact.address }}</p>
         <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
+
+        <!-- Отображение текущей цены -->
+        <p><strong>Current Price:</strong> ${{ contact.current_price }}</p>
+
+        <!-- Форма редактирования -->
+        <h2>Edit Contact</h2>
+        <form class="contact-edit-form" method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Save Changes</button>
+        </form>
+
         <a href="{% url 'contacts_list' %}"><button>Back to Contacts</button></a>
     </div>
 {% endblock %}

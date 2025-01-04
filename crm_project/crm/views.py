@@ -108,7 +108,17 @@ def delete_contact(request, contact_id):
 
 def view_contact(request, id):
     contact = get_object_or_404(Contact, id=id)
-    return render(request, 'crm/view_contact.html', {'contact': contact})
+
+    if request.method == "POST":
+        form = ContactForm(request.POST, instance=contact)
+        if form.is_valid():
+            form.save()
+            return redirect('view_contact', id = contact.id)
+    else:
+        form=ContactForm(instance=contact)
+
+
+    return render(request, 'crm/view_contact.html', {'contact': contact, 'form': form})
 
 
 def manage_employees(request, company_id):

@@ -730,3 +730,27 @@ table tr:hover {
     border-radius: 5px;
     cursor: pointer;
 }
+
+.contact-edit-form {
+    margin-top: 20px;
+}
+
+.contact-edit-form input,
+.contact-edit-form select {
+    padding: 5px;
+    margin: 5px 0;
+    width: 100%;
+}
+
+.contact-edit-form button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.contact-edit-form button:hover {
+    background-color: #0056b3;
+}
