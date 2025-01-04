@@ -129,8 +129,8 @@
         </table>
 
         <div style="margin-top: 20px;">
-            <p><strong>Total Income/Loss:</strong> {{ totals.total_income_loss|default:"0.00" }}</p>
-            <p><strong>Total Amount:</strong> {{ totals.total_amount|default:"0.00" }}</p>
+            <p><strong>Amount:</strong> {{ totals.total_amount|default:"0.00" |floatformat:2 }}</p>
+            <p><strong>Income:</strong> {{ totals.total_income_loss|default:"0.00" |floatformat:2 }}</p>
         </div>
     </div>
 
