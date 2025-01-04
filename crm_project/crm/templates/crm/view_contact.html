@@ -4,7 +4,7 @@
 
 {% block content %}
     <div class="content">
-        <h1>Contact Details</h1>
+        <h1><strong></strong> {{ contact.company.name }}</h1>
         <p><strong>Address:</strong> {{ contact.address }}</p>
         <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
 
@@ -12,7 +12,7 @@
         <p><strong>Current Price:</strong> ${{ contact.current_price }}</p>
 
         <!-- Форма редактирования -->
-        <h2>Edit Contact</h2>
+        <h2></h2>
         <form class="contact-edit-form" method="POST">
             {% csrf_token %}
             {{ form.as_p }}
