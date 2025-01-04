@@ -3,22 +3,35 @@
 {% block title %}View Contact{% endblock %}
 
 {% block content %}
-    <div class="content">
-        <h1><strong></strong> {{ contact.company.name }}</h1>
-        <p><strong>Address:</strong> {{ contact.address }}</p>
-        <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
+<div class="content">
+    <h1><strong>Contact Details:</strong> {{ contact.company_name }}</h1>
+    <p><strong>Address:</strong> {{ contact.address }}</p>
+    <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
 
-        <!-- Отображение текущей цены -->
-        <p><strong>Current Price:</strong> ${{ contact.current_price }}</p>
+    <!-- Отображение текущей цены -->
+    <p><strong>Current Price:</strong> ${{ contact.current_price }}</p>
 
-        <!-- Форма редактирования -->
-        <h2></h2>
+    <!-- Кнопка для отображения формы -->
+    <button id="edit-button" onclick="toggleEditForm()">Edit Contact</button>
+
+    <!-- Форма редактирования (скрыта по умолчанию) -->
+    <div id="edit-form-container" style="display: none;">
         <form class="contact-edit-form" method="POST">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit">Save Changes</button>
         </form>
-
-        <a href="{% url 'contacts_list' %}"><button>Back to Contacts</button></a>
     </div>
+
+    <a href="{% url 'contacts_list' %}">
+        <button>Back to Contacts</button>
+    </a>
+</div>
+
+<script>
+    function toggleEditForm() {
+        const formContainer = document.getElementById('edit-form-container');
+        formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
+    }
+</script>
 {% endblock %}
