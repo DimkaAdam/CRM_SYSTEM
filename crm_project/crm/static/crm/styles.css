@@ -454,67 +454,55 @@ body {
 .sidebar-form input[type="email"],
 .sidebar-form input[type="tel"],
 .sidebar-form input[type="number"],
-.sidebar-form input[type="date"] {
-    width: 80%;
-    padding: 8px;
-    margin: 10px 10%;
-    font-size: 14px;
+.sidebar-form input[type="date"],
+select#supplier, select#buyer, select#grade {
+    width: 85%; /* Одинаковая ширина */
+    padding: 10px; /* Одинаковый внутренний отступ */
+    margin: 10px auto; /* Одинаковые внешние отступы */
+    font-size: 16px; /* Единый размер шрифта */
     border: 1px solid #ccc;
     border-radius: 8px;
-    transition: border-color 0.3s ease; /* Плавное изменение цвета рамки */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    display: block; /* Убедимся, что элементы занимают всю строку */
+    box-sizing: border-box; /* Включаем отступы и рамки в общую ширину */
 }
 
-/* Рамка при наведении */
+/* Рамка при наведении и фокусе */
 .sidebar-form input[type="text"]:hover,
 .sidebar-form input[type="email"]:hover,
 .sidebar-form input[type="tel"]:hover,
 .sidebar-form input[type="number"]:hover,
 .sidebar-form input[type="date"]:hover,
+select#supplier:hover, select#buyer:hover, select#grade:hover,
 .sidebar-form input[type="text"]:focus,
 .sidebar-form input[type="email"]:focus,
 .sidebar-form input[type="tel"]:focus,
 .sidebar-form input[type="number"]:focus,
-.sidebar-form input[type="date"]:focus {
-    border-color: #ADD8E6; /* Светло-синий цвет рамки */
-    border-width: 4px; /* Увеличиваем толщину рамки при наведении/фокусе */
-    outline: none; /* Убираем стандартный фокусный обвод */
-}
-
-/* Стилизация выпадающего списка Supplier */
-select#supplier, select#buyer, select#grade {
-    width: 80%;
-    margin: 10px 10%;
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #ffffff;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
+.sidebar-form input[type="date"]:focus,
+select#supplier:focus, select#buyer:focus, select#grade:focus {
+    border-color: #ADD8E6;
+    border-width: 2px;
+    outline: none;
 }
 
 
-/* При наведении/фокусе */
-select#supplier:hover,
-select#supplier:focus {
-    border-color: #0077b6; /* Синий цвет рамки */
-    box-shadow: 0 0 5px rgba(0, 119, 182, 0.5); /* Голубое свечение */
-    outline: none; /* Убираем стандартный обвод */
-}
 
-/* Стиль для опций */
-select#supplier option {
-    padding: 10px; /* Отступы внутри опций */
-    background-color: #ffffff; /* Фон опции */
-    color: #333; /* Цвет текста */
-}
 
-/* При выборе опции */
-select#supplier option:checked {
-    background-color: #0077b6; /* Синий фон */
-    color: #ffffff; /* Белый текст */
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Contact panel settings */
 

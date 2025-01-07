@@ -20,8 +20,8 @@
                 <button id="closeSidebarBtn" class="close-btn">&times;</button>
             </div>
             <form id="dealForm">
-                <!-- Form Fields for the Deal -->
 
+            <!-- Form Fields for the Deal -->
             <label for="supplier"></label>
             <select id="supplier" name="supplier" required>
                 <option value="" disabled selected>Select a Supplier</option>
@@ -43,7 +43,6 @@
                 <input type="date" id="date" required><br><br>
 
                 <label for="grade"></label>
-
                 <select id="grade" name="grade" required>
                     <option value="" disabled selected>Select a Grade</option>
                     {% for key, value in setting.MATERIALS_LIST.items %}
