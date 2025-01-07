@@ -8,9 +8,6 @@
     <p><strong>Address:</strong> {{ contact.address }}</p>
     <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
 
-    <!-- Отображение текущей цены -->
-    <p><strong>Current Price:</strong> ${{ contact.current_price }}</p>
-
     <!-- Отображение материалов и цен -->
     <h3>Materials and Prices</h3>
     {% if contact.contact_materials.all %}
