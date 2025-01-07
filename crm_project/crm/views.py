@@ -414,8 +414,8 @@ def sales_analytics(request):
     transportation_fee = deals_filter.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
     suppliers_total = deals_filter.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
     mt_occ11 = deals_filter.filter(grade="OCC11").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
-    mt_plastic = deals_filter.filter(grade="Plastic").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
-    mt_mixed_containers = deals_filter.filter(grade="Mixed-containers").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
+    mt_plastic = deals_filter.filter(grade="Flexible Plastic").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
+    mt_mixed_containers = deals_filter.filter(grade="Mixed Container").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
     income = deals_filter.filter(total_income_loss__gt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
 
     # Данные о палетах

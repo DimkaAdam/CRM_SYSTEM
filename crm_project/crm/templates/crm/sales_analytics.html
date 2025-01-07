@@ -120,7 +120,7 @@
 
                 <!-- Статистика -->
                 <div class="stats-container">
-                    <h2>Other Statistics</h2>
+                    <h2>Statistics</h2>
                     <div class="stats-cards">
                         <div class="stat-card">
                             <div class="icon">
@@ -154,28 +154,28 @@
                             <div class="icon">
                                 <i class="fas fa-truck-moving"></i>
                             </div>
-                            <h3>${{ suppliers_total }}</h3>
+                            <h3>${{ suppliers_total|floatformat:1 }}</h3>
                             <p>Suppliers</p>
                         </div>
                         <div class="stat-card">
                             <div class="icon">
                                 <i class="fas fa-cogs"></i>
                             </div>
-                            <h3>{{ mt_occ11|floatformat:3 }}</h3>
+                            <h3>{{ mt_occ11|floatformat:1 }}</h3>
                             <p>MT OCC11</p>
                         </div>
                         <div class="stat-card">
                             <div class="icon">
                                 <i class="fas fa-cogs"></i>
                             </div>
-                            <h3>${{ mt_plastic|floatformat:3 }}</h3>
+                            <h3>${{ mt_plastic|floatformat:1 }}</h3>
                             <p>MT Plastic</p>
                         </div>
                         <div class="stat-card">
                             <div class="icon">
                                 <i class="fas fa-cogs"></i>
                             </div>
-                            <h3>${{ mt_mixed_containers|floatformat:3 }}</h3>
+                            <h3>${{ mt_mixed_containers|floatformat:1 }}</h3>
                             <p>MT Mixed-containers</p>
                         </div>
                         <div class="stat-card">
