@@ -43,7 +43,13 @@
                 <input type="date" id="date" required><br><br>
 
                 <label for="grade"></label>
-                <input type="text" id="grade" placeholder="Grade" required><br><br>
+
+                <select id="grade" name="grade" required>
+                    <option value="" disabled selected>Select a Grade</option>
+                    {% for key, value in setting.MATERIALS_LIST.items %}
+                        <option value="{{ key }}" {% if deal.grade == key %}selected{% endif %}>{{ key }}</option>
+                    {% endfor %}
+                </select>
 
                 <label for="shipped_quantity"></label>
                 <input type="number" id="shipped_quantity" step="0.01" placeholder="Shipped Quantity" required><br><br>

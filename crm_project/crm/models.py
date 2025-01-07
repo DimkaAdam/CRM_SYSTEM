@@ -68,7 +68,7 @@ class Deals(models.Model):
     date = models.DateTimeField(default=timezone.now)  # Дата сделки
     supplier = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='deals_as_supplier')
     buyer = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='deals_as_buyer', null=True, blank=True)
-    grade = models.CharField(max_length=50, default='A')  # Класс материала (по умолчанию 'A')
+    grade = models.CharField(max_length=255, choices=[(key, key) for key in settings.MATERIALS_LIST.keys()])
     shipped_quantity = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True, default=0)  # Отправленный объем (тонны, паллеты и т.д.)
     shipped_pallets = models.PositiveIntegerField(default=0)  # Количество паллет (по умолчанию 0)
     scale_ticket = models.CharField(max_length=50, blank=True, null=True)  # Номер талона на весы (может быть пустым)

@@ -14,6 +14,7 @@ from openpyxl import Workbook
 from datetime import datetime
 from django.db.models.functions import ExtractYear
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 
 def index(request):
@@ -296,6 +297,7 @@ def deal_list(request):
         'years': sorted(years),  # Сортируем список лет для удобства
         'month_names': month_names,
         'months': months,  # Месяцы для выпадающего списка
+        'setting': settings,
     }
 
     # Рендерим страницу с переданным контекстом
