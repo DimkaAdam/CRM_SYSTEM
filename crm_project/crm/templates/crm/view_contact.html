@@ -11,14 +11,37 @@
     <!-- Отображение текущей цены -->
     <p><strong>Current Price:</strong> ${{ contact.current_price }}</p>
 
-    <!-- Кнопка для отображения формы -->
+    <!-- Отображение материалов и цен -->
+    <h3>Materials and Prices</h3>
+    {% if contact.contact_materials.all %}
+        <ul>
+            {% for contact_material in contact.contact_materials.all %}
+                <li>
+                    {{ contact_material.material }} - ${{ contact_material.price|default:"Not set" }}
+                    <a href="{% url 'edit_contact_material' contact_material.id %}">Edit</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No materials linked to this contact.</p>
+    {% endif %}
+
+    <!-- Форма добавления нового материала -->
+    <h3>Add a New Material</h3>
+    <form method="POST" action="{% url 'add_contact_material' contact.id %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Add Material</button>
+    </form>
+
+    <!-- Кнопка для отображения формы редактирования контакта -->
     <button id="edit-button" onclick="toggleEditForm()">Edit Contact</button>
 
-    <!-- Форма редактирования (скрыта по умолчанию) -->
+    <!-- Форма редактирования контакта (скрыта по умолчанию) -->
     <div id="edit-form-container" style="display: none;">
-        <form class="contact-edit-form" method="POST">
+        <form class="contact-edit-form" method="POST" action="{% url 'edit_contact' contact.id %}">
             {% csrf_token %}
-            {{ form.as_p }}
+            {{ edit_contact_form.as_p }}
             <button type="submit">Save Changes</button>
         </form>
     </div>

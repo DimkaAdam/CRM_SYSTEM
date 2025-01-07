@@ -1,6 +1,6 @@
 from django.core.serializers import serialize
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee
+from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial
 from django.db.models import Sum
 from django.http import JsonResponse
 from rest_framework.views import APIView
@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets
 from .serializers import ClientSerializer
 from .serializers import DealSerializer
-from .forms import ContactForm, CompanyForm
+from .forms import ContactForm, CompanyForm, ContactMaterialForm
 from django.http import HttpResponse
 from openpyxl import Workbook
 from datetime import datetime
@@ -445,3 +445,62 @@ def sales_analytics(request):
         'months': months,
     }
     return render(request, 'crm/sales_analytics.html', context)
+
+
+def add_contact_material(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+
+    if request.method == 'POST':
+        # Создаем экземпляр формы с данными из POST-запроса
+        form = ContactMaterialForm(request.POST, request.FILES)
+
+        # Проверяем, что форма валидна
+        if form.is_valid():
+            # Если форма валидна, сохраняем материал
+            contact_material = form.save(commit=False)
+            contact_material.contact = contact  # Связываем материал с контактом
+            contact_material.save()
+
+            # После сохранения редиректим на страницу с контактами
+            return redirect('view_contact', contact_id=contact.id)
+
+    else:
+        # Если метод запроса GET, создаем пустую форму
+        form = ContactMaterialForm()
+
+    # Рендерим шаблон с формой и данными о контакте
+    return render(request, 'crm/add_contact_material.html', {'form': form, 'contact': contact})
+
+
+def add_contact_material(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+
+    if request.method == 'POST':
+        form = ContactMaterialForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            contact_material = form.save(commit=False)
+            contact_material.contact = contact
+            contact_material.save()
+
+            # Используйте 'id', чтобы соответствовать маршруту
+            return redirect('view_contact', id=contact.id)
+
+    else:
+        form = ContactMaterialForm()
+
+    return render(request, 'crm/add_contact_material.html', {'form': form, 'contact': contact})
+
+
+def edit_contact_material(request, pk):
+    contact_material = get_object_or_404(ContactMaterial, pk=pk)
+
+    if request.method == 'POST':
+        form = ContactMaterialForm(request.POST, instance=contact_material)
+        if form.is_valid():
+            form.save()
+            return redirect('view_contact', id=contact_material.contact.id)
+    else:
+        form = ContactMaterialForm(instance=contact_material)
+
+    return render(request, 'crm/edit_contact_material.html', {'form': form, 'contact_material': contact_material})

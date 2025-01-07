@@ -45,4 +45,10 @@ urlpatterns = [
     # Управление сотрудниками компании
     path('companies/<int:company_id>/employees/<int:employee_id>/delete/', views.delete_employee,
          name='delete_employee_from_company'),  # Удаление сотрудника из компании
+
+    path('contacts/<int:contact_id>/add-material/', views.add_contact_material, name='add_contact_material'),
+    path('contact-material/<int:pk>/edit/', views.edit_contact_material, name='edit_contact_material'),
+
 ]
+
+

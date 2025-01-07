@@ -129,3 +129,14 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+MATERIALS_LIST = {
+    'Baled Cardboard': None,
+    'Flexible Plastic': None,
+    'Mixed Container': None,
+    'Pallets': None,
+    'Kraft Paper Bags': None,
+    'Loose Cardboard': None,
+    'Cardboard in Loose': None,
+}

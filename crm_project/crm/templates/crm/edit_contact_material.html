@@ -1,0 +1,18 @@
+{% extends 'crm/index.html' %}
+
+{% block title %}Edit Material for {{ contact_material.contact.company_name }}{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h1>Edit Material: {{ contact_material.material }}</h1>
+    <form method="POST" action="{% url 'edit_contact_material' contact_material.id %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save Changes</button>
+    </form>
+    
+    <a href="{% url 'view_contact' contact_material.contact.id %}">
+        <button>Back to Contact</button>
+    </a>
+</div>
+{% endblock %}
