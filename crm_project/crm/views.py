@@ -506,3 +506,9 @@ def edit_contact_material(request, pk):
         form = ContactMaterialForm(instance=contact_material)
 
     return render(request, 'crm/edit_contact_material.html', {'form': form, 'contact_material': contact_material})
+
+
+#REPORTS
+
+def report_list(request):
+    return render(request, 'crm/report_list.html')

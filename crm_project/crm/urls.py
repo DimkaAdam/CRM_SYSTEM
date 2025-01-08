@@ -48,7 +48,7 @@ urlpatterns = [
 
     path('contacts/<int:contact_id>/add-material/', views.add_contact_material, name='add_contact_material'),
     path('contact-material/<int:pk>/edit/', views.edit_contact_material, name='edit_contact_material'),
-
+    path('reports/', views.report_list, name='report_list')
 ]
 
 

@@ -1,0 +1,21 @@
+{% extends 'crm/index.html' %}
+
+{% block title %}Deals List{% endblock %}
+
+{% block content %}
+    <div class="content">
+        {% load static %}
+
+      <!-- upper panel -->
+      <header class="header">
+          <div class="logo">
+              <a href="{% url 'sales_analytics' %}">
+                  <img src="{% static 'crm/images/logo.png' %}" alt="Logo" class="logo-img">
+              </a>
+          </div>
+          <nav class="nav">
+              <a href="{% url 'report_list' %}">Reports</a>
+          </nav>
+      </header>
+    </div>
+{% endblock %}
