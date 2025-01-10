@@ -474,8 +474,6 @@ def add_contact_material(request, contact_id):
     return render(request, 'crm/add_contact_material.html', {'form': form, 'contact': contact})
 
 
-
-
 def edit_contact_material(request, pk):
     contact_material = get_object_or_404(ContactMaterial, pk=pk)
 
