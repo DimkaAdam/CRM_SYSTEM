@@ -3,38 +3,28 @@
 {% block title %}View Contact{% endblock %}
 
 {% block content %}
-<div class="content">
-    <h1><strong>Contact Details:</strong> {{ contact.company_name }}</h1>
-    <p><strong>Address:</strong> {{ contact.address }}</p>
-    <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
+<div class="content" xmlns="http://www.w3.org/1999/html">
+    <!-- Режим просмотра -->
+    <div id="view-info">
+        <h1 class="company-name"><strong>{{ contact.company.name }}</strong></h1>
+        <p><strong>Address:</strong> {{ contact.address }}</p>
+        <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
+        <p><strong>Prices:</strong></p>
+        {% if contact.contact_materials.all %}
+            <ul>
+                {% for contact_material in contact.contact_materials.all %}
+                    <li>
+                        {{ contact_material.material }} - ${{ contact_material.price|default:"0.00" }}
+                        <a href="{% url 'edit_contact_material' contact_material.id %}">Edit</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No materials linked to this contact.</p>
+        {% endif %}
+    </div>
 
-    <!-- Отображение материалов и цен -->
-    <h3>Materials and Prices</h3>
-    {% if contact.contact_materials.all %}
-        <ul>
-            {% for contact_material in contact.contact_materials.all %}
-                <li>
-                    {{ contact_material.material }} - ${{ contact_material.price|default:"Not set" }}
-                    <a href="{% url 'edit_contact_material' contact_material.id %}">Edit</a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No materials linked to this contact.</p>
-    {% endif %}
-
-    <!-- Форма добавления нового материала -->
-    <h3>Add a New Material</h3>
-    <form method="POST" action="{% url 'add_contact_material' contact.id %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Add Material</button>
-    </form>
-
-    <!-- Кнопка для отображения формы редактирования контакта -->
-    <button id="edit-button" onclick="toggleEditForm()">Edit Contact</button>
-
-    <!-- Форма редактирования контакта (скрыта по умолчанию) -->
+    <!-- Режим редактирования -->
     <div id="edit-form-container" style="display: none;">
         <form class="contact-edit-form" method="POST" action="{% url 'edit_contact' contact.id %}">
             {% csrf_token %}
@@ -43,6 +33,25 @@
         </form>
     </div>
 
+
+
+
+
+    <!-- проблкмная часть возможно где то пересечение идет -->
+    <!-- Форма добавления нового материала -->
+    <form method="POST" action="{% url 'add_contact_material' contact.id %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Add Material</button>
+    </form>
+
+
+
+
+
+
+    <!-- Кнопка переключения режима -->
+    <button id="edit-button" onclick="toggleEditForm()">Edit Contact</button>
     <a href="{% url 'contacts_list' %}">
         <button>Back to Contacts</button>
     </a>
@@ -50,8 +59,35 @@
 
 <script>
     function toggleEditForm() {
-        const formContainer = document.getElementById('edit-form-container');
-        formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
+        const viewInfo = document.getElementById('view-info');
+        const editForm = document.getElementById('edit-form-container');
+
+        // Переключение видимости режима просмотра и редактирования
+        if (editForm.style.display === 'none') {
+            editForm.style.display = 'block';
+            viewInfo.style.display = 'none';
+        } else {
+            editForm.style.display = 'none';
+            viewInfo.style.display = 'block';
+        }
     }
 </script>
+
+{% block extra_styles %}
+<style>
+    .company-name {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #007BFF;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .content {
+        padding: 20px;
+        font-family: Arial, sans-serif;
+    }
+</style>
+{% endblock %}
 {% endblock %}

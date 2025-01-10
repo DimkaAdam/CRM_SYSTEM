@@ -474,24 +474,6 @@ def add_contact_material(request, contact_id):
     return render(request, 'crm/add_contact_material.html', {'form': form, 'contact': contact})
 
 
-def add_contact_material(request, contact_id):
-    contact = get_object_or_404(Contact, id=contact_id)
-
-    if request.method == 'POST':
-        form = ContactMaterialForm(request.POST, request.FILES)
-
-        if form.is_valid():
-            contact_material = form.save(commit=False)
-            contact_material.contact = contact
-            contact_material.save()
-
-            # Используйте 'id', чтобы соответствовать маршруту
-            return redirect('view_contact', id=contact.id)
-
-    else:
-        form = ContactMaterialForm()
-
-    return render(request, 'crm/add_contact_material.html', {'form': form, 'contact': contact})
 
 
 def edit_contact_material(request, pk):
