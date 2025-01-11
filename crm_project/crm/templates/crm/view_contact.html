@@ -1,4 +1,5 @@
 {% extends 'crm/index.html' %}
+{% load static %}
 
 {% block title %}View Contact{% endblock %}
 <head>
@@ -6,58 +7,60 @@
 </head>
 
 {% block content %}
-<div class="content" xmlns="http://www.w3.org/1999/html">
+<div class="content">
     <!-- Режим просмотра -->
-    <div id="view-info">
-        <h1 class="company-name"><strong>{{ contact.company.name }}</strong></h1>
-        <p><strong>Address:</strong> {{ contact.address }}</p>
-        <p><strong>Company Type:</strong> {{ contact.get_company_type_display }}</p>
-        <p><strong>Prices:</strong></p>
+    <div id="view-info" class="view-container">
+        <h1 class="company-name">{{ contact.company.name }}</h1>
+        <div class="info-item">
+            <img src="{% static 'crm/images/icons/location-dot.png' %}" alt="Address Icon" class="icon">
+            <span class="info-text">{{ contact.address }}</span>
+        </div>
+        <div class="info-item">
+            <img src="{% static 'crm/images/icons/type.png' %}" alt="Type Icon" class="icon">
+            <span class="info-text">{{ contact.get_company_type_display }}</span>
+        </div>
+        <h2 class="section-title">Prices:</h2>
         {% if contact.contact_materials.all %}
-            <ul>
+            <ul class="materials-list">
                 {% for contact_material in contact.contact_materials.all %}
-                    <li>
+                    <li class="material-item">
                         {{ contact_material.material }} - ${{ contact_material.price|default:"0.00" }}
-                        <a href="{% url 'edit_contact_material' contact_material.id %}">Edit</a>
+                        <a href="{% url 'edit_contact_material' contact_material.id %}" class="edit-link">Edit</a>
                     </li>
                 {% endfor %}
             </ul>
         {% else %}
-            <p>No materials linked to this contact.</p>
+            <p class="no-materials">No materials linked to this contact.</p>
         {% endif %}
     </div>
 
     <!-- Режим редактирования -->
-    <div id="edit-form-container" style="display: none;">
+    <div id="edit-form-container" class="edit-container" style="display: none;">
+        <h2 class="section-title">Edit Contact</h2>
         <form class="contact-edit-form" method="POST" action="{% url 'edit_contact' contact.id %}">
             {% csrf_token %}
             {{ edit_contact_form.as_p }}
-            <button type="submit">Save Changes</button>
+            <button type="submit" class="btn save-btn">Save Changes</button>
         </form>
     </div>
 
-
-
-
-
-    <!-- проблкмная часть возможно где то пересечение идет -->
     <!-- Форма добавления нового материала -->
-    <form method="POST" action="{% url 'add_contact_material' contact.id %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Add Material</button>
-    </form>
+    <div class="add-material-container">
+        <h2 class="section-title">Add Material</h2>
+        <form method="POST" action="{% url 'add_contact_material' contact.id %}">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn add-btn">Add Material</button>
+        </form>
+    </div>
 
-
-
-
-
-
-    <!-- Кнопка переключения режима -->
-    <button id="edit-button" onclick="toggleEditForm()">Edit Contact</button>
-    <a href="{% url 'contacts_list' %}">
-        <button>Back to Contacts</button>
-    </a>
+    <!-- Кнопки переключения -->
+    <div class="buttons-container">
+        <button id="edit-button" onclick="toggleEditForm()" class="btn edit-btn">Edit Contact</button>
+        <a href="{% url 'contacts_list' %}">
+            <button class="btn back-btn">Back to Contacts</button>
+        </a>
+    </div>
 </div>
 
 <script>
@@ -78,19 +81,110 @@
 
 {% block extra_styles %}
 <style>
-    .company-name {
-        font-family: 'Montserrat', sans-serif; /* Применяем шрифт Montserrat */
-        font-size: 2.5em;
-        font-weight: bold;
-        color: #007BFF;
-        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-        text-align: left;
+    body {
+        font-family: 'Montserrat', sans-serif;
+        background-color: #f8f9fa;
+        color: #333;
     }
 
     .content {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        font-family: Arial, sans-serif;
+    }
+
+    .company-name {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #0056b3;
+        text-align: left;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 10px;
+    }
+
+    .info-text {
+        font-size: 1.2em;
+    }
+
+    .section-title {
+        margin-top: 20px;
+        font-size: 1.5em;
+        color: #444;
+    }
+
+    .materials-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .material-item {
+        padding: 10px;
+        background: #f1f1f1;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .edit-link {
+        text-decoration: none;
+        color: #007bff;
+    }
+
+    .edit-link:hover {
+        text-decoration: underline;
+    }
+
+    .btn {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+
+    .edit-btn {
+        background: #007bff;
+        color: white;
+    }
+
+    .save-btn {
+        background: #28a745;
+        color: white;
+    }
+
+    .add-btn {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .back-btn {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    .no-materials {
+        font-style: italic;
+        color: #999;
     }
 </style>
 {% endblock %}
