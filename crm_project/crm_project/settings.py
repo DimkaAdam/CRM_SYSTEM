@@ -133,10 +133,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MATERIALS_LIST = {
     'OCC 11': None,
+    'OCC 11 Bale String': None,
     'Flexible Plastic': None,
     'Mixed Container': None,
     'Pallets': None,
     'Kraft Paper Bags': None,
-    'Loose Cardboard': None,
-    'Cardboard in Loose': None,
+    'Loose OCC': None,
+
 }

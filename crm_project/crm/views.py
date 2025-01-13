@@ -464,7 +464,7 @@ def add_contact_material(request, contact_id):
             contact_material.save()
 
             # После сохранения редиректим на страницу с контактами
-            return redirect('view_contact', contact_id=contact.id)
+            return redirect('view_contact', id = contact.id)
 
     else:
         # Если метод запроса GET, создаем пустую форму
