@@ -6,15 +6,16 @@
     <div class="content">
         <h1>Deals List</h1>
 
-        <!-- Форма добавления новой сделки -->
-        <button id="addNewDealBtn" class="add-new-deal-btn">
-            <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
-        </button>
+        <div class="buttons-container">
+            <!-- Форма добавления новой сделки -->
+            <button id="addNewDealBtn" class="add-new-deal-btn">
+                <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
+            </button>
 
-        <a href="{% url 'export_deals_to_excel' %}" class="export-btn">
-            Export to Excel
-        </a>
-
+            <a href="{% url 'export_deals_to_excel' %}" class="export-btn">
+                <img src="{% static 'crm/images/icons/excel.png' %}" alt="Add Icon" class="icon">
+            </a>
+        </div>
         <!-- Форма для создания новой сделки -->
         <div id="dealFormSidebar" class="sidebar-form">
             <div class="sidebar-header">
