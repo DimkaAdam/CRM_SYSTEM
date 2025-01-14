@@ -542,26 +542,6 @@ select#supplier:focus, select#buyer:focus, select#grade:focus {
 
 
 
-/* filter btn settings*/
-.filter-button {
-    padding: 10px;
-    background-color: #033870;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0,3s ease;
-}
-
-.filter-button: hover {
-    background-color: #0056b3;
-}
-
-.filter-button:active {
-    background-color: #004494;    /* Еще более темный синий */
-}
-
-
 
 /* sales analytics HTML settings */
 body {

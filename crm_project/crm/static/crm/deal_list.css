@@ -72,3 +72,51 @@
     pointer-events: none; /* Иконка не взаимодействует с кликами */
     object-fit: cover; /* Подгоняем иконку под размеры */
 }
+
+/* Контейнер для формы фильтрации */
+.filter-container {
+    display: flex; /* Располагаем элементы в ряд */
+    gap: 20px; /* Промежуток между элементами */
+    align-items: center; /* Центрируем по вертикали */
+}
+
+/* Стиль для каждого элемента фильтра */
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Стиль для кнопки фильтра */
+.filter-btn {
+    display: flex; /* Центрируем содержимое */
+    align-items: center; /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    width: 40px; /* Размер кнопки */
+    height: 40px; /* Размер кнопки */
+    background-color: #007BFF; /* Синий фон */
+    border: none; /* Убираем границу */
+    border-radius: 50%; /* Круглая форма */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Эффекты при переходе */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Тень */
+    padding: 0; /* Убираем отступы */
+    overflow: hidden; /* Обрезаем элементы, которые выходят за границы */
+}
+
+.filter-btn:hover {
+    background-color: #0056b3; /* Цвет при наведении */
+    transform: scale(1.1); /* Увеличение кнопки */
+}
+
+.filter-btn:active {
+    background-color: #003f8a; /* Цвет при нажатии */
+    transform: scale(1); /* Возврат к исходному размеру */
+}
+
+.filter-btn .icon {
+    width: 20px; /* Размер иконки */
+    height: 20px;
+    pointer-events: none; /* Иконка не будет реагировать на клики */
+    object-fit: cover; /* Подгонка иконки */
+}
