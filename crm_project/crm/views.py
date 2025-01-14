@@ -416,7 +416,7 @@ def sales_analytics(request):
     mt_occ11 = deals_filter.filter(grade="OCC11").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
     mt_plastic = deals_filter.filter(grade="Flexible Plastic").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
     mt_mixed_containers = deals_filter.filter(grade="Mixed Container").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
-    income = deals_filter.filter(total_income_loss__gt=0).aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
+    income = deals_filter.aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
 
     # Данные о палетах
     company_pallets = CompanyPallets.objects.select_related('company_name')
