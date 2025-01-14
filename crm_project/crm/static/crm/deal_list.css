@@ -1,0 +1,33 @@
+/* Стиль для кнопки добавления сделки */
+.add-new-deal-btn {
+    display: flex; /* Для выравнивания содержимого */
+    align-items: center; /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    width: 40px; /* Размер кнопки по ширине */
+    height: 40px; /* Размер кнопки по высоте */
+    background-color: #007BFF; /* Синий фон */
+    border: none; /* Убираем границу */
+    border-radius: 50%; /* Делаем кнопку круглой */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Эффект перехода */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Лёгкая тень */
+    padding: 0; /* Убираем внутренние отступы */
+    overflow: hidden; /* Убираем всё, что выходит за границы */
+}
+
+.add-new-deal-btn:hover {
+    background-color: #0056b3; /* Цвет при наведении */
+    transform: scale(1.1); /* Увеличение кнопки при наведении */
+}
+
+.add-new-deal-btn:active {
+    background-color: #003f8a; /* Цвет при нажатии */
+    transform: scale(1); /* Возврат к исходному размеру */
+}
+
+.add-new-deal-btn img {
+    width: 20px; /* Размер иконки */
+    height: 20px;
+    pointer-events: none; /* Иконка не взаимодействует с кликами */
+    object-fit: cover; /* Подгоняем иконку под размеры */
+}

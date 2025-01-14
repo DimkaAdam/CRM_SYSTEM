@@ -1,5 +1,5 @@
 {% extends 'crm/index.html' %}
-
+{% load static %}
 {% block title %}Deals List{% endblock %}
 
 {% block content %}
@@ -7,7 +7,9 @@
         <h1>Deals List</h1>
 
         <!-- Форма добавления новой сделки -->
-        <button id="addDealBtn" class="add-deal-btn">Add New Deal</button>
+        <button id="addNewDealBtn" class="add-new-deal-btn">
+            <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
+        </button>
 
         <a href="{% url 'export_deals_to_excel' %}" class="export-btn">
             Export to Excel
@@ -173,7 +175,7 @@
     <!-- Скрипт для обработки открытия/закрытия боковой панели -->
     <script>
         // Открыть боковую панель для создания новой сделки
-        document.getElementById('addDealBtn').addEventListener('click', function () {
+        document.getElementById('addNewDealBtn').addEventListener('click', function () {
             document.getElementById('dealFormSidebar').style.width = '400px';
         });
 

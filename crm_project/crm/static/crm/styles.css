@@ -287,17 +287,34 @@ body {
 }
 
 .add-deal-btn {
-    background-color: #00b4d8;
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
+    display: flex; /* Для выравнивания содержимого */
+    align-items: center; /* Вертикальное центрирование */
+    justify-content: center; /* Горизонтальное центрирование */
+    width: 40px; /* Ширина кнопки */
+    height: 40px; /* Высота кнопки */
+    background-color: #007BFF; /* Цвет фона */
+    border: none; /* Убираем границу */
+    border-radius: 50%; /* Делаем кнопку круглой */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Плавный переход при наведении */
 }
 
 .add-deal-btn:hover {
-    background-color: #0077b6;
+    background-color: #0056b3; /* Цвет при наведении */
+    transform: scale(1.1); /* Легкое увеличение кнопки */
+}
+
+.icon {
+    width: 20px; /* Размер иконки */
+    height: 20px;
+}
+}
+
+.icon {
+    width: 16px; /* Ширина иконки */
+    height: 16px; /* Высота иконки */
+    margin-right: 8px; /* Отступ между иконкой и текстом */
+    vertical-align: middle; /* Выравнивание иконки */
 }
 
 /* DEALS SET UP */
@@ -408,22 +425,6 @@ body {
     transition: background-color 0.3s ease;
 }
 
-/* Стиль для кнопки добавления сделки */
-.add-deal-btn {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 15px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-bottom: 20px;
-}
-
-/* Стили для кнопки добавления сделки при наведении */
-.add-deal-btn:hover {
-    background-color: #45a049;
-}
 
 /* filter button*/
 .dropdown {
