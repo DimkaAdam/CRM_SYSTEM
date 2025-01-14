@@ -5,7 +5,7 @@
 
 {% block content %}
     <div class="content">
-        <h1>Deals List</h1>
+        <h1>Deals</h1>
 
         <div class="buttons-container">
             <!-- Форма добавления новой сделки -->
@@ -148,9 +148,8 @@
     <form method="get" action="{% url 'deal_list' %}" class="filter-form">
         <div class="filter-container">
             <div class="filter-item">
-                <label for="month">Month:</label>
                 <select name="month" id="month">
-                    <option value="" {% if not month %}selected{% endif %}>All</option>
+                    <option value="" {% if not month %}selected{% endif %}>Month</option>
                     {% for m in months %}
                         <option value="{{ m }}" {% if m == month %}selected{% endif %}>
                             {{ m|get_month_name }}
@@ -160,9 +159,8 @@
             </div>
 
             <div class="filter-item">
-                <label for="year">Year:</label>
                 <select name="year" id="year">
-                    <option value="" {% if not year %}selected{% endif %}>All</option>
+                    <option value="" {% if not year %}selected{% endif %}>Year</option>
                     {% for y in years %}
                         <option value="{{ y }}" {% if y == year %}selected{% endif %}>
                             {{ y }}
