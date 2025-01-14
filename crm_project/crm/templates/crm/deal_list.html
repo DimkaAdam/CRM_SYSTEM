@@ -3,98 +3,72 @@
 {% load custom_filters %}
 {% block title %}Deals List{% endblock %}
 
+
 {% block content %}
     <div class="content">
         <h1>Deals</h1>
 
         <div class="buttons-container">
-            <!-- Форма добавления новой сделки -->
             <button id="addNewDealBtn" class="add-new-deal-btn">
                 <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
             </button>
 
             <a href="{% url 'export_deals_to_excel' %}" class="export-btn">
-                <img src="{% static 'crm/images/icons/excel.png' %}" alt="Add Icon" class="icon">
+                <img src="{% static 'crm/images/icons/excel.png' %}" alt="Export Icon" class="icon">
             </a>
         </div>
-        <!-- Форма для создания новой сделки -->
+
         <div id="dealFormSidebar" class="sidebar-form">
             <div class="sidebar-header">
                 <h3>Add Deal</h3>
                 <button id="closeSidebarBtn" class="close-btn">&times;</button>
             </div>
             <form id="dealForm">
-
-            <!-- Form Fields for the Deal -->
-            <label for="supplier"></label>
-            <select id="supplier" name="supplier" required>
-                <option value="" disabled selected>Select a Supplier</option>
-                {% for supplier in suppliers %}
-                    <option value="{{ supplier.id }}">{{ supplier.name }}</option>
-                {% endfor %}
-            </select>
-            <br><br>
-
-            <select id="buyer" name="buyer" required>
-                <option value="" disabled selected>Select a Buyer</option>
-                {% for buyer in buyers %}
-                    <option value="{{ buyer.id }}">{{ buyer.name }}</option>
-                {% endfor %}
-            </select>
-
-                <label for="date"></label>
-                <input type="date" id="date" required><br><br>
-
-                <label for="grade"></label>
-                <select id="grade" name="grade" required>
-                    <option value="" disabled selected>Select a Grade</option>
-                    {% for key, value in setting.MATERIALS_LIST.items %}
-                        <option value="{{ key }}" {% if deal.grade == key %}selected{% endif %}>{{ key }}</option>
+                <select id="supplier" name="supplier" required>
+                    <option value="" disabled selected>Select a Supplier</option>
+                    {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}">{{ supplier.name }}</option>
                     {% endfor %}
                 </select>
 
-                <label for="shipped_quantity"></label>
-                <input type="number" id="shipped_quantity" step="any" placeholder="Shipped Quantity" required><br><br>
+                <select id="buyer" name="buyer" required>
+                    <option value="" disabled selected>Select a Buyer</option>
+                    {% for buyer in buyers %}
+                        <option value="{{ buyer.id }}">{{ buyer.name }}</option>
+                    {% endfor %}
+                </select>
 
-                <label for="shipped_pallets"></label>
-                <input type="number" id="shipped_pallets" placeholder="Shipped Pallets" required><br><br>
+                <input type="date" id="date" required>
 
-                <label for="received_quantity"></label>
-                <input type="number" id="received_quantity" step="any" placeholder="Received Quantity" required><br><br>
+                <select id="grade" name="grade" required>
+                    <option value="" disabled selected>Select a Grade</option>
+                    {% for key, value in setting.MATERIALS_LIST.items %}
+                        <option value="{{ key }}">{{ key }}</option>
+                    {% endfor %}
+                </select>
 
-                <label for="received_pallets"></label>
-                <input type="number" id="received_pallets" placeholder="Received Pallets" required><br><br>
-
-                <label for="supplier_price"></label>
-                <input type="number" id="supplier_price" placeholder="Supplier Price" step="0.01"><br><br>
-
-                <label for="buyer_price"></label>
-                <input type="number" id="buyer_price" step="0.01" placeholder="Buyer Price" required><br><br>
-
-                <label for="transport_cost"></label>
-                <input type="number" id="transport_cost" step="0.01" placeholder="Transport Cost" required><br><br>
-
-                <label for="transport_company"></label>
-                <input type="text" id="transport_company" placeholder="Transport Company" required><br><br>
-
+                <input type="number" id="shipped_quantity" step="any" placeholder="Shipped Quantity" required>
+                <input type="number" id="shipped_pallets" placeholder="Shipped Pallets" required>
+                <input type="number" id="received_quantity" step="any" placeholder="Received Quantity" required>
+                <input type="number" id="received_pallets" placeholder="Received Pallets" required>
+                <input type="number" id="supplier_price" step="0.01" placeholder="Supplier Price">
+                <input type="number" id="buyer_price" step="0.01" placeholder="Buyer Price" required>
+                <input type="number" id="transport_cost" step="0.01" placeholder="Transport Cost" required>
+                <input type="text" id="transport_company" placeholder="Transport Company" required>
                 <button type="submit" class="submit-btn">Submit Deal</button>
             </form>
         </div>
 
-        <!-- Sidebar for Viewing Deal Details -->
         <div id="viewDealSidebar" class="sidebar-form" style="width: 0;">
             <div class="sidebar-header">
                 <h3>Deal Information</h3>
                 <button id="closeViewDealSidebarBtn" class="close-btn">&times;</button>
             </div>
-            <div id="dealDetailsContent">
-                <!-- Deal details will be dynamically loaded here -->
-            </div>
-            <!-- Add Delete Button -->
-            <button id="deleteDealBtn" class="delete-btn" style="display: none;">Delete Deal</button>
+            <div id="dealDetailsContent"></div>
+            <button id="editDealBtn" class="edit-btn">Edit</button>
+            <button id="deleteDealBtn" class="delete-btn">Delete Deal</button>
         </div>
 
-        <!-- Таблица сделок -->
         <table id="dealTable" class="deal-table">
             <thead>
                 <tr>
@@ -117,14 +91,14 @@
                 {% for deal in deals %}
                 <tr class="deal-row" data-id="{{ deal.id }}">
                     <td>{{ deal.date }}</td>
-                     <td>{{ deal.supplier.name }}</td>
+                    <td>{{ deal.supplier.name }}</td>
                     <td>{{ deal.buyer.name }}</td>
                     <td>{{ deal.grade }}</td>
                     <td>{{ deal.shipped_quantity }} / {{ deal.shipped_pallets }}</td>
                     <td>{{ deal.received_quantity }} / {{ deal.received_pallets }}</td>
-                    <td>{{ deal.supplier_price }} {{ deal.supplier_currency }}</td>
-                    <td>{{ deal.supplier_total }} {{ deal.supplier_currency }}</td>
-                    <td>{{ deal.buyer_price }} {{ deal.buyer_currency }}</td>
+                    <td>{{ deal.supplier_price }}</td>
+                    <td>{{ deal.supplier_total }}</td>
+                    <td>{{ deal.buyer_price }}</td>
                     <td>{{ deal.total_amount }}</td>
                     <td>{{ deal.transport_cost }}</td>
                     <td>{{ deal.transport_company }}</td>
@@ -137,197 +111,43 @@
         </table>
 
         <div style="margin-top: 20px;">
-            <p><strong>Amount:</strong> {{ totals.total_amount|default:"0.00" |floatformat:2 }}</p>
-            <p><strong>Income:</strong> {{ totals.total_income_loss|default:"0.00" |floatformat:2 }}</p>
+            <p><strong>Amount:</strong> {{ totals.total_amount|default:"0.00"|floatformat:2 }}</p>
+            <p><strong>Income:</strong> {{ totals.total_income_loss|default:"0.00"|floatformat:2 }}</p>
         </div>
+
+        <form method="get" action="{% url 'deal_list' %}" class="filter-form">
+            <div class="filter-container">
+                <div class="filter-item">
+                    <select name="month" id="month">
+                        <option value="" {% if not month %}selected{% endif %}>Month</option>
+                        {% for m in months %}
+                            <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                                {{ m|get_month_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <select name="year" id="year">
+                        <option value="" {% if not year %}selected{% endif %}>Year</option>
+                        {% for y in years %}
+                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>
+                                {{ y }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <button type="submit" class="filter-btn">
+                        <img src="{% static 'crm/images/icons/filter.png' %}" alt="Filter Icon" class="icon">
+                    </button>
+                </div>
+            </div>
+        </form>
+
+    <script src="{% static 'crm/js/deal_list.js' %}"></script>
+
     </div>
-
-
-    <!-- Форма фильтрации -->
-    <form method="get" action="{% url 'deal_list' %}" class="filter-form">
-        <div class="filter-container">
-            <div class="filter-item">
-                <select name="month" id="month">
-                    <option value="" {% if not month %}selected{% endif %}>Month</option>
-                    {% for m in months %}
-                        <option value="{{ m }}" {% if m == month %}selected{% endif %}>
-                            {{ m|get_month_name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="filter-item">
-                <select name="year" id="year">
-                    <option value="" {% if not year %}selected{% endif %}>Year</option>
-                    {% for y in years %}
-                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>
-                            {{ y }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="filter-item">
-                <button type="submit" class="filter-btn">
-                    <img src="{% static 'crm/images/icons/filter.png' %}" alt="Filter Icon" class="icon">
-                </button>
-            </div>
-        </div>
-    </form>
-
-
-    <!-- Скрипт для обработки открытия/закрытия боковой панели -->
-    <script>
-        // Открыть боковую панель для создания новой сделки
-        document.getElementById('addNewDealBtn').addEventListener('click', function () {
-            document.getElementById('dealFormSidebar').style.width = '400px';
-        });
-
-        // Закрыть боковую панель для создания новой сделки
-        document.getElementById('closeSidebarBtn').addEventListener('click', function () {
-            document.getElementById('dealFormSidebar').style.width = '0';
-        });
-
-        // Обработать отправку формы для новой сделки
-        document.getElementById('dealForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const receivedQuantityElement = document.getElementById('received_quantity');
-            const buyerPriceElement = document.getElementById('buyer_price');
-            const supplierPriceElement = document.getElementById('supplier_price');
-            const transportCostElement = document.getElementById('transport_cost');
-
-            if (!receivedQuantityElement || !buyerPriceElement || !supplierPriceElement || !transportCostElement) {
-                console.error('Элементы формы не найдены!');
-                return;
-            }
-
-            const received_quantity = parseFloat(receivedQuantityElement.value);
-            const buyer_price = parseFloat(buyerPriceElement.value);
-            const supplier_price = parseFloat(supplierPriceElement.value);
-            const transport_cost = parseFloat(transportCostElement.value);
-
-            // Вычисление общих сумм
-            const total_amount = received_quantity * buyer_price; // Общая сумма от покупателя
-            const supplier_total = received_quantity * supplier_price; // Общая сумма для поставщика
-            const total_income_loss = total_amount - supplier_total - transport_cost; // Убыток/прибыль
-            const supplierId = document.getElementById('supplier').value;
-            const buyer = document.getElementById('buyer').value;
-
-            const data = {
-                date: document.getElementById('date').value,
-                supplier: supplierId,
-                buyer: buyer,
-                grade: document.getElementById('grade').value,
-                shipped_quantity: document.getElementById('shipped_quantity').value,
-                shipped_pallets: document.getElementById('shipped_pallets').value,
-                received_quantity: received_quantity,
-                received_pallets: document.getElementById('received_pallets').value,
-                supplier_price: supplier_price,
-                buyer_price: buyer_price,
-                transport_cost: transport_cost,
-                transport_company: document.getElementById('transport_company').value
-            };
-
-            fetch('http://127.0.0.1:8000/api/deals/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}',
-                },
-                body: JSON.stringify(data),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Deal created:', data);
-
-                // Обновляем таблицу сделок
-                const dealTable = document.getElementById('dealTable').getElementsByTagName('tbody')[0];
-                const newRow = dealTable.insertRow();
-                newRow.innerHTML = `
-                    <td>${data.date}</td>
-                    <td>${data.supplier_name}</td>
-                    <td>${data.buyer}</td>
-                    <td>${data.grade}</td>
-                    <td>${data.shipped_quantity} / ${data.shipped_pallets}</td>
-                    <td>${data.received_quantity} / ${data.received_pallets}</td>
-                    <td>${data.supplier_price}</td>
-                    <td>${data.supplier_total}</td>
-                    <td>${data.buyer_price}</td>
-                    <td>${data.total_amount}</td>
-                    <td>${data.transport_cost}</td>
-                    <td>${data.transport_company}</td>
-                    <td>${data.total_income_loss}</td>
-                `;
-                document.getElementById('dealFormSidebar').style.width = '0';
-                document.getElementById('dealForm').reset();
-            })
-            .catch(error => console.error('Error:', error));
-        });
-
-        // Открыть боковую панель для просмотра сделки
-        document.querySelectorAll('.deal-row').forEach(row => {
-            row.addEventListener('click', function () {
-                const dealId = this.getAttribute('data-id');
-                const sidebar = document.getElementById('viewDealSidebar');
-                const content = document.getElementById('dealDetailsContent');
-                const deleteButton = document.getElementById('deleteDealBtn');
-
-                fetch(`http://127.0.0.1:8000/api/deals/${dealId}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        content.innerHTML = `
-                            <div class="deal-details-container">
-                                <p><strong>Date:</strong> ${data.date}</p>
-                                <p><strong>Supplier:</strong> ${data.supplier}</p>
-                                <p><strong>Buyer:</strong> ${data.buyer}</p>
-                                <p><strong>Grade:</strong> ${data.grade}</p>
-                                <p><strong>Shipped Quantity:</strong> ${data.shipped_quantity}</p>
-                                <p><strong>Received Quantity:</strong> ${data.received_quantity}</p>
-                                <p><strong>Supplier Price:</strong> ${data.supplier_price}</p>
-                                <p><strong>Buyer Price:</strong> ${data.buyer_price}</p>
-                                <p><strong>Total Amount:</strong> ${data.total_amount}</p>
-                                <p><strong>Transport Cost:</strong> ${data.transport_cost}</p>
-                                <p><strong>Transport Company:</strong> ${data.transport_company}</p>
-                            </div>
-                        `;
-                        deleteButton.style.display = 'inline-block';
-
-                        deleteButton.onclick = function () {
-                            if (confirm('Are you sure you want to delete this deal?')) {
-                                fetch(`http://127.0.0.1:8000/api/deals/${dealId}/`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'X-CSRFToken': '{{ csrf_token }}',
-                                    },
-                                })
-                                .then(response => {
-                                    if (response.ok) {
-                                        document.querySelector(`.deal-row[data-id="${dealId}"]`).remove();
-                                        sidebar.style.width = '0';
-                                        alert('Deal deleted successfully');
-                                    } else {
-                                        alert('Failed to delete deal. Please try again.');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    alert('An error occurred while deleting the deal.');
-                                });
-                            }
-                        };
-                        sidebar.style.width = '400px';
-                    })
-                    .catch(error => {
-                        console.error('Error fetching deal data:', error);
-                        content.innerHTML = '<p>Error loading deal details.</p>';
-                    });
-            });
-        });
-
-        // Закрыть боковую панель для просмотра сделки
-        document.getElementById('closeViewDealSidebarBtn').addEventListener('click', function () {
-            document.getElementById('viewDealSidebar').style.width = '0';
-        });
-    </script>
 {% endblock %}
