@@ -4,7 +4,7 @@ from .models import Contact, Company, ContactMaterial
 class ContactForm(forms.ModelForm):
     class Meta:
         model = Contact
-        fields = ['address', 'company_type', 'current_price']
+        fields = ['address', 'company_type']
 
 
 class CompanyForm(forms.ModelForm):
