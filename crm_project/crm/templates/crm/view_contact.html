@@ -46,21 +46,27 @@
 
     <!-- Форма добавления нового материала -->
     <div class="add-material-container">
-        <h2 class="section-title">Add Material</h2>
         <form method="POST" action="{% url 'add_contact_material' contact.id %}">
             {% csrf_token %}
             {{ form.material.as_p }}
             {{ form.price.as_p }}
-            <button type="submit" class="btn add-btn">Add Material</button>
+
+            <button type="submit" class="btn add-btn">
+                <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
+            </button>
+
         </form>
     </div>
 
-
     <!-- Кнопки переключения -->
     <div class="buttons-container">
-        <button id="edit-button" onclick="toggleEditForm()" class="btn edit-btn">Edit Contact</button>
+        <button id="edit-button" onclick="toggleEditForm()" class="btn edit-btn">
+            <img src="{% static 'crm/images/icons/edit.png' %}" alt="Edit Icon" class="icon">
+        </button>
         <a href="{% url 'contacts_list' %}">
-            <button class="btn back-btn">Back to Contacts</button>
+            <button class="btn back-btn">
+                Back to Contacts
+            </button>
         </a>
     </div>
 </div>
@@ -90,26 +96,26 @@
     }
 
     .content {
-        max-width: 800px;
+        max-width: 900px;
         margin: 0 auto;
         background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        padding: 30px;
     }
 
     .company-name {
-        font-size: 2.5em;
+        font-size: 2.8em;
         font-weight: bold;
         color: #0056b3;
         text-align: left;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
     }
 
     .info-item {
         display: flex;
         align-items: center;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
     }
 
     .icon {
@@ -119,12 +125,12 @@
     }
 
     .info-text {
-        font-size: 1.2em;
+        font-size: 1.3em;
     }
 
     .section-title {
-        margin-top: 20px;
-        font-size: 1.5em;
+        margin-top: 25px;
+        font-size: 1.8em;
         color: #444;
     }
 
@@ -134,13 +140,14 @@
     }
 
     .material-item {
-        padding: 10px;
-        background: #f1f1f1;
-        border-radius: 4px;
-        margin-bottom: 10px;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 6px;
+        margin-bottom: 15px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-left: 5px solid #0056b3;
     }
 
     .edit-link {
@@ -152,42 +159,60 @@
         text-decoration: underline;
     }
 
+    /* Стиль для кнопок */
     .btn {
-        padding: 10px 15px;
+        padding: 10px 20px;
         border: none;
-        border-radius: 4px;
-        cursor: pointer;
         font-size: 1em;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .edit-btn {
-        background: #007bff;
+    .btn.add-btn {
+        background: linear-gradient(135deg, #ff7e5f, #feb47b); /* Градиент для кнопки */
         color: white;
     }
 
-    .save-btn {
-        background: #28a745;
+    .btn.edit-btn {
+        background: linear-gradient(135deg, #007bff, #0056b3); /* Градиент для кнопки Edit */
         color: white;
     }
 
-    .add-btn {
-        background: #17a2b8;
-        color: white;
-    }
-
-    .back-btn {
-        background: #6c757d;
+    .btn.back-btn {
+        background: linear-gradient(135deg, #28a745, #218838); /* Градиент для кнопки Back */
         color: white;
     }
 
     .btn:hover {
-        opacity: 0.9;
+        transform: scale(1.05); /* Эффект увеличения при наведении */
     }
 
-    .no-materials {
-        font-style: italic;
-        color: #999;
+    .btn:active {
+        transform: scale(1); /* Эффект сжатия при нажатии */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Легкая тень при нажатии */
+    }
+
+    /* Контейнер для кнопок */
+    .buttons-container {
+        display: flex;
+        gap: 15px; /* Расстояние между кнопками */
+        justify-content: flex-start;
+        margin-top: 30px;
+    }
+
+    /* Кнопка с иконкой */
+    .btn .icon {
+        margin-right: 8px;
+        width: 18px;
+        height: 18px;
+        object-fit: cover;
     }
 </style>
+
 {% endblock %}
 {% endblock %}
