@@ -39,7 +39,7 @@
         <h2 class="section-title">Edit Contact</h2>
         <form class="contact-edit-form" method="POST" action="{% url 'edit_contact' contact.id %}">
             {% csrf_token %}
-            {{ edit_contact_form.as_p }}
+            {{ form.as_p }}
             <button type="submit" class="btn save-btn">Save Changes</button>
         </form>
     </div>
@@ -49,10 +49,12 @@
         <h2 class="section-title">Add Material</h2>
         <form method="POST" action="{% url 'add_contact_material' contact.id %}">
             {% csrf_token %}
-            {{ form.as_p }}
+            {{ form.material.as_p }}
+            {{ form.price.as_p }}
             <button type="submit" class="btn add-btn">Add Material</button>
         </form>
     </div>
+
 
     <!-- Кнопки переключения -->
     <div class="buttons-container">
