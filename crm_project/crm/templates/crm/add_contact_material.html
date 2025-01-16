@@ -4,31 +4,105 @@
 
 {% block content %}
 <div class="content">
-    <h1><strong>Add Material for Contact:</strong> {{ contact.company_name }}</h1>
-
-    <!-- Вывод ошибок формы, если есть -->
-    {% if form.errors %}
-    <div class="errors">
-        <ul>
-            {% for field in form %}
-                {% for error in field.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
+    <h1 class="title"><strong>Add new material for </strong> {{ contact.company.name }}</h1>
 
     <!-- Форма добавления нового материала -->
-    <h3>Add a New Material</h3>
-    <form method="POST" action="{% url 'add_contact_material' contact.id %}">
+    <form method="POST" action="{% url 'add_contact_material' contact.id %}" class="material-form">
         {% csrf_token %}
         {{ form.as_p }}  <!-- Отображение всех полей формы -->
-        <button type="submit">Add Material</button>
+        <button type="submit" class="btn submit-btn">Add Material</button>
     </form>
 
     <a href="{% url 'view_contact' contact.id %}">
-        <button>Back to Contact</button>
+        <button class="btn back-btn">Back to Contact</button>
     </a>
 </div>
+
+{% block extra_styles %}
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+        background-color: #f2f2f7;
+        color: #333;
+    }
+
+    .content {
+        max-width: 700px; /* Уменьшил максимальную ширину */
+        margin: 0 auto;
+        padding: 30px; /* Уменьшил отступы */
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Легче тень */
+        text-align: center;
+    }
+
+    .title {
+        font-size: 2em; /* Уменьшил размер заголовка */
+        font-weight: 600;
+        color: #1d1d1f;
+        margin-bottom: 20px; /* Уменьшил отступ снизу */
+    }
+
+    .material-form {
+        margin-top: 15px; /* Уменьшил отступ сверху */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .material-form input, .material-form select {
+        width: 100%;
+        padding: 12px; /* Уменьшил внутренние отступы */
+        margin: 8px 0; /* Уменьшил межполе */
+        border-radius: 8px; /* Уменьшил округление */
+        border: 1px solid #d1d1d6;
+        font-size: 1.1em; /* Уменьшил размер шрифта */
+        transition: all 0.3s ease;
+    }
+
+    .material-form input:focus, .material-form select:focus {
+        border-color: #007aff;
+        box-shadow: 0 0 5px rgba(0, 122, 255, 0.5);
+    }
+
+    .btn {
+        font-size: 1.1em; /* Уменьшил размер шрифта */
+        padding: 12px 30px; /* Уменьшил отступы */
+        border: none;
+        background-color: #007aff;
+        color: white;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+        max-width: 250px; /* Уменьшил максимальную ширину */
+        margin: 8px 0; /* Уменьшил отступы */
+    }
+
+    .btn:hover {
+        background-color: #0051a8;
+        transform: scale(1.05);
+    }
+
+    .btn:active {
+        background-color: #003b70;
+        transform: scale(1);
+    }
+
+    .back-btn {
+        background-color: #e0e0e0;
+        color: #1d1d1f;
+    }
+
+    .back-btn:hover {
+        background-color: #d1d1d6;
+    }
+
+    /* Скрытие сообщений об ошибках */
+    .error-message {
+        display: none;
+    }
+</style>
+{% endblock %}
 {% endblock %}
