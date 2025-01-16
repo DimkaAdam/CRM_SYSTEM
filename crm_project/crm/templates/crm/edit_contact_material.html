@@ -1,18 +1,93 @@
 {% extends 'crm/index.html' %}
 
-{% block title %}Edit Material for {{ contact_material.contact.company_name }}{% endblock %}
-
 {% block content %}
-<div class="content">
-    <h1>Edit Material: {{ contact_material.material }}</h1>
-    <form method="POST" action="{% url 'edit_contact_material' contact_material.id %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Save Changes</button>
-    </form>
-    
-    <a href="{% url 'view_contact' contact_material.contact.id %}">
-        <button>Back to Contact</button>
-    </a>
-</div>
+
+<h1>Edit Material: {{ contact_material.material }}</h1>
+<form method="POST" action="{% url 'edit_contact_material' contact_material.id %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save Changes</button>
+</form>
+
+<a href="{% url 'view_contact' contact_material.contact.id %}">
+    <button>Back to Contact</button>
+</a>
+
+<style>
+/* Основной стиль контента */
+.content {
+    max-width: 800px; /* Ограничиваем ширину контента */
+    margin: 40px auto; /* Центрируем и даем отступы сверху и снизу */
+    background-color: #fff; /* Белый фон для контента */
+    padding: 30px; /* Внутренние отступы */
+    border-radius: 12px; /* Скругленные углы */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Легкая тень для выделения */
+    text-align: center;
+}
+
+/* Заголовок */
+h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px; /* Отступ снизу */
+}
+
+/* Форма */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Поля формы */
+form input, form textarea, form select {
+    padding: 12px 20px;
+    margin: 10px 0;
+    border: 1px solid #d1d1d1;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+/* Плавное изменение рамки при фокусе на поле формы */
+form input:focus, form textarea:focus, form select:focus {
+    border-color: #007aff;
+    outline: none;
+}
+
+/* Кнопки */
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    background-color: #007aff; /* Синий фон */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 20px;
+}
+
+/* Эффект наведения на кнопки */
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Кнопка "Back to Contact" */
+a button {
+    background-color: #f1f1f1; /* Светлый фон для кнопки назад */
+    color: #000000;
+    border: 1px solid #d1d1d1;
+}
+
+a button:hover {
+    background-color: #e5f1ff;
+    color: #003e8a;
+}
+</style>
 {% endblock %}
+
+
+
