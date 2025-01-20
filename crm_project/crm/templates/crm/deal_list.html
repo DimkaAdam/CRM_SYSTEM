@@ -90,7 +90,7 @@
             <tbody>
                 {% for deal in deals %}
                 <tr class="deal-row" data-id="{{ deal.id }}">
-                    <td>{{ deal.date }}</td>
+                    <td>{{ deal.date|date:'m.d.y' }}</td>
                     <td>{{ deal.supplier.name }}</td>
                     <td>{{ deal.buyer.name }}</td>
                     <td>{{ deal.grade }}</td>
