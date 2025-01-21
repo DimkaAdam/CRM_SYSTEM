@@ -50,7 +50,7 @@
             </div>
         </form>
 
-        <!-- Сайдбар для добавления сделки -->
+        <!-- Сайдбар для добавления новой сделки -->
         <div id="dealFormSidebar" class="sidebar-form">
             <div class="sidebar-header">
                 <h3>Add Deal</h3>
@@ -170,9 +170,13 @@
                     <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
                 </div>
             </form>
-            <div class="action-buttons">
-                <button id="editDealBtn" class="edit-btn">Edit</button>
-                <button id="deleteDealBtn" class="delete-btn">Delete Deal</button>
+            <div class="sidebar-buttons-container">
+                <button id="editDealBtn" class="edit-btn">
+                    <img src="{% static 'crm/images/icons/edit.png' %}" alt="Edit">
+                </button>
+                <button id="deleteDealBtn" class="delete-btn">
+                    <img src="{% static 'crm/images/icons/trash.png' %}" alt="Delete">
+                </button>
             </div>
         </div>
 
@@ -225,6 +229,5 @@
         </div>
     </div>
 
-    <!-- Подключение JavaScript -->
     <script src="{% static 'crm/js/deal_list.js' %}"></script>
 {% endblock %}

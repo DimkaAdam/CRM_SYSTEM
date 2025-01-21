@@ -120,3 +120,81 @@
     pointer-events: none; /* Иконка не будет реагировать на клики */
     object-fit: cover; /* Подгонка иконки */
 }
+
+
+/* Контейнер для кнопок в сайдбаре */
+.sidebar-buttons-container {
+    display: flex; /* Располагаем кнопки по горизонтали */
+    gap: 10px; /* Промежуток между кнопками */
+    justify-content: left; /* Центрируем кнопки по горизонтали */
+    align-items: center; /* Центрируем кнопки по вертикали */
+    margin-top: 20px; /* Отступ сверху для кнопок */
+}
+
+/* Стиль для кнопки редактирования */
+.edit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    overflow: hidden;
+}
+
+.edit-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.1);
+}
+
+.edit-btn:active {
+    background-color: #003f8a;
+    transform: scale(1);
+}
+
+.edit-btn img {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    object-fit: cover;
+}
+
+/* Стиль для кнопки удаления */
+.delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #dc3545; /* Красный цвет */
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    overflow: hidden;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+    transform: scale(1.1);
+}
+
+.delete-btn:active {
+    background-color: #bd2130;
+    transform: scale(1);
+}
+
+.delete-btn img {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    object-fit: cover;
+}
