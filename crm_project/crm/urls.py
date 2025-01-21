@@ -49,6 +49,18 @@ urlpatterns = [
     path('contacts/<int:contact_id>/add-material/', views.add_contact_material, name='add_contact_material'),
     path('contact-material/<int:pk>/edit/', views.edit_contact_material, name='edit_contact_material'),
     path('reports/', views.report_list, name='report_list'),
+
+    # Список сделок
+    path('deals/', views.deal_list, name='deal_list'),
+
+    # API для получения деталей сделки
+    path('deals/<int:deal_id>/', views.get_deal_details, name='get_deal_details'),
+
+    # API для редактирования сделки
+    path('deals/<int:deal_id>/edit/', views.edit_deal, name='edit_deal'),
+
+    # API для удаления сделки
+    path('deals/<int:deal_id>/delete/', views.delete_deal, name='delete_deal'),
 ]
 
 

@@ -3,21 +3,54 @@
 {% load custom_filters %}
 {% block title %}Deals List{% endblock %}
 
-
 {% block content %}
     <div class="content">
         <h1>Deals</h1>
 
+        <!-- Кнопки управления -->
         <div class="buttons-container">
             <button id="addNewDealBtn" class="add-new-deal-btn">
                 <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
             </button>
-
             <a href="{% url 'export_deals_to_excel' %}" class="export-btn">
                 <img src="{% static 'crm/images/icons/excel.png' %}" alt="Export Icon" class="icon">
             </a>
         </div>
 
+        <!-- Фильтры для месяца и года -->
+        <form method="get" action="{% url 'deal_list' %}" class="filter-form">
+            <div class="filter-container">
+                <div class="filter-item">
+                    <select name="month" id="month">
+                        <option value="" {% if not month %}selected{% endif %}>Month</option>
+                        {% for m in months %}
+                            <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                                {{ m|get_month_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <select name="year" id="year">
+                        <option value="" {% if not year %}selected{% endif %}>Year</option>
+                        {% for y in years %}
+                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>
+                                {{ y }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <button type="submit" class="filter-btn">
+                        <img src="{% static 'crm/images/icons/filter.png' %}" alt="Filter Icon" class="icon">
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Сайдбар для добавления сделки -->
         <div id="dealFormSidebar" class="sidebar-form">
             <div class="sidebar-header">
                 <h3>Add Deal</h3>
@@ -39,7 +72,6 @@
                 </select>
 
                 <input type="date" id="date" required>
-
                 <select id="grade" name="grade" required>
                     <option value="" disabled selected>Select a Grade</option>
                     {% for key, value in setting.MATERIALS_LIST.items %}
@@ -59,16 +91,92 @@
             </form>
         </div>
 
+        <!-- Сайдбар для редактирования и просмотра сделки -->
         <div id="viewDealSidebar" class="sidebar-form" style="width: 0;">
             <div class="sidebar-header">
                 <h3>Deal Information</h3>
                 <button id="closeViewDealSidebarBtn" class="close-btn">&times;</button>
             </div>
-            <div id="dealDetailsContent"></div>
-            <button id="editDealBtn" class="edit-btn">Edit</button>
-            <button id="deleteDealBtn" class="delete-btn">Delete Deal</button>
+            <div id="dealDetailsContent">
+                <p><strong>Date:</strong> <span id="dealDate"></span></p>
+                <p><strong>Supplier:</strong> <span id="dealSupplier"></span></p>
+                <p><strong>Buyer:</strong> <span id="dealBuyer"></span></p>
+                <p><strong>Grade:</strong> <span id="dealGrade"></span></p>
+                <p><strong>Total Amount:</strong> <span id="dealTotalAmount"></span></p>
+            </div>
+
+            <!-- Форма редактирования -->
+            <form id="editDealForm" style="display: none;">
+                <div class="form-field">
+                    <label for="editDate">Date</label>
+                    <input type="date" id="editDate" required>
+                </div>
+                <div class="form-field">
+                    <label for="editSupplier">Supplier</label>
+                    <select id="editSupplier" required>
+                        <option value="" disabled>Select a Supplier</option>
+                        {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="editBuyer">Buyer</label>
+                    <select id="editBuyer" required>
+                        <option value="" disabled>Select a Buyer</option>
+                        {% for buyer in buyers %}
+                            <option value="{{ buyer.id }}">{{ buyer.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="editGrade">Grade</label>
+                    <input type="text" id="editGrade" required>
+                </div>
+                <div class="form-field">
+                    <label for="editShippedQuantity">Shipped Quantity</label>
+                    <input type="number" id="editShippedQuantity" step="any" required>
+                </div>
+                <div class="form-field">
+                    <label for="editShippedPallets">Shipped Pallets</label>
+                    <input type="number" id="editShippedPallets" required>
+                </div>
+                <div class="form-field">
+                    <label for="editReceivedQuantity">Received Quantity</label>
+                    <input type="number" id="editReceivedQuantity" step="any" required>
+                </div>
+                <div class="form-field">
+                    <label for="editReceivedPallets">Received Pallets</label>
+                    <input type="number" id="editReceivedPallets" required>
+                </div>
+                <div class="form-field">
+                    <label for="editSupplierPrice">Supplier Price</label>
+                    <input type="number" id="editSupplierPrice" step="0.01" required>
+                </div>
+                <div class="form-field">
+                    <label for="editBuyerPrice">Buyer Price</label>
+                    <input type="number" id="editBuyerPrice" step="0.01" required>
+                </div>
+                <div class="form-field">
+                    <label for="editTransportCost">Transport Cost</label>
+                    <input type="number" id="editTransportCost" step="0.01" required>
+                </div>
+                <div class="form-field">
+                    <label for="editTransportCompany">Transport Company</label>
+                    <input type="text" id="editTransportCompany" required>
+                </div>
+                <div class="action-buttons">
+                    <button type="submit" class="save-btn">Save</button>
+                    <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
+                </div>
+            </form>
+            <div class="action-buttons">
+                <button id="editDealBtn" class="edit-btn">Edit</button>
+                <button id="deleteDealBtn" class="delete-btn">Delete Deal</button>
+            </div>
         </div>
 
+        <!-- Таблица сделок -->
         <table id="dealTable" class="deal-table">
             <thead>
                 <tr>
@@ -105,49 +213,18 @@
                     <td>{{ deal.total_income_loss }}</td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="12">No deals available.</td></tr>
+                <tr><td colspan="13">No deals available.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
 
+        <!-- Итоги -->
         <div style="margin-top: 20px;">
             <p><strong>Amount:</strong> {{ totals.total_amount|default:"0.00"|floatformat:2 }}</p>
             <p><strong>Income:</strong> {{ totals.total_income_loss|default:"0.00"|floatformat:2 }}</p>
         </div>
-
-        <form method="get" action="{% url 'deal_list' %}" class="filter-form">
-            <div class="filter-container">
-                <div class="filter-item">
-                    <select name="month" id="month">
-                        <option value="" {% if not month %}selected{% endif %}>Month</option>
-                        {% for m in months %}
-                            <option value="{{ m }}" {% if m == month %}selected{% endif %}>
-                                {{ m|get_month_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="filter-item">
-                    <select name="year" id="year">
-                        <option value="" {% if not year %}selected{% endif %}>Year</option>
-                        {% for y in years %}
-                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>
-                                {{ y }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="filter-item">
-                    <button type="submit" class="filter-btn">
-                        <img src="{% static 'crm/images/icons/filter.png' %}" alt="Filter Icon" class="icon">
-                    </button>
-                </div>
-            </div>
-        </form>
-
-    <script src="{% static 'crm/js/deal_list.js' %}"></script>
-
     </div>
+
+    <!-- Подключение JavaScript -->
+    <script src="{% static 'crm/js/deal_list.js' %}"></script>
 {% endblock %}

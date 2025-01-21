@@ -1,4 +1,3 @@
-
 // Открыть боковую панель для создания новой сделки
 document.getElementById('addNewDealBtn').addEventListener('click', function () {
     document.getElementById('dealFormSidebar').style.width = '400px';
@@ -85,67 +84,135 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
     .catch(error => console.error('Error:', error));
 });
 
-// Открыть боковую панель для просмотра сделки
+// Открыть сайдбар с деталями сделки
 document.querySelectorAll('.deal-row').forEach(row => {
-    row.addEventListener('click', function () {
-        const dealId = this.getAttribute('data-id');
-        const sidebar = document.getElementById('viewDealSidebar');
-        const content = document.getElementById('dealDetailsContent');
-        const deleteButton = document.getElementById('deleteDealBtn');
-
-        fetch(`http://127.0.0.1:8000/api/deals/${dealId}/`)
+    row.addEventListener('click', () => {
+        const dealId = row.dataset.id; // Получаем ID сделки из атрибута data-id
+        fetch(`/deals/${dealId}/`) // Запрашиваем детали сделки
             .then(response => response.json())
             .then(data => {
-                content.innerHTML = `
-                    <div class="deal-details-container">
-                        <p><strong>Date:</strong> ${data.date}</p>
-                        <p><strong>Supplier:</strong> ${data.supplier}</p>
-                        <p><strong>Buyer:</strong> ${data.buyer}</p>
-                        <p><strong>Grade:</strong> ${data.grade}</p>
-                        <p><strong>Shipped Quantity:</strong> ${data.shipped_quantity}</p>
-                        <p><strong>Received Quantity:</strong> ${data.received_quantity}</p>
-                        <p><strong>Supplier Price:</strong> ${data.supplier_price}</p>
-                        <p><strong>Buyer Price:</strong> ${data.buyer_price}</p>
-                        <p><strong>Total Amount:</strong> ${data.total_amount}</p>
-                        <p><strong>Transport Cost:</strong> ${data.transport_cost}</p>
-                        <p><strong>Transport Company:</strong> ${data.transport_company}</p>
-                    </div>
-                `;
-                deleteButton.style.display = 'inline-block';
+                // Заполняем данные в сайдбар
+                document.getElementById('dealDate').innerText = data.date;
+                document.getElementById('dealSupplier').innerText = data.supplier;
+                document.getElementById('dealBuyer').innerText = data.buyer;
+                document.getElementById('dealGrade').innerText = data.grade;
+                document.getElementById('dealTotalAmount').innerText = data.total_amount;
 
-                deleteButton.onclick = function () {
-                    if (confirm('Are you sure you want to delete this deal?')) {
-                        fetch(`http://127.0.0.1:8000/api/deals/${dealId}/`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token }}',
-                            },
-                        })
-                        .then(response => {
-                            if (response.ok) {
-                                document.querySelector(`.deal-row[data-id="${dealId}"]`).remove();
-                                sidebar.style.width = '0';
-                                alert('Deal deleted successfully');
-                            } else {
-                                alert('Failed to delete deal. Please try again.');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('An error occurred while deleting the deal.');
-                        });
-                    }
-                };
-                sidebar.style.width = '400px';
+                // Сохраняем текущий ID сделки для последующих операций
+                document.getElementById('viewDealSidebar').dataset.dealId = dealId;
+
+                // Открываем сайдбар с деталями сделки
+                const sidebar = document.getElementById('viewDealSidebar');
+                sidebar.style.width = '400px'; // Показываем сайдбар
             })
-            .catch(error => {
-                console.error('Error fetching deal data:', error);
-                content.innerHTML = '<p>Error loading deal details.</p>';
-            });
+            .catch(error => console.error('Error fetching deal details:', error));
     });
 });
 
-// Закрыть боковую панель для просмотра сделки
-document.getElementById('closeViewDealSidebarBtn').addEventListener('click', function () {
-    document.getElementById('viewDealSidebar').style.width = '0';
+// Закрыть сайдбар
+document.getElementById('closeViewDealSidebarBtn').addEventListener('click', () => {
+    const sidebar = document.getElementById('viewDealSidebar');
+    sidebar.style.width = '0'; // Закрыть сайдбар
+});
+
+// Включить режим редактирования
+document.getElementById('editDealBtn').addEventListener('click', () => {
+    // Скрываем детали сделки, показываем форму редактирования
+    document.getElementById('dealDetailsContent').style.display = 'none';
+    document.getElementById('editDealForm').style.display = 'block';
+
+    // Заполняем форму текущими значениями
+    const dealId = document.getElementById('viewDealSidebar').dataset.dealId; // Получаем ID сделки из data-атрибута
+
+    // Делаем fetch запрос, чтобы получить данные для редактирования
+    fetch(`/deals/${dealId}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Заполняем поля формы редактирования данными текущей сделки
+            document.getElementById('editDate').value = data.date; // Дата
+            document.getElementById('editSupplier').value = data.supplier.id; // Поставщик
+            document.getElementById('editBuyer').value = data.buyer.id; // Покупатель
+            document.getElementById('editGrade').value = data.grade; // Группа
+            document.getElementById('editShippedQuantity').value = data.shipped_quantity; // Отправленное количество
+            document.getElementById('editShippedPallets').value = data.shipped_pallets; // Отправленные паллеты
+            document.getElementById('editReceivedQuantity').value = data.received_quantity; // Принятое количество
+            document.getElementById('editReceivedPallets').value = data.received_pallets; // Принятые паллеты
+            document.getElementById('editSupplierPrice').value = data.supplier_price; // Цена поставщика
+            document.getElementById('editBuyerPrice').value = data.buyer_price; // Цена покупателя
+            document.getElementById('editTransportCost').value = data.transport_cost; // Стоимость доставки
+            document.getElementById('editTransportCompany').value = data.transport_company; // Транспортная компания
+        })
+        .catch(error => console.error('Error fetching data for editing:', error));
+});
+
+// Отключить режим редактирования
+document.getElementById('cancelEditBtn').addEventListener('click', () => {
+    // Показываем детали сделки, скрываем форму редактирования
+    document.getElementById('dealDetailsContent').style.display = 'block';
+    document.getElementById('editDealForm').style.display = 'none';
+});
+
+// Сохранение изменений
+document.getElementById('editDealForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const dealId = document.getElementById('viewDealSidebar').dataset.dealId; // Получаем ID текущей сделки
+    const data = {
+        date: document.getElementById('editDate').value,
+        supplier: document.getElementById('editSupplier').value,
+        buyer: document.getElementById('editBuyer').value,
+        grade: document.getElementById('editGrade').value,
+        shipped_quantity: document.getElementById('editShippedQuantity').value,
+        shipped_pallets: document.getElementById('editShippedPallets').value,
+        received_quantity: document.getElementById('editReceivedQuantity').value,
+        received_pallets: document.getElementById('editReceivedPallets').value,
+        supplier_price: document.getElementById('editSupplierPrice').value,
+        buyer_price: document.getElementById('editBuyerPrice').value,
+        transport_cost: document.getElementById('editTransportCost').value,
+        transport_company: document.getElementById('editTransportCompany').value,
+    };
+
+    fetch(`/deals/${dealId}/edit/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+        .then(response => response.json())
+        .then(data => {
+            alert('Changes saved successfully!');
+            // Закрываем форму редактирования и обновляем данные в сайдбаре
+            document.getElementById('dealDate').innerText = data.date;
+            document.getElementById('dealSupplier').innerText = data.supplier;
+            document.getElementById('dealBuyer').innerText = data.buyer;
+            document.getElementById('dealGrade').innerText = data.grade;
+            document.getElementById('dealTotalAmount').innerText = data.total_amount;
+
+            document.getElementById('dealDetailsContent').style.display = 'block';
+            document.getElementById('editDealForm').style.display = 'none';
+        })
+        .catch(error => console.error('Error saving changes:', error));
+});
+
+// Удаление сделки
+document.getElementById('deleteDealBtn').addEventListener('click', () => {
+    const dealId = document.getElementById('viewDealSidebar').dataset.dealId; // Получаем ID текущей сделки
+    if (confirm('Are you sure you want to delete this deal?')) {
+        fetch(`/deals/${dealId}/delete/`, {
+            method: 'DELETE',
+        })
+            .then(response => {
+                if (response.ok) {
+                    alert('Deal deleted successfully!');
+                    // Закрываем сайдбар
+                    const sidebar = document.getElementById('viewDealSidebar');
+                    sidebar.style.width = '0';
+                    // Удаляем строку из таблицы
+                    document.querySelector(`.deal-row[data-id="${dealId}"]`).remove();
+                } else {
+                    alert('Failed to delete deal.');
+                }
+            })
+            .catch(error => console.error('Error deleting deal:', error));
+    }
 });

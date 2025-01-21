@@ -8,13 +8,17 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets
 from .serializers import ClientSerializer
 from .serializers import DealSerializer
-from .forms import ContactForm, CompanyForm, ContactMaterialForm
+from .forms import ContactForm, CompanyForm, ContactMaterialForm, DealForm
 from django.http import HttpResponse
 from openpyxl import Workbook
 from datetime import datetime
 from django.db.models.functions import ExtractYear
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+import json
+from decimal import Decimal
+
 
 
 def index(request):
@@ -286,6 +290,8 @@ def deal_list(request):
         '12': _('December'),
     }
 
+    form = DealForm()
+
     # Контекст для шаблона
     context = {
         'deals': deals,
@@ -298,6 +304,7 @@ def deal_list(request):
         'month_names': month_names,
         'months': months,  # Месяцы для выпадающего списка
         'setting': settings,
+        'form': form,
     }
 
     # Рендерим страницу с переданным контекстом
@@ -338,8 +345,87 @@ def export_deals_to_excel(request):
     wb.save(response)
     return response
 
+def get_deal_details(request, deal_id):
+    deal = get_object_or_404(Deals, id=deal_id)
+    return JsonResponse({
+        'id': deal.id,
+        'date': deal.date.strftime('%Y-%m-%d'),
+        'supplier': deal.supplier.name,
+        'buyer': deal.buyer.name,
+        'grade': deal.grade,
+        'shipped_quantity': deal.shipped_quantity,
+        'received_quantity': deal.received_quantity,
+        'supplier_price': deal.supplier_price,
+        'buyer_price': deal.buyer_price,
+        'total_amount': deal.total_amount,
+        'transport_cost': deal.transport_cost,
+        'transport_company': deal.transport_company,
+    })
 
 
+@csrf_exempt
+def edit_deal(request, deal_id):
+    deal = get_object_or_404(Deals, id=deal_id)
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+
+        # Получаем объект Company для supplier и buyer по их ID
+        supplier_id = data.get('supplier')
+        buyer_id = data.get('buyer')
+
+        # Убедитесь, что ID являются валидными
+        if supplier_id:
+            deal.supplier = get_object_or_404(Company, id=supplier_id)
+        if buyer_id:
+            deal.buyer = get_object_or_404(Company, id=buyer_id)
+
+        # Преобразуем данные в числовые значения
+        deal.received_quantity = Decimal(data.get('received_quantity', deal.received_quantity))
+        deal.buyer_price = Decimal(data.get('buyer_price', deal.buyer_price))
+        deal.supplier_price = Decimal(data.get('supplier_price', deal.supplier_price))
+
+        # Обновляем остальные поля
+        deal.date = data.get('date', deal.date)
+        deal.grade = data.get('grade', deal.grade)
+        deal.shipped_quantity = data.get('shipped_quantity', deal.shipped_quantity)
+        deal.shipped_pallets = data.get('shipped_pallets', deal.shipped_pallets)
+        deal.received_pallets = data.get('received_pallets', deal.received_pallets)
+        deal.transport_cost = Decimal(data.get('transport_cost', deal.transport_cost))
+        deal.transport_company = data.get('transport_company', deal.transport_company)
+
+        # Выполняем расчеты для итоговых сумм
+        deal.total_amount = deal.received_quantity * deal.buyer_price
+        deal.supplier_total = deal.received_quantity * deal.supplier_price
+        deal.total_income_loss = deal.total_amount - (deal.supplier_total + deal.transport_cost)
+
+        # Сохраняем обновленную сделку
+        deal.save()
+
+        # Возвращаем успешный ответ с данными обновленной сделки
+        return JsonResponse({
+            'status': 'success',
+            'deal': {
+                'id': deal.id,
+                'date': deal.date,
+                'supplier': deal.supplier.name,
+                'buyer': deal.buyer.name if deal.buyer else '',
+                'grade': deal.grade,
+                'total_amount': str(deal.total_amount),
+                'total_income_loss': str(deal.total_income_loss),
+            }
+        })
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+def delete_deal(request, deal_id):
+    if request.method == 'DELETE':
+        deal = get_object_or_404(Deals, id=deal_id)
+        deal.delete()
+        return JsonResponse({'message': 'Deal deleted successfully!'})
+    return HttpResponse(status=405)  # Method not allowed
 # TACKS
 def task_list(request):
     tasks = Task.objects.all()
