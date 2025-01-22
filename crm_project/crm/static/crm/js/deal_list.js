@@ -216,3 +216,4 @@ document.getElementById('deleteDealBtn').addEventListener('click', () => {
             .catch(error => console.error('Error deleting deal:', error));
     }
 });
+

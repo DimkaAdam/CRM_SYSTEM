@@ -317,7 +317,7 @@ def export_deals_to_excel(request):
     ws.title = "Deals"
 
     # Заголовки столбцов
-    ws.append(['Date', 'Supplier', 'Buyer', 'Grade', 'Shipped Qty/Pallets', 'Received Qty/Pallets', 'Supplier Price', 'Total Amount', 'Transport Cost', 'Income/Loss'])
+    ws.append(['Date', 'Supplier', 'Buyer', 'Grade', 'Shipped Qty/Pallets', 'Received Qty/Pallets', 'Supplier Price','Buyer Price','Total Amount', 'Transport Cost', 'Income/Loss'])
 
     # Получаем все сделки
     deals = Deals.objects.select_related('supplier', 'buyer')
@@ -334,6 +334,7 @@ def export_deals_to_excel(request):
             f'{deal.shipped_quantity} / {deal.shipped_pallets}',
             f'{deal.received_quantity} / {deal.received_pallets}',
             deal.supplier_price,
+            deal.buyer_price,
             deal.total_amount,
             deal.transport_cost,
             deal.total_income_loss
