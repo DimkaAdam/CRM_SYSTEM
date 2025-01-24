@@ -199,20 +199,26 @@
                             <tr>
                                 <th>Company Name</th>
                                 <th>Current Pallets</th>
+                                <th>Edit Pallets</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for pallet in company_pallets %}
-                            <tr>
-                                <td>{{ pallet.company_name.name }}</td>
-                                <td>{{ pallet.pallets_count }}</td>
-                            </tr>
+                                <tr>
+                                    <td>{{ pallet.company_name.name }}</td>
+                                    <td>{{ pallet.pallets_count }}</td>
+                                    <!-- Редактируемое поле для количества паллет -->
+                                    <td>
+                                        <input type="number" name="pallets_{{ pallet.id }}" value="{{ pallet.pallets_count }}" min="0">
+                                    </td>
+                                </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                    <button type="submit" name="reset_pallets" class="reset-btn">Reset All Pallets</button>
+                    <button type="submit" name="update_pallets" class="reset-btn">Update Pallets</button>
                 </form>
             </div>
+
 
             <script>
                 // Данные для графика

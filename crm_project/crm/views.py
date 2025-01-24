@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from decimal import Decimal
 from openpyxl.styles import Font, PatternFill, Alignment
-
+from django.http import HttpResponseRedirect
 
 
 
@@ -601,9 +601,17 @@ def sales_analytics(request):
     # Данные о палетах
     company_pallets = CompanyPallets.objects.select_related('company_name')
 
-    # Сброс палет (если пользователь отправил форму)
-    if request.method == 'POST' and 'reset_pallets' in request.POST:
-        CompanyPallets.objects.update(pallets_count=0)
+    # Обработка формы обновления паллет
+    if request.method == 'POST' and 'update_pallets' in request.POST:
+        for pallet in company_pallets:
+            new_pallet_count = request.POST.get(f"pallets_{pallet.id}")
+            if new_pallet_count is not None:
+                # Обновляем количество паллет
+                pallet.pallets_count = int(new_pallet_count)
+                pallet.save()
+
+        # Перенаправляем после успешного обновления
+        return HttpResponseRedirect(request.path)
 
     # Получаем доступные года и месяцы
     years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()
