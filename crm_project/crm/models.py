@@ -104,13 +104,16 @@ class Deals(models.Model):
 
         super().save(*args, **kwargs)
 
+        # Преобразуем self.shipped_pallets в число
+        shipped_pallets_count = float(self.shipped_pallets) if self.shipped_pallets else 0
+
         # Обновляем или создаем запись о паллетах для компании-поставщика
         if self.supplier:
             supplier_pallets, created = CompanyPallets.objects.get_or_create(
                 company_name=self.supplier,
                 defaults={'pallets_count': 0}  # Если записи нет, создаем с нулевым значением
             )
-            supplier_pallets.pallets_count -= self.shipped_pallets
+            supplier_pallets.pallets_count -= shipped_pallets_count
             supplier_pallets.save()
 
         # Обновляем или создаем запись о паллетах для компании-покупателя

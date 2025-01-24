@@ -61,6 +61,8 @@ urlpatterns = [
 
     # API для удаления сделки
     path('deals/<int:deal_id>/delete/', views.delete_deal, name='delete_deal'),
+
+
 ]
 
 
