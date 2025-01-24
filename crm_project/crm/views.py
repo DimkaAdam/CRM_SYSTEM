@@ -312,10 +312,9 @@ def deal_list(request):
     # Рендерим страницу с переданным контекстом
     return render(request, 'crm/deal_list.html', context)
 
-from datetime import datetime
-
 def export_deals_to_excel(request):
     from openpyxl.utils import get_column_letter
+    from openpyxl.styles import Border, Side
 
     # Получаем текущий месяц и год
     current_date = datetime.now()
@@ -331,6 +330,7 @@ def export_deals_to_excel(request):
     header_font = Font(name="Arial", bold=True, color="FFFFFF")  # Белый жирный текст
     header_fill = PatternFill(start_color="87CEEB", end_color="87CEEB", fill_type="solid")  # Светло-синий фон
     header_alignment = Alignment(horizontal="center", vertical="center")  # Центрирование текста
+    thin_border = Border(left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"), bottom=Side(style="thin"))
 
     # Заголовки столбцов
     headers = [
@@ -342,10 +342,11 @@ def export_deals_to_excel(request):
 
     # Применяем стили к заголовкам
     for col_num, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_num)  # Получаем ячейку
-        cell.font = header_font  # Применяем стиль шрифта
-        cell.fill = header_fill  # Применяем цвет фона
-        cell.alignment = header_alignment  # Применяем выравнивание
+        cell = ws.cell(row=1, column=col_num)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
 
     # Получаем сделки только за текущий месяц
     deals = Deals.objects.select_related('supplier', 'buyer').filter(
@@ -353,9 +354,14 @@ def export_deals_to_excel(request):
         date__month=current_month
     )
 
+    # Применяем стили к данным
+    data_fill_light = PatternFill(start_color="F8F8F8", end_color="F8F8F8", fill_type="solid")  # Светлый фон для четных строк
+    data_fill_dark = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")  # Темный фон для нечетных строк
+    data_font = Font(name="Arial", size=11)  # Стандартный шрифт для данных
+
     for row_num, deal in enumerate(deals, start=2):
         formatted_date = deal.date.strftime('%Y-%m') if deal.date else ''
-        ws.append([
+        row = [
             formatted_date,
             deal.supplier.name if deal.supplier else '',
             deal.buyer.name if deal.buyer else '',
@@ -371,42 +377,49 @@ def export_deals_to_excel(request):
             deal.transport_cost,
             deal.transport_company,
             deal.total_income_loss
-        ])
+        ]
+
+        ws.append(row)
+
+        # Применяем стили к строке данных
+        for col_num, value in enumerate(row, 1):
+            cell = ws.cell(row=row_num, column=col_num)
+            cell.font = data_font
+            cell.border = thin_border
+            cell.fill = data_fill_light if row_num % 2 == 0 else data_fill_dark
 
     # Начало сводной секции справа от основной таблицы
     summary_col_start = len(headers) + 2  # Первая колонка справа от таблицы
     summary_data = [
-        ("TOTAL SALE", "=SUM(L2:L30)".format(len(deals) + 1)),  # Общая продажа (Total Amount)
-        ("# of pallets", "=SUM(F2:F30)".format(len(deals) + 1)),  # Общее количество паллет
-        ("Transportation cost", "=SUM(M2:M30)".format(len(deals) + 1)),  # Транспортные расходы
-        ("Suppliers", "=SUM(J2:J30)".format(len(deals) + 1)),  # Итоги для поставщиков
+        ("TOTAL SALE", "=SUM(L2:L{})".format(len(deals) + 1)),  # Общая продажа (Total Amount)
+        ("# of pallets", "=SUM(F2:F{})".format(len(deals) + 1)),  # Общее количество паллет
+        ("Transportation cost", "=SUM(M2:M{})".format(len(deals) + 1)),  # Транспортные расходы
+        ("Suppliers", "=SUM(J2:J{})".format(len(deals) + 1)),  # Итоги для поставщиков
         ("MT OCC11",
-         "=SUMPRODUCT((D2:D30=\"OCC11\")+(D2:D30=\"OCC 11\")+(D2:D30=\"OCC 11 Bale String\")+(D2:D30=\"Loose OCC\"), E2:E30)".format(
-             len(deals) + 1, len(deals) + 1, len(deals) + 1, len(deals) + 1, len(deals) + 1, len(deals) + 1
+         "=SUMPRODUCT((D2:D{}=\"OCC11\")+(D2:D{}=\"OCC 11\")+(D2:D{}=\"OCC 11 Bale String\")+(D2:D{}=\"Loose OCC\"), E2:E{})".format(
+             len(deals) + 1, len(deals) + 1, len(deals) + 1, len(deals) + 1, len(deals) + 1
          )),  # MT OCC11
-        ("MT Plastic", "=SUMIF(D2:D30, \"Flexible Plastic\", E2:E30)".format(len(deals) + 1, len(deals) + 1)),  # MT Plastic
-        ("MT Mixed-containers", "=SUMIF(D2:D30, \"Mixed Container\", E2:E30)".format(len(deals) + 1, len(deals) + 1)),  # MT Mixed-containers
-        ("INCOME", "=SUM(O2:O30)".format(len(deals) + 1))  # Общая прибыль/убыток
+        ("MT Plastic", "=SUMIF(D2:D{}, \"Flexible Plastic\", E2:E{})".format(len(deals) + 1, len(deals) + 1)),  # MT Plastic
+        ("MT Mixed-containers", "=SUMIF(D2:D{}, \"Mixed Container\", E2:E{})".format(len(deals) + 1, len(deals) + 1)),  # MT Mixed-containers
+        ("INCOME", "=SUM(O2:O{})".format(len(deals) + 1))  # Общая прибыль/убыток
     ]
 
     # Заполняем сводные данные
     for row_num, (label, value) in enumerate(summary_data, start=2):
-        label_cell = ws.cell(row=row_num, column=summary_col_start)  # Ячейка для заголовка
+        label_cell = ws.cell(row=row_num, column=summary_col_start)
         label_cell.value = label
-        label_cell.font = Font(bold=True)  # Жирный текст
-        label_cell.alignment = Alignment(horizontal="right")  # Выравнивание по правому краю
+        label_cell.font = Font(bold=True, name="Arial", size=12)
+        label_cell.alignment = Alignment(horizontal="right")
 
-        value_cell = ws.cell(row=row_num, column=summary_col_start + 1)  # Ячейка для значения
-        value_cell.value = value  # Значение или формула
-        if value.startswith("="):  # Если это формула
-            value_cell.number_format = '#,##0.00'  # Формат чисел с запятыми
-        else:
-            value_cell.font = Font(color="007BFF", italic=True)  # Стилизация текста
+        value_cell = ws.cell(row=row_num, column=summary_col_start + 1)
+        value_cell.value = value
+        value_cell.border = thin_border
+        value_cell.font = Font(name="Arial", size=11)
 
     # Автоматическая подгонка ширины столбцов
     for col in ws.columns:
         max_length = 0
-        column = get_column_letter(col[0].column)  # Получаем букву столбца
+        column = get_column_letter(col[0].column)
         for cell in col:
             try:
                 if cell.value:
@@ -421,6 +434,7 @@ def export_deals_to_excel(request):
     response['Content-Disposition'] = f'attachment; filename=deals_{current_year}_{current_month}.xlsx'
     wb.save(response)
     return response
+
 
 
 
