@@ -104,19 +104,23 @@ class Deals(models.Model):
 
         super().save(*args, **kwargs)
 
-        # Обновляем палеты у компании-поставщика
+        # Обновляем или создаем запись о паллетах для компании-поставщика
         if self.supplier:
-            supplier_pallets = CompanyPallets.objects.filter(company_name__name=self.supplier)
-            if supplier_pallets.exists():
-                supplier_pallets.update(pallets_count=F('pallets_count') - self.shipped_pallets)
+            supplier_pallets, created = CompanyPallets.objects.get_or_create(
+                company_name=self.supplier,
+                defaults={'pallets_count': 0}  # Если записи нет, создаем с нулевым значением
+            )
+            supplier_pallets.pallets_count -= self.shipped_pallets
+            supplier_pallets.save()
 
-        # Обновляем палеты у компании-покупателя
+        # Обновляем или создаем запись о паллетах для компании-покупателя
         if self.buyer:
-            buyer_pallets = CompanyPallets.objects.filter(company_name__name=self.buyer)
-            if buyer_pallets.exists():
-                buyer_pallets.update(pallets_count=F('pallets_count') + self.received_pallets)
-
-
+            buyer_pallets, created = CompanyPallets.objects.get_or_create(
+                company_name=self.buyer,
+                defaults={'pallets_count': 0}  # Если записи нет, создаем с нулевым значением
+            )
+            buyer_pallets.pallets_count += self.received_pallets
+            buyer_pallets.save()
 
     def __str__(self):
         return f"Deal: {self.date} - {self.supplier} to {self.buyer}"
