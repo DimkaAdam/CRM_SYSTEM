@@ -187,38 +187,40 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- График палет -->
-            <div class="block">
-                <h2>Pallet Analytics</h2>
-                <form method="POST">
-                    {% csrf_token %}
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Company Name</th>
-                                <th>Current Pallets</th>
-                                <th>Edit Pallets</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for pallet in company_pallets %}
-                                <tr>
-                                    <td>{{ pallet.company_name.name }}</td>
-                                    <td>{{ pallet.pallets_count }}</td>
-                                    <!-- Редактируемое поле для количества паллет -->
-                                    <td>
-                                        <input type="number" name="pallets_{{ pallet.id }}" value="{{ pallet.pallets_count }}" min="0">
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <button type="submit" name="update_pallets" class="reset-btn">Update Pallets</button>
-                </form>
-            </div>
 
+                    <!-- График палет -->
+                    <div class="block">
+                        <h2>Pallet Analytics</h2>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Company Name</th>
+                                        <th>Current Pallets</th>
+                                        <th>Edit Pallets</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pallet in company_pallets %}
+                                        <tr>
+                                            <td>{{ pallet.company_name.name }}</td>
+                                            <td>{{ pallet.pallets_count }}</td>
+                                            <!-- Редактируемое поле для количества паллет -->
+                                            <td>
+                                                <input type="number" name="pallets_{{ pallet.id }}" value="{{ pallet.pallets_count }}" min="0">
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <button type="submit" name="update_pallets" class="upt-btn">
+                                <img src="{% static 'crm/images/icons/update.png' %}" alt="Update">
+                            </button>
+                        </form>
+                    </div>
+                </div>
 
             <script>
                 // Данные для графика
@@ -259,4 +261,5 @@
                 });
             </script>
         </div>
+<link rel="stylesheet" href="{% static 'crm/sales_analytics.css' %}">
 {% endblock %}
