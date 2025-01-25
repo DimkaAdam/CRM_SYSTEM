@@ -20,7 +20,7 @@ import json
 from decimal import Decimal
 from openpyxl.styles import Font, PatternFill, Alignment
 from django.http import HttpResponseRedirect
-
+from django.db.models import Q
 
 
 def index(request):
@@ -588,12 +588,14 @@ def sales_analytics(request):
         for contact in Contact.objects.filter(company__id=entry['supplier'])
     }
 
+    occ11_filter = Q(grade="OCC11") | Q(grade="OCC 11") | Q(grade="Loose OCC") | Q(grade="OCC 11 Bale String")
+
     total_deals = deals_filter.count()
     total_sale = deals_filter.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     total_pallets = deals_filter.aggregate(Sum('shipped_pallets'))['shipped_pallets__sum'] or 0
     transportation_fee = deals_filter.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
     suppliers_total = deals_filter.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
-    mt_occ11 = deals_filter.filter(grade="OCC11").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
+    mt_occ11 = deals_filter.filter(occ11_filter).aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
     mt_plastic = deals_filter.filter(grade="Flexible Plastic").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
     mt_mixed_containers = deals_filter.filter(grade="Mixed Container").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
     income = deals_filter.aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
