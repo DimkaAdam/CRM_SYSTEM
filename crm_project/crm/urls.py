@@ -48,7 +48,7 @@ urlpatterns = [
 
     path('contacts/<int:contact_id>/add-material/', views.add_contact_material, name='add_contact_material'),
     path('contact-material/<int:pk>/edit/', views.edit_contact_material, name='edit_contact_material'),
-    path('reports/', views.report_list, name='report_list'),
+
 
     # Список сделок
     path('deals/', views.deal_list, name='deal_list'),
@@ -62,6 +62,8 @@ urlpatterns = [
     # API для удаления сделки
     path('deals/<int:deal_id>/delete/', views.delete_deal, name='delete_deal'),
 
+    path('reports/', views.report_list, name='report_list'),
+    path('reports/company/', views.company_report, name='company_report'),
 
 ]
 

@@ -6,16 +6,16 @@
     <div class="content">
         {% load static %}
 
-      <!-- upper panel -->
-      <header class="header">
-          <div class="logo">
-              <a href="{% url 'sales_analytics' %}">
-                  <img src="{% static 'crm/images/logo.png' %}" alt="Logo" class="logo-img">
-              </a>
-          </div>
-          <nav class="nav">
-              <a href="{% url 'report_list' %}">Reports</a>
-          </nav>
-      </header>
-    </div>
+
+        <!-- Новая плитка для Company Report -->
+        <a href="{% url 'company_report' %}" class="report-tile">
+            <div class="tile">
+                <img src="{% static 'crm/images/icons/company_report.png' %}" alt="Company Report" class="tile-icon">
+                <p>Company Report</p>
+            </div>
+        </a>
+    </nav>
+</header>
+
+</div>
 {% endblock %}

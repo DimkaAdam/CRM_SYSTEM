@@ -682,3 +682,45 @@ def edit_contact_material(request, pk):
 
 def report_list(request):
     return render(request, 'crm/report_list.html')
+
+def company_report(request):
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
+
+    # Получение фильтров из запроса
+    selected_company_id = request.GET.get('company', '')
+    month = request.GET.get('month', str(current_month).zfill(2))
+    year = request.GET.get('year', str(current_year))
+
+    # Фильтрация сделок
+    deals = Deals.objects.all()
+    if selected_company_id:
+        deals = deals.filter(supplier__id=selected_company_id)  # Фильтр по компании
+    if month and year:
+        deals = deals.filter(date__month=int(month), date__year=int(year))  # Фильтр по месяцу и году
+    elif month:
+        deals = deals.filter(date__month=int(month))  # Только месяц
+    elif year:
+        deals = deals.filter(date__year=int(year))  # Только год
+
+    # Итоги
+    total_transport_cost = deals.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
+    total_supplier_paid = deals.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
+    total_amount_buyer = deals.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+
+    # Список компаний для выбора в фильтре
+    companies = Company.objects.all()
+
+    # Контекст для шаблона
+    context = {
+        'deals': deals,
+        'total_transport_cost': total_transport_cost,
+        'total_supplier_paid': total_supplier_paid,
+        'total_amount_buyer': total_amount_buyer,
+        'companies': companies,
+        'selected_company_id': int(selected_company_id) if selected_company_id else None,
+        'month': int(month) if month else None,
+        'year': int(year) if year else None,
+    }
+    return render(request, 'crm/company_report.html', context)

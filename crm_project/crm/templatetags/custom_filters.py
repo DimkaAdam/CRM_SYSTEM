@@ -10,3 +10,14 @@ def get_month_name(value):
         return calendar.month_name[int(value)]
     except (ValueError, IndexError):
         return value
+
+
+@register.filter
+def range_filter(start, end):
+    try:
+        start = int(start)
+        end = int(end)
+        return range(start, end)
+    except (ValueError, TypeError):
+        return []
+
