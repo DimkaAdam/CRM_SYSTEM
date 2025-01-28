@@ -683,21 +683,30 @@ def edit_contact_material(request, pk):
 def report_list(request):
     return render(request, 'crm/report_list.html')
 
+
 def company_report(request):
     # Получаем текущий месяц и год
     now = datetime.now()
     current_month = now.month
     current_year = now.year
 
-    # Получение фильтров из запроса
+    # Получаем параметры фильтра из запроса
     selected_company_id = request.GET.get('company', '')
     month = request.GET.get('month', str(current_month).zfill(2))  # Текущий месяц по умолчанию
     year = request.GET.get('year', str(current_year))  # Текущий год по умолчанию
 
+    transport_companies = Company.objects.filter(contacts__company_type='hauler')
+
     # Фильтрация сделок
     deals = Deals.objects.all()
+
     if selected_company_id:
-        deals = deals.filter(supplier__id=int(selected_company_id))
+        # Фильтруем по поставщикам и покупателям
+        deals = deals.filter(Q(supplier__id=int(selected_company_id)) |
+                             Q(buyer__id=int(selected_company_id)) |
+                             Q(transport_company__in=transport_companies)
+        )
+
     if month and year:
         deals = deals.filter(date__month=int(month), date__year=int(year))
     elif month:  # Если указан только месяц
@@ -709,6 +718,8 @@ def company_report(request):
     total_transport_cost = deals.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
     total_supplier_paid = deals.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
     total_amount_buyer = deals.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_buyer_paid = deals.aggregate(Sum('total_income_loss'))[
+                           'total_income_loss__sum'] or 0  # Итог для покупателя (например, прибыль или убыток)
 
     # Список компаний для выбора в фильтре
     companies = Company.objects.all()
@@ -725,6 +736,7 @@ def company_report(request):
         'total_transport_cost': total_transport_cost,
         'total_supplier_paid': total_supplier_paid,
         'total_amount_buyer': total_amount_buyer,
+        'total_buyer_paid': total_buyer_paid,  # Передаем total_buyer_paid в шаблон
         'companies': companies,
         'selected_company_id': int(selected_company_id) if selected_company_id.isdigit() else None,
         'month': month,
