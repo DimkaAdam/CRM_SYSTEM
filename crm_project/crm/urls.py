@@ -3,6 +3,7 @@ from . import views
 from .views import ClientCreateAPIView, DealCreateAPIView
 from .views import ClientViewSet, DealViewSet
 from rest_framework.routers import DefaultRouter
+from .views import export_company_report_pdf
 
 # Создаем один роутер для обоих ViewSet
 router = DefaultRouter()
@@ -65,6 +66,7 @@ urlpatterns = [
     path('reports/', views.report_list, name='report_list'),
     path('reports/company/', views.company_report, name='company_report'),
 
+    path('reports/company/pdf/', export_company_report_pdf, name='export_company_report_pdf'),
 ]
 
 

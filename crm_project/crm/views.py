@@ -21,6 +21,14 @@ from decimal import Decimal
 from openpyxl.styles import Font, PatternFill, Alignment
 from django.http import HttpResponseRedirect
 from django.db.models import Q
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+from datetime import datetime
+from io import BytesIO
+from django.templatetags.static import static
+import os
 
 
 def index(request):
@@ -692,8 +700,8 @@ def company_report(request):
 
     # Получаем параметры фильтра из запроса
     selected_company_id = request.GET.get('company', '')
-    month = request.GET.get('month', str(current_month).zfill(2))  # Текущий месяц по умолчанию
-    year = request.GET.get('year', str(current_year))  # Текущий год по умолчанию
+    month = request.GET.get('month', '') or str(current_month).zfill(2)
+    year = request.GET.get('year', '') or str(current_year)
 
     transport_companies = Company.objects.filter(contacts__company_type='hauler')
 
@@ -745,3 +753,77 @@ def company_report(request):
         'months': months,  # Месяцы для выпадающего списка
     }
     return render(request, 'crm/company_report.html', context)
+
+logo_path = os.path.join(os.path.dirname(__file__), 'pictures','logo.png')
+
+def export_company_report_pdf(request):
+    # Получение данных для отчёта
+    deals = Deals.objects.all()
+    selected_company_id = request.GET.get('company', '')
+    if selected_company_id:
+        deals = deals.filter(supplier__id=selected_company_id)
+
+    # Данные для таблицы
+    data = [["Date", "Customer", "Grade", "Net", "Price", "Amount", "Total"]]
+    for deal in deals:
+        data.append([
+            deal.date.strftime("%Y-%m-%d"),
+            deal.supplier,
+            deal.grade,
+            deal.received_quantity,
+            deal.supplier_price,
+            deal.supplier_total,
+            deal.total_income_loss
+        ])
+
+    # Итоги
+    total_net = sum([deal.received_quantity for deal in deals])
+    total_amount = sum([deal.supplier_total for deal in deals])
+    total_price = sum([deal.total_income_loss for deal in deals])
+
+    # Создание PDF
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    # Лого компании (если есть)
+    logo_path = r"C:\Users\adamc\PycharmProjects\CRM_SYSTEM\crm_project\crm\static\crm\images\company_logo.png"
+
+    pdf.drawImage(logo_path, x=30, y=height - 80, width=50, height=50)
+
+    # Заголовок
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(140, height - 50, "Company Report")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(30, height - 100, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+
+    # Таблица
+    table = Table(data, colWidths=[80, 80, 80, 50, 50, 50, 50])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('ALIGN', (3, 1), (6, -1), 'RIGHT'),  # Для чисел
+    ]))
+
+    # Установим положение таблицы на странице
+    table.wrapOn(pdf, width, height)
+    table.drawOn(pdf, 30, height - 300)
+
+    # Итоговые данные
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(30, height - 320, f"Total Net: {total_net}")
+    pdf.drawString(30, height - 340, f"Total Amount: {total_amount}")
+    pdf.drawString(30, height - 360, f"Total Price: {total_price}")
+
+    # Завершаем PDF
+    pdf.save()
+    buffer.seek(0)
+
+    # Возвращаем PDF как ответ
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="company_report.pdf"'
+    return response
