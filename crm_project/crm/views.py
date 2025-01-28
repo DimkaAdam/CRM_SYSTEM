@@ -754,7 +754,7 @@ def company_report(request):
     }
     return render(request, 'crm/company_report.html', context)
 
-logo_path = os.path.join(os.path.dirname(__file__), 'pictures','logo.png')
+
 
 def export_company_report_pdf(request):
     # Получение данных для отчёта
