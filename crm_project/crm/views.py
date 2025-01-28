@@ -684,25 +684,26 @@ def report_list(request):
     return render(request, 'crm/report_list.html')
 
 def company_report(request):
+    # Получаем текущий месяц и год
     now = datetime.now()
     current_month = now.month
     current_year = now.year
 
     # Получение фильтров из запроса
     selected_company_id = request.GET.get('company', '')
-    month = request.GET.get('month', str(current_month).zfill(2))
-    year = request.GET.get('year', str(current_year))
+    month = request.GET.get('month', str(current_month).zfill(2))  # Текущий месяц по умолчанию
+    year = request.GET.get('year', str(current_year))  # Текущий год по умолчанию
 
     # Фильтрация сделок
     deals = Deals.objects.all()
     if selected_company_id:
-        deals = deals.filter(supplier__id=selected_company_id)  # Фильтр по компании
+        deals = deals.filter(supplier__id=int(selected_company_id))
     if month and year:
-        deals = deals.filter(date__month=int(month), date__year=int(year))  # Фильтр по месяцу и году
-    elif month:
-        deals = deals.filter(date__month=int(month))  # Только месяц
-    elif year:
-        deals = deals.filter(date__year=int(year))  # Только год
+        deals = deals.filter(date__month=int(month), date__year=int(year))
+    elif month:  # Если указан только месяц
+        deals = deals.filter(date__month=int(month))
+    elif year:  # Если указан только год
+        deals = deals.filter(date__year=int(year))
 
     # Итоги
     total_transport_cost = deals.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
@@ -712,6 +713,12 @@ def company_report(request):
     # Список компаний для выбора в фильтре
     companies = Company.objects.all()
 
+    # Получаем доступные года из базы данных для фильтрации
+    years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()
+
+    # Список месяцев для фильтрации
+    months = range(1, 13)  # Месяцы с 1 по 12
+
     # Контекст для шаблона
     context = {
         'deals': deals,
@@ -719,8 +726,10 @@ def company_report(request):
         'total_supplier_paid': total_supplier_paid,
         'total_amount_buyer': total_amount_buyer,
         'companies': companies,
-        'selected_company_id': int(selected_company_id) if selected_company_id else None,
-        'month': int(month) if month else None,
-        'year': int(year) if year else None,
+        'selected_company_id': int(selected_company_id) if selected_company_id.isdigit() else None,
+        'month': month,
+        'year': year,
+        'years': sorted(years),  # Сортируем список лет для удобства
+        'months': months,  # Месяцы для выпадающего списка
     }
     return render(request, 'crm/company_report.html', context)
