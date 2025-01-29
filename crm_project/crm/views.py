@@ -27,9 +27,6 @@ from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
 from datetime import datetime
 from io import BytesIO
-from django.templatetags.static import static
-import os
-
 
 def index(request):
     return render(request, 'crm/index.html')
@@ -754,32 +751,66 @@ def company_report(request):
     }
     return render(request, 'crm/company_report.html', context)
 
-
-
 def export_company_report_pdf(request):
-    # Получение данных для отчёта
-    deals = Deals.objects.all()
+    # Получение фильтров из запроса
     selected_company_id = request.GET.get('company', '')
+    month = request.GET.get('month', '')
+    year = request.GET.get('year', '')
+
+    # Текущая дата для отчета
+    now = datetime.now()
+
+    # Получение всех сделок
+    deals = Deals.objects.all()
     if selected_company_id:
-        deals = deals.filter(supplier__id=selected_company_id)
+        deals = deals.filter(supplier__id=selected_company_id) | \
+                deals.filter(buyer__id=selected_company_id) | \
+                deals.filter(transport_company__id=selected_company_id)
+
+    # Фильтр по месяцу и году
+    if month:
+        deals = deals.filter(date__month=int(month))
+    if year:
+        deals = deals.filter(date__year=int(year))
+
+    # Логика для определения типа компании
+    company = None
+    company_type = None
+    total_field = None  # Поле для итогов в зависимости от компании
+
+    if selected_company_id:
+        company = Company.objects.filter(id=selected_company_id).first()
+        if company:
+            if deals.filter(supplier=company).exists():
+                company_type = "supplier"
+                deals = deals.filter(supplier=company)
+                total_field = "supplier_total"
+            elif deals.filter(buyer=company).exists():
+                company_type = "buyer"
+                deals = deals.filter(buyer=company)
+                total_field = "total_amount"
+            elif deals.filter(transport_company=company).exists():
+                company_type = "transport"
+                deals = deals.filter(transport_company=company)
+                total_field = "transport_cost"
 
     # Данные для таблицы
     data = [["Date", "Customer", "Grade", "Net", "Price", "Amount", "Total"]]
     for deal in deals:
+        total_value = getattr(deal, total_field, 0)
         data.append([
             deal.date.strftime("%Y-%m-%d"),
-            deal.supplier,
+            deal.customer.name,
             deal.grade,
             deal.received_quantity,
-            deal.supplier_price,
-            deal.supplier_total,
-            deal.total_income_loss
+            deal.price,
+            deal.amount,
+            total_value
         ])
 
     # Итоги
     total_net = sum([deal.received_quantity for deal in deals])
-    total_amount = sum([deal.supplier_total for deal in deals])
-    total_price = sum([deal.total_income_loss for deal in deals])
+    total_amount = sum([getattr(deal, total_field, 0) for deal in deals])
 
     # Создание PDF
     buffer = BytesIO()
@@ -787,15 +818,22 @@ def export_company_report_pdf(request):
     width, height = A4
 
     # Лого компании (если есть)
-    logo_path = r"C:\Users\adamc\PycharmProjects\CRM_SYSTEM\crm_project\crm\static\crm\images\company_logo.png"
-
-    pdf.drawImage(logo_path, x=30, y=height - 80, width=50, height=50)
+    logo_path = "path/to/your/logo.png"  # Укажите путь к вашему логотипу
+    pdf.drawImage(logo_path, x=30, y=height - 80, width=100, height=50)
 
     # Заголовок
     pdf.setFont("Helvetica-Bold", 16)
     pdf.drawString(140, height - 50, "Company Report")
     pdf.setFont("Helvetica", 10)
-    pdf.drawString(30, height - 100, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+    pdf.drawString(30, height - 100, f"Date: {now.strftime('%Y-%m-%d')}")
+
+    # Подзаголовок
+    if company:
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(30, height - 120, f"Company: {company.name}")
+        pdf.drawString(30, height - 140, f"Type: {company_type.capitalize()}")
+    else:
+        pdf.drawString(30, height - 120, "All Companies")
 
     # Таблица
     table = Table(data, colWidths=[80, 80, 80, 50, 50, 50, 50])
@@ -816,8 +854,7 @@ def export_company_report_pdf(request):
     # Итоговые данные
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(30, height - 320, f"Total Net: {total_net}")
-    pdf.drawString(30, height - 340, f"Total Amount: {total_amount}")
-    pdf.drawString(30, height - 360, f"Total Price: {total_price}")
+    pdf.drawString(30, height - 340, f"Total {company_type.capitalize()}: {total_amount}")
 
     # Завершаем PDF
     pdf.save()
@@ -825,5 +862,5 @@ def export_company_report_pdf(request):
 
     # Возвращаем PDF как ответ
     response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="company_report.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="company_report_{company_type}.pdf"'
     return response
