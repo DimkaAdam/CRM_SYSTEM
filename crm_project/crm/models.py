@@ -85,6 +85,8 @@ class Deals(models.Model):
     transport_company = models.CharField(max_length=255, blank=True, null=True)  # Название транспортной компании (может быть пустым)
     total_income_loss = models.DecimalField(max_digits=10, decimal_places=2,default=0)  # Общий доход/убыток
 
+
+
     def save(self, *args, **kwargs):
         # Убедимся, что все значения корректны для расчетов
         self.received_quantity = self.received_quantity or 0
