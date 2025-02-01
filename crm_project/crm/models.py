@@ -124,7 +124,7 @@ class Deals(models.Model):
                 company_name=self.buyer,
                 defaults={'pallets_count': 0}  # Если записи нет, создаем с нулевым значением
             )
-            buyer_pallets.pallets_count += self.received_pallets
+            buyer_pallets.pallets_count += int(self.received_pallets)
             buyer_pallets.save()
 
     def __str__(self):

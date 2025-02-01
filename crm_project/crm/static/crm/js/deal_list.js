@@ -77,6 +77,8 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
             <td>${data.transport_cost}</td>
             <td>${data.transport_company}</td>
             <td>${data.total_income_loss}</td>
+            <td>${data.scale_ticket}</td>
+
         `;
         document.getElementById('dealFormSidebar').style.width = '0';
         document.getElementById('dealForm').reset();
@@ -141,6 +143,7 @@ document.getElementById('editDealBtn').addEventListener('click', () => {
             document.getElementById('editBuyerPrice').value = data.buyer_price; // Цена покупателя
             document.getElementById('editTransportCost').value = data.transport_cost; // Стоимость доставки
             document.getElementById('editTransportCompany').value = data.transport_company; // Транспортная компания
+            document.getElementById('editScaleTicket').value = data.scale_ticket;
         })
         .catch(error => console.error('Error fetching data for editing:', error));
 });
@@ -169,6 +172,8 @@ document.getElementById('editDealForm').addEventListener('submit', (e) => {
         buyer_price: document.getElementById('editBuyerPrice').value,
         transport_cost: document.getElementById('editTransportCost').value,
         transport_company: document.getElementById('editTransportCompany').value,
+        scale_ticket: document.getElementById('editScaleTicket').value,
+
     };
 
     fetch(`/deals/${dealId}/edit/`, {
