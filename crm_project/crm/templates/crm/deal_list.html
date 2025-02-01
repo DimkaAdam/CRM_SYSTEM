@@ -4,7 +4,7 @@
 {% block title %}Deals List{% endblock %}
 
 {% block content %}
-    <div class="content">
+
         <h1>Deals</h1>
 
         <!-- Кнопки управления -->
@@ -235,7 +235,7 @@
             <p><strong>Amount:</strong> {{ totals.total_amount|default:"0.00"|floatformat:2 }}</p>
             <p><strong>Income:</strong> {{ totals.total_income_loss|default:"0.00"|floatformat:2 }}</p>
         </div>
-    </div>
+
 
     <script src="{% static 'crm/js/deal_list.js' %}"></script>
     <link rel="stylesheet" href="{% static 'crm/deal_list.css' %}">

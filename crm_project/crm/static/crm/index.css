@@ -1,26 +1,21 @@
+
+/*
+#E2EEEC
+#CFDBDA
+#8AAAA5
+#CABD9A
+#A5956D
+124, 138, 137 shadow
+*/
+
+
 /* Общий стиль для страницы */
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #f8f4f4;
+    background-color: white; /* Задний фон белый */
 }
 
-/* Верхняя панель */
-.header {
-    background-color: #154c79 !important;
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-}
-
-.header .logo img {
-    max-height: 40px; /* Логотип */
-    width: auto;
-    object-fit: contain;
-    display: block;
-}
 
 .header .nav a {
     color: white;
@@ -31,15 +26,25 @@ body {
 
 /* Основной макет */
 .layout {
-    display: flex;
-    height: 100vh;
+    display: flex; /* Располагаем сайдбар и контент по горизонтали */
+    min-height: 100vh; /* Обеспечивает растягивание контейнера */
+    flex-direction: row; /* Горизонтальное расположение */
+    position: relative; /* Для работы абсолютного позиционирования */
 }
 
 /* Боковая панель */
 .sidebar {
-    background-color: #f8f4f4;
+    position: fixed;
+    top: 20%;  /* Смещаем сайдбар на 20% вниз от его обычного положения */
+    bottom: 30%;
+    background-color: rgba(207, 219, 218, 0.9);
     width: 150px;
     padding: 20px 10px;
+    left: 0; /* Фиксируем по левому краю */
+    height: 50%; /* Высота сайдбара равна высоте родительского контейнера */
+    border-top-left-radius: 30%;
+    border-bottom-left-radius: 30%;
+    box-shadow: 0 4px 30px 5px rgba(124, 138, 137, 0.6);
 }
 
 .sidebar ul {
@@ -53,7 +58,7 @@ body {
 }
 
 .sidebar ul li a {
-    color: #426774;
+    color: #585774;
     text-decoration: none;
     font-size: 18px;
     display: block;
@@ -62,18 +67,36 @@ body {
 }
 
 .sidebar ul li a:hover {
-    background-color: #0056b3;
+    background-color: #8aaaa5;
     color: white;
+}
+
+.sidebar .logo {
+    display: flex;
+    justify-content: center; /* Центрирует по горизонтали */
+    align-items: center; /* Центрирует по вертикали (если у родителя есть высота) */
+    margin-bottom: 20px; /* Отступ снизу */
+
+}
+
+.logo img {
+    max-width: 100px; /* Уменьши, если нужно */
+    height: auto;
 }
 
 /* Основной контент */
 .content {
     flex-grow: 1;
     padding: 20px;
-    background-color: white;
+    background-color: #e2eeec;
     border-radius: 8px;
     margin: 20px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-left: 150px; /* Добавляем отступ слева, чтобы контент не накладывался на сайдбар */
+    padding-left: 30px;
+    height: auto;
+    z-index: 2;
+    box-shadow: 0 4px 30px 5px rgba(124, 138, 137, 0.6);
 }
 
 .content h1 {

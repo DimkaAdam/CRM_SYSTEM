@@ -10,7 +10,7 @@
 </head>
 <body>
     <!-- upper panel -->
-    <header class="header">
+   <!-- <header class="header">
         <div class="logo">
             <a href="{% url 'sales_analytics' %}">
                 <img src="{% static 'crm/images/logo.png' %}" alt="Logo" class="logo-img">
@@ -20,25 +20,32 @@
         <nav class="nav">
             <a href="{% url 'report_list' %}">Reports</a>
         </nav>
-    </header>
+    </header> -->
 
     <!-- Main body -->
     <div class="layout">
         <!-- navigation menu -->
         <nav class="sidebar">
             <ul>
+                <div class="logo">
+                    <a href="{% url 'sales_analytics' %}">
+                        <img src="{% static 'crm/images/logo2.png' %}" alt="Logo" class="logo-img">
+                    </a>
+
+                </div>
                 <li><a href="{% url 'contacts_list' %}">Contacts</a></li>
                 <li><a href="{% url 'deal_list' %}">Deals</a></li>
                 <li><a href="{% url 'task_list' %}">Tasks</a></li>
                 <li><a href="{% url 'pipeline_list' %}">My Pipelines</a></li>
+                <li><a href="{% url 'report_list' %}">Reports</a></li>
+                <li><a href="{% url 'sales_analytics' %}">Sales Analytic</a></li>
             </ul>
         </nav>
+
 
         <!-- Основное содержимое -->
         <div class="content">
             {% block content %}
-                <h1>Добро пожаловать в CRM</h1>
-                <p>Выберите раздел из меню слева.</p>
             {% endblock %}
         </div>
         <link rel="stylesheet" href="{% static 'crm/index.css' %}">

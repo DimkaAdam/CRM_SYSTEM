@@ -1,67 +1,71 @@
 {% extends 'crm/index.html' %}
-
+{% load static %}
 {% block title %}Contacts{% endblock %}
 
 {% block content %}
-    <div class="content" style="padding: 20px; max-width: 90%; margin: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 style="color: #333;">Contacts</h1>
-            <div style="display: flex; gap: 10px;">
-                <a href="{% url 'company_main' %}">
-                    <button style="padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer;">Company List</button>
-                </a>
-                <a href="{% url 'add_company' %}">
-                    <button style="padding: 10px 20px; background-color: #28A745; color: white; border: none; border-radius: 5px; cursor: pointer;">Add New Company</button>
-                </a>
+    <h1>Contacts</h1>
+    <div class="buttons">
+        <a href="{% url 'company_main' %}">
+            <button class="btn btn-primary">Company List</button>
+        </a>
+        <a href="{% url 'add_company' %}">
+            <button class="btn btn-success">Add New Company</button>
+        </a>
+    </div>
+
+    <table class="contacts-table">
+        <thead>
+            <tr>
+                <th>Company Name</th>
+                <th>Unique Number</th>
+                <th>Address</th>
+                <th>Company Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for company in companies %}
+                <tr>
+                    <td>{{ company.name }}</td>
+                    <td>{{ company.unique_number }}</td>
+                    <td>
+                        {% if company.contacts.first %}
+                            {{ company.contacts.first.address }}
+                        {% else %}
+                            <span class="no-contact">No contacts available</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if company.contacts.first %}
+                            {{ company.contacts.first.get_company_type_display }}
+                        {% else %}
+                            <span class="no-contact">No contacts available</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if company.contacts.first %}
+                            <a href="{% url 'view_contact' company.contacts.first.id %}">
+                                <button class="btn btn-primary">View Contact</button>
+                            </a>
+                        {% else %}
+                            <span class="no-contact">No contact available</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Sidebar для просмотра контакта -->
+    <div id="contactSidebar" class="view_contact_sidebar">
+        <div class="view_contact_sidebar-content">
+            <span class="close_view-btn" onclick="closeSidebar()">&times;</span>
+            <div id="contactDetails">
+                <p>Loading...</p>
             </div>
         </div>
-
-        <table style="width: 100%; border-collapse: collapse; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); background-color: white; border-radius: 8px; overflow: hidden;">
-            <thead>
-                <tr style="background-color: #f4f4f4; text-align: left;">
-                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Company Name</th>
-                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Unique Number</th>
-                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Address</th>
-                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Company Type</th>
-                    <th style="padding: 10px; border-bottom: 2px solid #ddd;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for company in companies %}
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px;">{{ company.name }}</td>
-                        <td style="padding: 10px;">{{ company.unique_number }}</td>
-                        <td style="padding: 10px;">
-                            {% if company.contacts.first %}
-                                {{ company.contacts.first.address }}
-                            {% else %}
-                                <span style="color: #999;">No contacts available</span>
-                            {% endif %}
-                        </td>
-                        <td style="padding: 10px;">
-                            {% if company.contacts.first %}
-                                {{ company.contacts.first.get_company_type_display }}
-                            {% else %}
-                                <span style="color: #999;">No contacts available</span>
-                            {% endif %}
-                       <td style="padding: 10px;">
-                            {% if company.contacts.first %}
-                                <div style="display: flex; gap: 10px;">
-                                    <a href="{% url 'view_contact' company.contacts.first.id %}">
-                                        <button style="padding: 5px 10px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                            View Contact
-                                        </button>
-                                    </a>
-                                </div>
-                            {% else %}
-                                <span style="color: #999;">No contact available</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
+
 
     <!-- Optional JavaScript for Sidebar -->
     <script>
@@ -87,4 +91,5 @@
             document.getElementById('sidebar').classList.remove('open');
         }
     </script>
+    <link rel="stylesheet" href="{% static 'crm/contacts_list.css' %}">
 {% endblock %}

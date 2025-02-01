@@ -3,83 +3,82 @@
 {% block title %}Deals List{% endblock %}
 
 {% block content %}
-    <div class="content">
-        {% load static %}
-        {% load custom_filters %}
-        <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Подключаем Chart.js -->
-        <style>
-            .analytics-container {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px; /* Уменьшено расстояние между блоками */
-            }
 
-            .chart-container, .stats-container {
-                flex: 1;
-                min-width: 150px; /* Уменьшена минимальная ширина контейнеров */
-                padding: 10px; /* Уменьшены внутренние отступы */
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                background: #f9f9f9;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            }
+{% load static %}
+{% load custom_filters %}
+<link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Подключаем Chart.js -->
+<style>
+    .analytics-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px; /* Уменьшено расстояние между блоками */
+    }
 
-            .chart-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
+    .chart-container, .stats-container {
+        flex: 1;
+        min-width: 150px; /* Уменьшена минимальная ширина контейнеров */
+        padding: 10px; /* Уменьшены внутренние отступы */
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #f9f9f9;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
 
-            .stats-container {
-                font-family: Arial, sans-serif;
-            }
+    .chart-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-            .stats-cards {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px; /* Уменьшено расстояние между карточками */
-            }
+    .stats-container {
+        font-family: Arial, sans-serif;
+    }
 
-            .stat-card {
-                background-color: #ffffff;
-                border-radius: 8px;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                padding: 10px; /* Уменьшены внутренние отступы */
-                text-align: center;
-                width: 90px; /* Уменьшена ширина карточек */
-                height: 90px; /* Уменьшена высота карточек */
-                flex: 1;
-                min-width: 100px; /* Уменьшена минимальная ширина карточек */
-            }
+    .stats-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px; /* Уменьшено расстояние между карточками */
+    }
 
-            .stat-card .icon {
-                font-size: 30px; /* Уменьшен размер иконки */
-                margin-bottom: 5px;
-                color: #007bff;
-            }
+    .stat-card {
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 10px; /* Уменьшены внутренние отступы */
+        text-align: center;
+        width: 90px; /* Уменьшена ширина карточек */
+        height: 90px; /* Уменьшена высота карточек */
+        flex: 1;
+        min-width: 100px; /* Уменьшена минимальная ширина карточек */
+    }
 
-            .stat-card h3 {
-                font-size: 18px; /* Уменьшен размер значения */
-                color: #333;
-                margin: 5px 0; /* Уменьшены отступы вокруг значения */
-            }
+    .stat-card .icon {
+        font-size: 30px; /* Уменьшен размер иконки */
+        margin-bottom: 5px;
+        color: #007bff;
+    }
 
-            .stat-card p {
-                font-size: 14px; /* Уменьшен размер текста в подписи */
-                color: #6c757d;
-            }
+    .stat-card h3 {
+        font-size: 18px; /* Уменьшен размер значения */
+        color: #333;
+        margin: 5px 0; /* Уменьшены отступы вокруг значения */
+    }
 
-            .stat-card:hover {
-                background-color: #f1f1f1;
-                transform: scale(1.05);
-                transition: 0.3s ease;
-            }
-        </style>
+    .stat-card p {
+        font-size: 14px; /* Уменьшен размер текста в подписи */
+        color: #6c757d;
+    }
 
-    </div>
+    .stat-card:hover {
+        background-color: #f1f1f1;
+        transform: scale(1.05);
+        transition: 0.3s ease;
+    }
+</style>
+
     </head>
-        <div class="content">
+
             <h1>Sales Analytics</h1>
              <!-- Форма фильтрации -->
                         <form method="get" action="{% url 'sales_analytics' %}" class="filter-form">
@@ -260,6 +259,6 @@
                     }
                 });
             </script>
-        </div>
+
 <link rel="stylesheet" href="{% static 'crm/sales_analytics.css' %}">
 {% endblock %}

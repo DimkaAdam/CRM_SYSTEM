@@ -1,0 +1,96 @@
+/* Общие стили для страницы */
+body {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #fff;
+  background-color: #141b2d;
+  height: 100vh;
+}
+
+/* Стили для кнопок */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background-color: #08666e;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #314241;
+}
+
+.btn-success {
+  background-color: #759242;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #374709;
+}
+
+/* Стили для таблицы контактов */
+.contacts-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px; /* Расстояние между рядами */
+}
+
+.contacts-table th,
+.contacts-table td {
+  padding: 12px 15px;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+}
+
+/* Округление для первой и последней ячейки в ряду */
+.contacts-table tbody tr td:first-child {
+  border-top-left-radius: 8px;  /* Округление левого верхнего угла */
+  border-bottom-left-radius: 8px; /* Округление левого нижнего угла */
+}
+
+.contacts-table tbody tr td:last-child {
+  border-top-right-radius: 8px;  /* Округление правого верхнего угла */
+  border-bottom-right-radius: 8px; /* Округление правого нижнего угла */
+}
+
+/* Стили для строк */
+.contacts-table thead tr {
+  background-color: #f4f4f4;
+}
+
+.contacts-table tbody tr {
+  background-color: #fafafa;
+}
+
+.contacts-table tbody tr:hover {
+  background-color: #f0f0f0;
+}
+
+/* Для текста с отсутствием данных */
+.no-contact {
+  color: #999;
+}
+
+/* Стили для кнопок в таблице */
+.contacts-table button {
+  padding: 8px 16px;
+  background-color: #08666e;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.contacts-table button:hover {
+  background-color: #314241;
+}
