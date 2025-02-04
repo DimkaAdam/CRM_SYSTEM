@@ -156,7 +156,8 @@
     background: linear-gradient(135deg, rgba(129, 190, 206, 0.8), rgba(55, 139, 164, 0.8), rgba(3, 98, 128, 0.8)); /* Градиент с прозрачностью */
     color: white; /* Для контента сделаем текст белым, чтобы он был виден */
     box-shadow: 0 4px 30px 5px rgba(124, 138, 137, 1);
-
+    font-family: 'Lora-Bold';
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 /* Сайдбар для редактирования и просмотра сделки */
@@ -245,6 +246,6 @@
 
 
 font-face {
-    font-family: 'CustomFont';
-    src: url('fonts/CustomFont.ttf') format('truetype');
+    font-family: 'Lora-Bold';
+    src: url('fronts/Lora-Bold.ttf') format('truetype');
 
