@@ -3,6 +3,7 @@
     display: flex; /* Располагаем кнопки по горизонтали */
     gap: 10px; /* Добавляем промежуток между кнопками */
     align-items: center; /* Центрируем кнопки по вертикали */
+    margin-bottom: 10px;
 }
 
 /* Стиль для кнопки добавления сделки */
@@ -12,7 +13,7 @@
     justify-content: center; /* Центрирование по горизонтали */
     width: 40px; /* Размер кнопки по ширине */
     height: 40px; /* Размер кнопки по высоте */
-    background-color: #007BFF; /* Синий фон */
+    background-color: #378BA4;
     border: none; /* Убираем границу */
     border-radius: 50%; /* Делаем кнопку круглой */
     cursor: pointer; /* Указатель при наведении */
@@ -23,7 +24,7 @@
 }
 
 .add-new-deal-btn:hover {
-    background-color: #0056b3; /* Цвет при наведении */
+    background-color: #036280; /* Цвет при наведении */
     transform: scale(1.1); /* Увеличение кнопки при наведении */
 }
 
@@ -46,7 +47,7 @@
     justify-content: center; /* Центрирование по горизонтали */
     width: 40px; /* Размер кнопки по ширине */
     height: 40px; /* Размер кнопки по высоте */
-    background-color: #28a745; /* Зеленый фон */
+    background-color: #8ab446; /* Зеленый фон */
     border: none; /* Убираем границу */
     border-radius: 50%; /* Делаем кнопку круглой */
     cursor: pointer; /* Указатель при наведении */
@@ -57,7 +58,7 @@
 }
 
 .export-btn:hover {
-    background-color: #218838; /* Цвет при наведении */
+    background-color: #455442; /* Цвет при наведении */
     transform: scale(1.1); /* Увеличение кнопки при наведении */
 }
 
@@ -76,8 +77,9 @@
 /* Контейнер для формы фильтрации */
 .filter-container {
     display: flex; /* Располагаем элементы в ряд */
-    gap: 20px; /* Промежуток между элементами */
+    gap: 10px; /* Промежуток между элементами */
     align-items: center; /* Центрируем по вертикали */
+
 }
 
 /* Стиль для каждого элемента фильтра */
@@ -94,7 +96,7 @@
     justify-content: center; /* Центрирование по горизонтали */
     width: 40px; /* Размер кнопки */
     height: 40px; /* Размер кнопки */
-    background-color: #007BFF; /* Синий фон */
+    background-color: #378BA4;
     border: none; /* Убираем границу */
     border-radius: 50%; /* Круглая форма */
     cursor: pointer; /* Указатель при наведении */
@@ -105,7 +107,7 @@
 }
 
 .filter-btn:hover {
-    background-color: #0056b3; /* Цвет при наведении */
+    background-color: #036280; /* Цвет при наведении */
     transform: scale(1.1); /* Увеличение кнопки */
 }
 
@@ -121,6 +123,48 @@
     object-fit: cover; /* Подгонка иконки */
 }
 
+/* Стили для input и select */
+.filter-item input,
+.filter-item select {
+    padding: 10px 15px; /* Внутренний отступ для удобства */
+    border: 1px solid #aaa; /* Граница */
+    border-radius: 25px; /* Округление углов */
+    background: white;
+    font-size: 14px;
+    outline: none; /* Убираем стандартное выделение */
+    transition: 0.3s; /* Плавное изменение */
+}
+
+/* Эффект при наведении */
+.filter-item input:hover,
+.filter-item select:hover {
+    border-color: #3f5efb; /* Меняем цвет границы */
+}
+
+/* Эффект при фокусе (когда поле выбрано) */
+.filter-item input:focus,
+.filter-item select:focus {
+    border-color: #3f5efb;
+    box-shadow: 0 0 5px rgba(63, 94, 251, 0.5); /* Легкое свечение */
+}
+
+
+/* сайдбар */
+
+/* Сайдбар для добавления новой сделки */
+#dealFormSidebar {
+    background: linear-gradient(135deg, rgba(129, 190, 206, 0.8), rgba(55, 139, 164, 0.8), rgba(3, 98, 128, 0.8)); /* Градиент с прозрачностью */
+    color: white; /* Для контента сделаем текст белым, чтобы он был виден */
+    box-shadow: 0 4px 30px 5px rgba(124, 138, 137, 1);
+
+}
+
+/* Сайдбар для редактирования и просмотра сделки */
+#viewDealSidebar {
+    background-color: rgba(0, 0, 0, 0.5); /* Черный фон с прозрачностью 50% */
+    color: white; /* Белый текст */
+    /* Остальные стили */
+}
 
 /* Контейнер для кнопок в сайдбаре */
 .sidebar-buttons-container {
@@ -199,4 +243,8 @@
     object-fit: cover;
 }
 
+
+font-face {
+    font-family: 'CustomFont';
+    src: url('fonts/CustomFont.ttf') format('truetype');
 
