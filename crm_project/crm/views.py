@@ -341,7 +341,7 @@ def export_deals_to_excel(request):
     headers = [
         'Date', 'Supplier', 'Buyer', 'Grade', 'Shipped Qty', 'Pallets',
         'Received Qty', 'Pallets', 'Supplier Price', 'Supplier Paid Amount', 'Buyer Price',
-        'Total Amount', 'Transport Cost', 'Houler', 'Income/Loss'
+        'Total Amount', 'Transport Cost', 'Houler', 'Income/Loss','Scale Ticket'
     ]
     ws.append(headers)
 
@@ -381,7 +381,8 @@ def export_deals_to_excel(request):
             deal.total_amount,
             deal.transport_cost,
             deal.transport_company,
-            deal.total_income_loss
+            deal.total_income_loss,
+            deal.scale_ticket,
         ]
 
         ws.append(row)

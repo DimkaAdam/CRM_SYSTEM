@@ -245,34 +245,46 @@
 
 /* Основные стили для таблицы сделок */
 .deal-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background-color: #f7f9fc;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px; /* Расстояние между рядами */
 }
 
-.deal-table th, .deal-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-/* Заголовки таблицы */
-.deal-table th {
-    background-color: #033870;
-    color: white;
-    font-weight: bold;
-}
-
-/* Строки таблицы */
+.deal-table th,
 .deal-table td {
-    background-color: white;
+  padding: 12px 15px;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 2px solid #ddd;
 }
 
-/* Стиль для строк при наведении */
+/* Округление для первой и последней ячейки в ряду */
+.deal-table tbody tr td:first-child {
+  border-top-left-radius: 8px;  /* Округление левого верхнего угла */
+  border-bottom-left-radius: 8px; /* Округление левого нижнего угла */
+}
+
+.deal-table tbody tr td:last-child {
+  border-top-right-radius: 8px;  /* Округление правого верхнего угла */
+  border-bottom-right-radius: 8px; /* Округление правого нижнего угла */
+}
+
+/* Стили для строк */
+.deal-table thead tr {
+  background-color: #f4f4f4;
+}
+
+.deal-table tbody tr {
+  background-color: #fafafa;
+}
+
 .deal-table tbody tr:hover {
-    background-color: #e6f7ff; /* Светло-голубой цвет */
-    cursor: pointer;
+  background-color: #f0f0f0;
+}
+
+/* Для текста с отсутствием данных */
+.no-contact {
+  color: #999;
 }
 
 /* Стили для боковой панели (форма для добавления сделки) */

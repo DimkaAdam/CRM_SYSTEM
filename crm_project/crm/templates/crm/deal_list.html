@@ -2,7 +2,6 @@
 {% load static %}
 {% load custom_filters %}
 {% block title %}Deals List{% endblock %}
-
 {% block content %}
 
         <h1>Deals</h1>
@@ -202,8 +201,9 @@
                     <th>Total Amount</th>
                     <th>Transport $</th>
                     <th>Transport Company</th>
-                    <th>Income/Loss</th>
                     <th>Scale Ticket</th>
+                    <th>Income/Loss</th>
+
                 </tr>
             </thead>
             <tbody>
@@ -221,11 +221,12 @@
                     <td>{{ deal.total_amount }}</td>
                     <td>{{ deal.transport_cost }}</td>
                     <td>{{ deal.transport_company }}</td>
-                    <td>{{ deal.total_income_loss }}</td>
                     <td>{{ deal.scale_ticket}}</td>
+                    <td>{{ deal.total_income_loss }}</td>
+
                 </tr>
                 {% empty %}
-                <tr><td colspan="13">No deals available.</td></tr>
+                <tr><td colspan="14">No deals available.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -239,4 +240,6 @@
 
     <script src="{% static 'crm/js/deal_list.js' %}"></script>
     <link rel="stylesheet" href="{% static 'crm/deal_list.css' %}">
+    <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+
 {% endblock %}
