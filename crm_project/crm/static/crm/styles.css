@@ -24,7 +24,7 @@
 
 .sidebar-header h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 50px;
 }
 
 /* Кнопка закрытия панели */
@@ -33,12 +33,12 @@
     border: none;
     font-size: 20px;
     cursor: pointer;
-    color: #888;
+    color: #bc0000;
     transition: color 0.2s ease;
 }
 
 .close-btn:hover {
-    color: #555;
+    color: #680003;
 }
 
 /* Ввод данных в форму */
@@ -117,24 +117,7 @@
     background-color: #28a745;
 }
 
-/* Округление полей ввода и рамка при наведении */
-.sidebar-form input {
-    width: 80%;
-    padding: 8px;
-    margin: 10px 10%;
-    font-size: 14px;
-    border: 1px solid #ccc; /* Начальная рамка */
-    border-radius: 8px; /* Округление углов */
-    transition: border-color 0.3s ease; /* Плавное изменение цвета рамки */
-}
 
-/* Рамка при наведении */
-.sidebar-form input:hover,
-.sidebar-form input:focus {
-    border-color: #ADD8E6; /* Светло-синий цвет рамки */
-    border-width: 4px; /* Увеличиваем толщину рамки при наведении/фокусе */
-    outline: none; /* Убираем стандартный фокусный обвод */
-}
 
 /* Logo settings */
 .logo img {
@@ -287,32 +270,8 @@
   color: #999;
 }
 
-/* Стили для боковой панели (форма для добавления сделки) */
-.sidebar-form {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 0;
-    height: 100%;
-    background-color: #ffffff;
-    overflow-x: hidden;
-    transition: 0.3s;
-    padding-top: 20px;
-    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
-    z-index: 999;
-}
 
-.sidebar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding: 0 20px;
-}
 
-.sidebar-header h3 {
-    margin: 0;
-}
 
 .close-btn {
     font-size: 30px;
@@ -321,45 +280,6 @@
     background-color: transparent;
 }
 
-/* Вводные элементы для формы добавления сделки */
-.sidebar-form input[type="text"],
-.sidebar-form input[type="number"],
-.sidebar-form input[type="date"],
-.sidebar-form input[type="tel"] {
-    width: 90%;
-    padding: 10px;
-    margin-bottom: 10px;
-    margin-left: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-
-.sidebar-form button[type="submit"] {
-    background-color: #033870;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-top: 20px;
-    width: 100%;
-}
-
-/* При навигации на кнопки Cancel и Submit */
-.cancel-btn:hover, .submit-btn:hover {
-    background-color: #ff1a1a;
-}
-
-/* Плавные переходы для элементов */
-.sidebar-form input[type="text"],
-.sidebar-form input[type="number"],
-.sidebar-form input[type="date"],
-.sidebar-form input[type="tel"],
-.sidebar-form button[type="submit"] {
-    transition: background-color 0.3s ease;
-}
 
 
 /* filter button*/
@@ -386,57 +306,113 @@
 }
 
 
-/* Обновление стиля для полей ввода */
+/* Стили для боковой панели (форма для добавления сделки) */
+.sidebar-form {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 100%;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 20px;
+    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 20px;
+}
+
+
+/* Стили для боковой панели (форма для добавления сделки) */
+.sidebar-form {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 0; /* Будет изменяться динамически */
+    height: 100%;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    transition: 0.3s ease-in-out;
+    padding-top: 20px;
+    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+/* Активное состояние (когда сайдбар открыт) */
+.sidebar-form.open {
+    width: 300px; /* Ширина боковой панели */
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 20px;
+}
+
+/* Поля ввода */
 .sidebar-form input[type="text"],
 .sidebar-form input[type="email"],
 .sidebar-form input[type="tel"],
 .sidebar-form input[type="number"],
 .sidebar-form input[type="date"],
-select#supplier, select#buyer, select#grade {
+.sidebar-form select {
     width: 85%; /* Одинаковая ширина */
-    padding: 10px; /* Одинаковый внутренний отступ */
-    margin: 10px auto; /* Одинаковые внешние отступы */
-    font-size: 16px; /* Единый размер шрифта */
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    display: block; /* Убедимся, что элементы занимают всю строку */
-    box-sizing: border-box; /* Включаем отступы и рамки в общую ширину */
-}
-
-/* Рамка при наведении и фокусе */
-.sidebar-form input[type="text"]:hover,
-.sidebar-form input[type="email"]:hover,
-.sidebar-form input[type="tel"]:hover,
-.sidebar-form input[type="number"]:hover,
-.sidebar-form input[type="date"]:hover,
-select#supplier:hover, select#buyer:hover, select#grade:hover,
-.sidebar-form input[type="text"]:focus,
-.sidebar-form input[type="email"]:focus,
-.sidebar-form input[type="tel"]:focus,
-.sidebar-form input[type="number"]:focus,
-.sidebar-form input[type="date"]:focus,
-select#supplier:focus, select#buyer:focus, select#grade:focus {
-    border-color: #ADD8E6;
-    border-width: 2px;
+    padding: 10px 15px;
+    margin: 10px auto;
+    font-size: 16px;
+    border: 1px solid #aaa;
+    border-radius: 25px;
+    background: white;
     outline: none;
+    transition: 0.3s;
+    display: block;
+    box-sizing: border-box;
 }
 
+/* Эффект при наведении */
+.sidebar-form input:hover,
+.sidebar-form select:hover {
+    border-color: #3f5efb;
+}
 
+/* Эффект при фокусе */
+.sidebar-form input:focus,
+.sidebar-form select:focus {
+    border-color: #3f5efb;
+    box-shadow: 0 0 5px rgba(63, 94, 251, 0.5);
+}
 
+/* Кнопка отправки */
+.sidebar-form button[type="submit"] {
+    background-color: #033870;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 80%;
+    margin: 0 auto 15px auto;
+    display: block;
+    box-shadow: 0 0 8px rgba(63, 94, 251, 0.6);
+    transition: 0.3s;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
+/* Эффект при наведении */
+.sidebar-form button[type="submit"]:hover {
+    background: linear-gradient(#C33764, #1D2671);
+    box-shadow: 0 4px 15px rgba(63, 94, 251, 0.7);
+    transform: scale(1.03);
+}
 
 
 

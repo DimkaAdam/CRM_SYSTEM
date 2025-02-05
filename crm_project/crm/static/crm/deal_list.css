@@ -151,6 +151,8 @@
 
 /* сайдбар */
 
+
+
 /* Сайдбар для добавления новой сделки */
 #dealFormSidebar {
     background: linear-gradient(135deg, rgba(129, 190, 206, 0.8), rgba(55, 139, 164, 0.8), rgba(3, 98, 128, 0.8)); /* Градиент с прозрачностью */
@@ -158,13 +160,25 @@
     box-shadow: 0 4px 30px 5px rgba(124, 138, 137, 1);
     font-family: 'Lora-Bold';
     text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+
 }
+
 
 /* Сайдбар для редактирования и просмотра сделки */
 #viewDealSidebar {
-    background-color: rgba(0, 0, 0, 0.5); /* Черный фон с прозрачностью 50% */
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+
+
+}
+
+/* Применяем стили ко всем текстовым элементам внутри viewDealSidebar */
+#viewDealSidebar p,
+#viewDealSidebar span,
+#viewDealSidebar div {
     color: white; /* Белый текст */
-    /* Остальные стили */
+    font-size: 16px; /* Умеренный размер шрифта */
+    line-height: 1.5; /* Увеличенный интервал между строками */
 }
 
 /* Контейнер для кнопок в сайдбаре */
