@@ -45,7 +45,8 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
         supplier_price: supplier_price,
         buyer_price: buyer_price,
         transport_cost: transport_cost,
-        transport_company: document.getElementById('transport_company').value
+        transport_company: document.getElementById('transport_company').value,
+        scale_ticket: document.getElementById('scale_ticket').value
     };
 
     fetch('http://127.0.0.1:8000/api/deals/', {
