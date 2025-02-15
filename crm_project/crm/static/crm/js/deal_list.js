@@ -223,3 +223,113 @@ document.getElementById('deleteDealBtn').addEventListener('click', () => {
     }
 });
 
+
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("✅ Script loaded: Scale Ticket Sidebar");
+
+    const scaleTicketSidebar = document.getElementById("scaleTicketSidebar");
+    if (!scaleTicketSidebar) {
+        console.error("⚠️ Scale Ticket Sidebar НЕ найден в DOM! Проверь ID.");
+        return;
+    }
+
+    // Функция открытия сайдбара
+    window.openScaleTicketSidebar = function () {
+        console.log("📂 Opening Scale Ticket Sidebar...");
+        if (!scaleTicketSidebar) return;
+
+        scaleTicketSidebar.style.display = "block"; // Показываем сайдбар
+        setTimeout(() => {
+            scaleTicketSidebar.classList.add("open"); // Добавляем анимацию
+        }, 10);
+    };
+
+    // Функция закрытия сайдбара
+    window.closeScaleTicketSidebar = function () {
+        console.log("📂 Closing Scale Ticket Sidebar...");
+        if (!scaleTicketSidebar) return;
+
+        scaleTicketSidebar.classList.remove("open"); // Убираем анимацию
+        setTimeout(() => {
+            scaleTicketSidebar.style.display = "none"; // Прячем сайдбар
+        }, 300);
+    };
+
+    // Проверяем кнопку открытия
+    const openBtn = document.querySelector("button[onclick='openScaleTicketSidebar()']");
+    if (openBtn) {
+        openBtn.addEventListener("click", openScaleTicketSidebar);
+    } else {
+        console.warn("⚠️ Кнопка открытия сайдбара не найдена!");
+    }
+
+    // Проверяем кнопку закрытия
+    const closeBtn = document.querySelector("#scaleTicketSidebar .close-btn");
+    if (closeBtn) {
+        closeBtn.addEventListener("click", closeScaleTicketSidebar);
+    } else {
+        console.warn("⚠️ Кнопка закрытия сайдбара не найдена!");
+    }
+});
+
+// 📌 Функция для загрузки данных по Scale Ticket Number
+window.fetchDealData = function () {
+    let ticketNumber = document.getElementById("ticket_number").value;
+
+    if (!ticketNumber || ticketNumber.length < 3) {
+        console.warn("⚠️ Введите минимум 3 символа для поиска сделки.");
+        return;
+    }
+
+    console.log(`🔍 Fetching deal data for ticket: ${ticketNumber}`);
+
+    fetch(`/get-deal-by-ticket/?ticket_number=${ticketNumber}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                console.log("✅ Deal found:", data.deal);
+
+                document.getElementById("selectedDealId").value = data.deal.id;
+                document.getElementById("scaleticket_date").value = data.deal.date;
+                document.getElementById("scaleticket_received_quantity").value = data.deal.received_quantity;
+                document.getElementById("pallets").value = data.deal.received_pallets;
+                document.getElementById("supplier_name").value = data.deal.supplier_name;
+                document.getElementById("scaleticket_grade").value = data.deal.grade;
+            } else {
+                console.warn("❌ Deal not found for this Scale Ticket.");
+                alert("Deal not found for this Scale Ticket.");
+            }
+        })
+        .catch(error => console.error("🚨 Error fetching deal data:", error));
+};
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("✅ Script loaded: Scale Ticket Export");
+
+    // Глобально объявляем функцию, чтобы она была доступна в onclick
+    window.exportScaleTicket = function (event) {
+        event.preventDefault();
+
+        let ticketNumber = document.getElementById("ticket_number").value;
+        if (!ticketNumber) {
+            alert("⚠️ Please enter a scale ticket number before exporting.");
+            return;
+        }
+
+        console.log(`📂 Exporting Scale Ticket: ${ticketNumber}`);
+        window.open(`/export-scale-ticket/?ticket_number=${ticketNumber}`, '_blank');
+    };
+
+    // Назначаем обработчик для кнопки экспорта
+    const exportBtn = document.getElementById("exportScaleTicketBtn");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", exportScaleTicket);
+        console.log("✅ Export button connected.");
+    } else {
+        console.error("🚨 Export button NOT FOUND! Проверь ID: exportScaleTicketBtn");
+    }
+});

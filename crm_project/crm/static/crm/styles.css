@@ -412,7 +412,7 @@
     background: linear-gradient(#C33764, #1D2671);
     box-shadow: 0 4px 15px rgba(63, 94, 251, 0.7);
     transform: scale(1.03);
-}ЁЁЁЁЁЁЁЁЁЁЁ
+}
 
 
 
@@ -527,4 +527,23 @@
 
 .report-tile {
     text-decoration: none; /* Убираем подчеркивание ссылки */
+}
+
+
+#scaleTicketSidebar {
+    position: fixed;
+    top: 0;
+    right: -400px; /* Начальная позиция */
+    width: 350px;
+    height: 100%;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    transition: right 0.3s ease-in-out;
+    padding-top: 20px;
+    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+#scaleTicketSidebar.open {
+    right: 0;
 }

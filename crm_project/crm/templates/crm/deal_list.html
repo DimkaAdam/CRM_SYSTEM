@@ -14,6 +14,7 @@
             <a href="{% url 'export_deals_to_excel' %}" class="export-btn">
                 <img src="{% static 'crm/images/icons/excel.png' %}" alt="Export Icon" class="icon">
             </a>
+            <button onclick="openScaleTicketSidebar()">+ Add Scale Ticket</button>
         </div>
 
         <!-- Фильтры для месяца и года -->
@@ -48,6 +49,58 @@
                 </div>
             </div>
         </form>
+
+        <!-- Сайдбар для Scale Ticket -->
+        <div id="scaleTicketSidebar" class="sidebar-form" style="display: none;">
+            <div class="sidebar-header">
+                <h3>Add Scale Ticket</h3>
+                <button onclick="closeScaleTicketSidebar()" class="close-btn">&times;</button>
+            </div>
+
+            <form id="scaleTicketForm">
+                <label for="ticket_number">Ticket Number:</label>
+                <input type="text" id="ticket_number" name="ticket_number" required oninput="fetchDealData()">
+
+                <!-- Поля для авто-заполнения -->
+                <input type="hidden" id="selectedDealId" name="selectedDealId">
+
+                <label for="date">Date:</label>
+                <input type="date" id="scaleticket_date" name="date" required>
+
+                <label for="time_in">Time In:</label>
+                <input type="time" id="time_in" name="time_in" required>
+
+                <label for="time_out">Time Out:</label>
+                <input type="time" id="time_out" name="time_out" required>
+
+                <label for="licence_plate">Licence Plate:</label>
+                <input type="text" id="licence_plate" name="licence_plate">
+
+                <label for="gross_weight">Gross Weight:</label>
+                <input type="number" id="gross_weight" name="gross_weight" step="0.01" required>
+
+                <label for="tare_weight">Tare Weight:</label>
+                <input type="number" id="tare_weight" name="tare_weight" step="0.01" required>
+
+                <label for="received_quantity">Net Weight:</label>
+                <input type="number" id="scaleticket_received_quantity" name="received_quantity" step="0.01" readonly>
+
+                <label for="pallets">Pallets:</label>
+                <input type="number" id="pallets" name="pallets" readonly>
+
+                <label for="supplier_name">Supplier:</label>
+                <input type="text" id="supplier_name" name="supplier_name" readonly>
+
+                <label for="grade">Material:</label>
+                <input type="text" id="scaleticket_grade" name="grade" readonly>
+                <!-- Кнопка для экспорта в PDF -->
+                <a id="exportScaleTicketBtn" href="#" onclick="exportScaleTicket(event)">
+                    <button>Export Scale Ticket to PDF</button>
+                </a>
+            </form>
+
+
+        </div>
 
         <!-- Сайдбар для добавления новой сделки -->
         <div id="dealFormSidebar" class="sidebar-form">

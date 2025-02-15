@@ -27,6 +27,7 @@ from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
 from datetime import datetime
 from io import BytesIO
+from reportlab.lib.pagesizes import letter
 
 def index(request):
     return render(request, 'crm/index.html')
@@ -864,4 +865,97 @@ def export_company_report_pdf(request):
     # Возвращаем PDF как ответ
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="company_report_{company_type}.pdf"'
+    return response
+
+
+def get_deal_by_ticket(request):
+    ticket_number = request.GET.get('ticket_number', None)
+    print(f"Получен запрос на поиск Scale Ticket: {ticket_number}")
+
+    if not ticket_number:
+        return JsonResponse({'success': False, 'error': 'No ticket number provided'})
+
+    try:
+        deal = Deals.objects.filter(scale_ticket=ticket_number).first()
+        if not deal:
+            print("Ошибка: Сделка не найдена")
+            return JsonResponse({'success': False, 'error': 'No deal found for this ticket number'}, status=404)
+
+        print(f"Найдена сделка: {deal}")
+
+        return JsonResponse({
+            'success': True,
+            'deal': {
+                'id': deal.id,
+                'date': deal.date.strftime('%Y-%m-%d'),
+                'received_quantity': float(deal.received_quantity),
+                'received_pallets': deal.received_pallets,
+                'supplier_name': deal.supplier.name if deal.supplier else "",
+                'grade': deal.grade,
+            }
+        })
+    except Exception as e:
+        import traceback
+        print("Ошибка сервера:", traceback.format_exc())
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+def export_scale_ticket_pdf(request):
+    ticket_number = request.GET.get('ticket_number', None)
+
+    if not ticket_number:
+        return HttpResponse("⚠️ No ticket number provided.", status=400)
+
+    # Получаем **все** сделки с таким scale_ticket
+    deals = Deals.objects.filter(scale_ticket=ticket_number)
+
+    if not deals.exists():
+        return HttpResponse("⚠️ No deals found for this ticket number.", status=404)
+
+    # Создаём PDF
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter  # Размер страницы
+
+    # Заголовок отчёта
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.drawString(100, height - 50, f"Scale Ticket Report for {ticket_number}")
+
+    # Вывод даты (используем первую найденную сделку)
+    pdf.setFont("Helvetica", 12)
+    pdf.drawString(100, height - 70, f"Date: {deals.first().date.strftime('%Y-%m-%d')}")
+
+    # Вывод поставщика (используем первую найденную сделку)
+    supplier_name = deals.first().supplier.name if deals.first().supplier else "Unknown"
+    pdf.drawString(100, height - 90, f"Supplier: {supplier_name}")
+
+    # Заголовки таблицы
+    data = [["Grade", "Received Quantity"]]  # Шапка таблицы
+
+    # Добавляем сделки в таблицу
+    for deal in deals:
+        data.append([deal.grade, f"{deal.received_quantity:.4f}"])
+
+    # Создаём таблицу с данными
+    table = Table(data, colWidths=[250, 150])  # Ширина колонок
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),  # Серый фон для заголовка
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),  # Белый текст для заголовка
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),  # Выравнивание текста
+        ("GRID", (0, 0), (-1, -1), 1, colors.black),  # Границы таблицы
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),  # Жирный шрифт для заголовка
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),  # Отступ для заголовка
+        ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),  # Светло-серый фон для данных
+    ]))
+
+    # Рисуем таблицу на PDF
+    table.wrapOn(pdf, width, height)
+    table.drawOn(pdf, 100, height - 200)
+
+    # Сохраняем PDF
+    pdf.save()
+    buffer.seek(0)
+
+    response = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="scale_ticket_{ticket_number}.pdf"'
     return response
