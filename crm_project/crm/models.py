@@ -140,16 +140,6 @@ class Task(models.Model):
     def __str__(self):
         return self.title
 
-class PipeLine(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='pipeline_clients')
-    name = models.CharField(max_length=255, verbose_name="Sellers")
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
-    stage = models.CharField(max_length=100,verbose_name="Stage")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created')
-    updated_at = models.DateTimeField(auto_now=True,verbose_name='Updated')
-
-    def __str__(self):
-        return self.company
 
 class CompanyPallets(models.Model):
     company_name = models.ForeignKey(Company,on_delete=models.CASCADE, related_name='pallets')
@@ -173,3 +163,20 @@ class ContactMaterial(models.Model):
 
     def __str__(self):
         return f"{self.contact.company.name} - {self.material} (${self.price or 'Not set'})"
+
+
+
+class PipeLine(models.Model):
+    STAGES = [
+        ('new', 'New'),
+        ('send_email', 'Send Email'),
+        ('meeting', 'Meeting'),
+        ('account', 'Account'),
+        ('deal', 'Deal'),
+    ]
+
+    company = models.ForeignKey('Company', on_delete=models.CASCADE, null=True, blank=True)  # Связь с моделью компании
+    stage = models.CharField(max_length=20, choices=STAGES, default='new')  # Этап воронки
+
+    def __str__(self):
+        return f"{self.company.name} - {self.get_stage_display()}"

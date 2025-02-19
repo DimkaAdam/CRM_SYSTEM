@@ -3,8 +3,6 @@
 {% block title %}My Pipelines{% endblock %}
 
 {% block content %}
-    <div class="content">
-        <h1>My Pipelines</h1>
-        <p>The list of my pipelines will be shown here.</p>
-    </div>
+    <div id="root"></div>  <!-- ✅ React рендерится ВНУТРИ CRM -->
+    <script src="/static/js/main.3bb3ce0a.js"></script>  <!-- ✅ Загружаем React вручную -->
 {% endblock %}

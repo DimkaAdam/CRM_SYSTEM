@@ -41,24 +41,29 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crm',
     'rest_framework',
+    'corsheaders',
+    'pipeline',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True  # Разрешаем запросы с любого адреса (для тестов)
+
 ROOT_URLCONF = 'crm_project.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend', 'build')],  # Указываем путь к index.html
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -118,12 +123,17 @@ USE_TZ = True
 
 # settings.py
 STATIC_URL = '/static/'
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
+# ✅ Пути для статических файлов React
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'crm', 'static'),
+    os.path.join(BASE_DIR, "frontend", "build", "static"),  # 📌 Для CSS и JS
+]
+
+# ✅ Пути для шаблонов Django
+TEMPLATES[0]["DIRS"] = [
+    os.path.join(BASE_DIR, "frontend", "build"),  # 📌 Указываем путь к index.html
 ]
 
 

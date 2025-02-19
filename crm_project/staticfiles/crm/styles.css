@@ -1,0 +1,549 @@
+
+/* Боковая панель */
+.sidebar-form {
+    height: 100%; /* Высота панели */
+    width: 0; /* Начальная ширина - 0 (скрыта) */
+    position: fixed; /* Фиксированная позиция */
+    top: 0;
+    right: 0; /* Панель появляется справа */
+    background-color: #f4f4f4; /* Цвет фона */
+    overflow-x: hidden; /* Отключаем горизонтальный скроллинг */
+    transition: 0.3s; /* Плавное открытие */
+    padding: 20px 0;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* Тень для панели */
+}
+
+/* Заголовок боковой панели */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 50px;
+}
+
+/* Кнопка закрытия панели */
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #bc0000;
+    transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+    color: #680003;
+}
+
+/* Ввод данных в форму */
+.sidebar-form input {
+    width: 80%;
+    padding: 8px;
+    margin: 10px 10%;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Кнопка для добавления клиента */
+.add-contact-btn {
+    background-color: green;   /* Зеленый цвет */
+    color: white;              /* Белый цвет текста */
+    border: none;              /* Без рамки */
+    padding: 10px 20px;        /* Отступы для кнопки */
+    font-size: 16px;           /* Размер шрифта */
+    cursor: pointer;          /* Указатель при наведении */
+    border-radius: 5px;        /* Закругленные углы */
+    transition: background-color 0.3s ease; /* Плавное изменение фона */
+}
+
+.add-contact-btn:hover {
+    background-color: #28a745; /* Более яркий зеленый при наведении */
+}
+
+/* Кнопка Cancel */
+.cancel-btn {
+    background-color: grey;   /* Серый цвет */
+    color: white;              /* Белый цвет текста */
+    border: none;              /* Без рамки */
+    padding: 10px 20px;        /* Отступы для кнопки */
+    font-size: 16px;           /* Размер шрифта */
+    cursor: pointer;          /* Указатель при наведении */
+    border-radius: 5px;        /* Закругленные углы */
+    margin-left: 10px;         /* Отступ от кнопки Add Contact */
+    transition: background-color 0.3s ease; /* Плавное изменение фона */
+}
+
+.cancel-btn:hover {
+    background-color: #6c757d; /* Более темный серый при наведении */
+}
+
+/* Форма добавления клиента */
+#addClientForm {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+/* Ввод данных */
+#addClientForm input {
+    margin-bottom: 10px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Кнопка внутри формы */
+#addClientForm button {
+    background-color: green;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+#addClientForm button:hover {
+    background-color: #28a745;
+}
+
+
+
+/* Logo settings */
+.logo img {
+    max-height: 40px; /* Уменьшение высоты */
+    width: auto; /* Автоматическое сохранение пропорций */
+    object-fit: contain; /* Уменьшает логотип, сохраняя содержимое */
+    display: block;
+}
+
+/* Общий контейнер для всех клиентов */
+.clients-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background-color: #f7f9fc;
+}
+
+/* Заголовки всех колонок */
+.clients-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 2px solid #ddd;
+}
+
+.header-column {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: #033870;
+}
+
+.client-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #f7f9fc;
+}
+
+.client-table th, .client-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.client-table th {
+    background-color: #033870;
+    color: white;
+}
+
+.client-table td span {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Базовый стиль для строки таблицы */
+.client-table tbody tr {
+    background-color: white; /* Цвет по умолчанию */
+    transition: background-color 0.3s ease; /* Плавный переход */
+}
+
+/* Изменение цвета строки при наведении */
+.client-table tbody tr:hover {
+    background-color: #f0f0f0; /* Светло-серый цвет при наведении */
+    cursor: pointer; /* Указатель в виде руки */
+}
+
+/* Изменение цвета при наведении */
+.client-table tbody tr:hover {
+    background-color: #f0f0f0; /* Светло-серый цвет */
+    cursor: pointer; /* Указатель в виде руки */
+}
+
+.add-deal-btn {
+    display: flex; /* Для выравнивания содержимого */
+    align-items: center; /* Вертикальное центрирование */
+    justify-content: center; /* Горизонтальное центрирование */
+    width: 40px; /* Ширина кнопки */
+    height: 40px; /* Высота кнопки */
+    background-color: #007BFF; /* Цвет фона */
+    border: none; /* Убираем границу */
+    border-radius: 50%; /* Делаем кнопку круглой */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Плавный переход при наведении */
+}
+
+.add-deal-btn:hover {
+    background-color: #0056b3; /* Цвет при наведении */
+    transform: scale(1.1); /* Легкое увеличение кнопки */
+}
+
+.icon {
+    width: 20px; /* Размер иконки */
+    height: 20px;
+}
+}
+
+.icon {
+    width: 16px; /* Ширина иконки */
+    height: 16px; /* Высота иконки */
+    margin-right: 8px; /* Отступ между иконкой и текстом */
+    vertical-align: middle; /* Выравнивание иконки */
+}
+
+/* DEALS SET UP */
+
+/* Основные стили для таблицы сделок */
+.deal-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px; /* Расстояние между рядами */
+}
+
+.deal-table th,
+.deal-table td {
+  padding: 12px 15px;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+}
+
+/* Округление для первой и последней ячейки в ряду */
+.deal-table tbody tr td:first-child {
+  border-top-left-radius: 8px;  /* Округление левого верхнего угла */
+  border-bottom-left-radius: 8px; /* Округление левого нижнего угла */
+}
+
+.deal-table tbody tr td:last-child {
+  border-top-right-radius: 8px;  /* Округление правого верхнего угла */
+  border-bottom-right-radius: 8px; /* Округление правого нижнего угла */
+}
+
+/* Стили для строк */
+.deal-table thead tr {
+  background-color: #f4f4f4;
+}
+
+.deal-table tbody tr {
+  background-color: #fafafa;
+}
+
+.deal-table tbody tr:hover {
+  background-color: #f0f0f0;
+}
+
+/* Для текста с отсутствием данных */
+.no-contact {
+  color: #999;
+}
+
+
+
+
+.close-btn {
+    font-size: 30px;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+}
+
+
+
+/* filter button*/
+.dropdown {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.dropdown select {
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.contact-list {
+    display: none; /* Скрываем блоки изначально */
+}
+
+.contact-list.active {
+    display: block; /* Отображаем только выбранный блок */
+}
+
+
+/* Стили для боковой панели (форма для добавления сделки) */
+.sidebar-form {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 100%;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 20px;
+    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 20px;
+}
+
+
+/* Стили для боковой панели (форма для добавления сделки) */
+.sidebar-form {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 0; /* Будет изменяться динамически */
+    height: 100%;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    transition: 0.3s ease-in-out;
+    padding-top: 20px;
+    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+/* Активное состояние (когда сайдбар открыт) */
+.sidebar-form.open {
+    width: 300px; /* Ширина боковой панели */
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 20px;
+}
+
+/* Поля ввода */
+.sidebar-form input[type="text"],
+.sidebar-form input[type="email"],
+.sidebar-form input[type="tel"],
+.sidebar-form input[type="number"],
+.sidebar-form input[type="date"],
+.sidebar-form select {
+    width: 85%; /* Одинаковая ширина */
+    padding: 10px 15px;
+    margin: 10px auto;
+    font-size: 16px;
+    border: 1px solid #aaa;
+    border-radius: 25px;
+    background: white;
+    outline: none;
+    transition: 0.3s;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* Эффект при наведении */
+.sidebar-form input:hover,
+.sidebar-form select:hover {
+    border-color: #3f5efb;
+}
+
+/* Эффект при фокусе */
+.sidebar-form input:focus,
+.sidebar-form select:focus {
+    border-color: #3f5efb;
+    box-shadow: 0 0 5px rgba(63, 94, 251, 0.5);
+}
+
+/* Кнопка отправки */
+.sidebar-form button[type="submit"] {
+    background-color: #033870;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 80%;
+    margin: 0 auto 15px auto;
+    display: block;
+    box-shadow: 0 0 8px rgba(63, 94, 251, 0.6);
+    transition: 0.3s;
+}
+
+/* Эффект при наведении */
+.sidebar-form button[type="submit"]:hover {
+    background: linear-gradient(#C33764, #1D2671);
+    box-shadow: 0 4px 15px rgba(63, 94, 251, 0.7);
+    transform: scale(1.03);
+}
+
+
+
+
+/* Contact panel settings */
+
+/* Стиль для общего контейнера */
+.client-details-container {
+    border: 1px solid #ddd; /* Тонкая рамка */
+    border-radius: 8px; /* Скругленные углы */
+    padding: 10px; /* Отступы внутри рамки */
+    margin-bottom: 10px; /* Отступ между блоками */
+    background-color: #f9f9f9; /* Светлый фон */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Небольшая тень */
+}
+
+
+.logo-img{
+    width: 30px;
+    height: auto;
+}
+
+.client-details-container p {
+    margin: 0; /* Убрать отступы у параграфов */
+    line-height: 1.6; /* Интервал между строками */
+    font-size: 14px; /* Размер шрифта */
+}
+
+/* deals panel settings*/
+.deal-details-container{
+    border: 1px solid #ddd; /* Тонкая рамка */
+    border-radius: 8px; /* Скругленные углы */
+    padding: 10px; /* Отступы внутри рамки */
+    margin-bottom: 10px; /* Отступ между блоками */
+    background-color: #f9f9f9; /* Светлый фон */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Небольшая тень */
+}
+
+
+
+
+
+
+
+.contact-edit-form {
+    margin-top: 20px;
+}
+
+.contact-edit-form input,
+.contact-edit-form select {
+    padding: 5px;
+    margin: 5px 0;
+    width: 100%;
+}
+
+.contact-edit-form button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.contact-edit-form button:hover {
+    background-color: #0056b3;
+}
+
+
+/* Контейнер для плиток */
+.tiles-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Расстояние между плитками */
+    justify-content: center; /* Выравнивание плиток по центру */
+    margin-top: 20px;
+}
+
+/* Стиль плитки */
+.tile {
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 150px;
+    height: 150px;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.tile:hover {
+    transform: scale(1.05); /* Лёгкое увеличение при наведении */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Более заметная тень */
+}
+
+.tile-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
+}
+
+.tile p {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.report-tile {
+    text-decoration: none; /* Убираем подчеркивание ссылки */
+}
+
+
+#scaleTicketSidebar {
+    position: fixed;
+    top: 0;
+    right: -400px; /* Начальная позиция */
+    width: 350px;
+    height: 100%;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    transition: right 0.3s ease-in-out;
+    padding-top: 20px;
+    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+#scaleTicketSidebar.open {
+    right: 0;
+}

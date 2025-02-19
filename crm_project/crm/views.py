@@ -29,6 +29,10 @@ from datetime import datetime
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 
+from rest_framework.decorators import action
+from .serializers import PipeLineSerializer
+
+
 def index(request):
     return render(request, 'crm/index.html')
 
@@ -527,15 +531,6 @@ def delete_deal(request, deal_id):
         deal.delete()
         return JsonResponse({'message': 'Deal deleted successfully!'})
     return HttpResponse(status=405)  # Method not allowed
-# TACKS
-def task_list(request):
-    tasks = Task.objects.all()
-    return render(request, 'crm/task_list.html', {'tasks': tasks})
-
-
-def pipeline_list(request):
-    pipelines = PipeLine.objects.all()
-    return render(request, 'crm/pipeline_list.html', {'pipelines': pipelines})
 
 
 class ClientCreateAPIView(APIView):
@@ -959,3 +954,35 @@ def export_scale_ticket_pdf(request):
     response = HttpResponse(buffer, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="scale_ticket_{ticket_number}.pdf"'
     return response
+
+
+# TACKS
+def task_list(request):
+    tasks = Task.objects.all()
+    return render(request, 'crm/task_list.html', {'tasks': tasks})
+
+
+
+def pipeline(request):
+    pipeline = PipeLine.objects.all()
+    return render(request, 'crm/pipeline_list.html', {'pipeline': pipeline()})
+
+class PipelineViewSet(viewsets.ModelViewSet):
+    queryset = PipeLine.objects.all()
+    serializer_class = PipeLineSerializer
+
+    @action(detail=True, methods=['post'])
+    def move(self, request, pk=None):
+        """Обновление стадии компании"""
+        pipeline = self.get_object()
+        new_stage = request.data.get('stage')
+
+        if new_stage not in dict(PipeLine.STAGES):
+            return Response({'error': 'Invalid stage'}, status=status.HTTP_400_BAD_REQUEST)
+
+        pipeline.stage = new_stage
+        pipeline.save()
+        return Response({'status': 'stage updated'})
+
+def pipeline_list(request):
+    return JsonResponse({"message": "This is the pipeline list."})
