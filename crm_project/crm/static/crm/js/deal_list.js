@@ -276,10 +276,9 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ Script loaded: Scale Ticket Export");
 
-    // 📌 Автоматическое подставление текущего времени
     function setCurrentTime() {
         const now = new Date();
-        const formattedTime = now.toLocaleTimeString('en-US', { hour12: false }).slice(0, 5); // HH:MM формат
+        const formattedTime = now.toLocaleTimeString('en-US', { hour12: false }).slice(0, 5);
         const timeInput = document.getElementById("deal_time");
         if (timeInput) {
             timeInput.value = formattedTime;
@@ -288,9 +287,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    setCurrentTime(); // Устанавливаем текущее время при загрузке страницы
+    setCurrentTime();
 
-    // 📌 Функция загрузки данных по Scale Ticket Number
     window.fetchDealData = function () {
         let ticketNumberElement = document.getElementById("ticket_number");
         if (!ticketNumberElement) {
@@ -317,7 +315,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data.success) {
                     console.log("✅ Deal found:", data.deal);
 
-                    // 🛠️ Проверяем существование каждого поля перед присваиванием
                     const setValueIfExists = (id, value) => {
                         const element = document.getElementById(id);
                         if (element) {
@@ -333,15 +330,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     setValueIfExists("pallets", data.deal.received_pallets);
                     setValueIfExists("supplier_name", data.deal.supplier_name);
                     setValueIfExists("scaleticket_grade", data.deal.grade);
-                    setValueIfExists("gross_weight", data.deal.gross_weight || "0");
 
-                    // 🏋️‍♂️ Генерируем tare_weight в диапазоне 5270-5470 кг
+                    // 🏋️‍♂️ Генерируем tare_weight в диапазоне 5170-5470 кг
                     let randomTareWeight = 5170 + Math.floor(Math.random() * 301);
                     setValueIfExists("tare_weight", randomTareWeight);
 
-                    // 📌 Пересчитываем net_weight
-                    let netWeight = parseFloat(data.deal.gross_weight || 0) - randomTareWeight;
-                    setValueIfExists("net_weight", netWeight > 0 ? netWeight : 0);
+                    // 📌 Получаем net_weight (либо из сделки, либо считаем по received_quantity)
+                    let netWeight = parseFloat(data.deal.net_weight_str || data.deal.received_quantity * 1000 || 0);
+                    setValueIfExists("net_weight", netWeight);
+
+                    // 📌 Пересчитываем Gross Weight = Tare Weight + Net Weight
+                    let grossWeight = randomTareWeight + netWeight;
+                    setValueIfExists("gross_weight", grossWeight);
+
+                    console.log(`📌 Пересчет весов: Tare = ${randomTareWeight}, Net = ${netWeight}, Gross = ${grossWeight}`);
                 } else {
                     console.warn("❌ Deal not found for this Scale Ticket.");
                     alert("Deal not found for this Scale Ticket.");
@@ -350,7 +352,6 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch(error => console.error("🚨 Error fetching deal data:", error));
     };
 
-    // 📌 Функция экспорта Scale Ticket в PDF
     window.exportScaleTicket = function (event) {
         event.preventDefault();
 
@@ -371,9 +372,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let dealTime = getValueOrWarn("deal_time", "N/A");
         let licencePlate = getValueOrWarn("licence_plate", "N/A");
-        let grossWeight = getValueOrWarn("gross_weight", "0");
-        let tareWeight = getValueOrWarn("tare_weight", "0");
-        let netWeight = getValueOrWarn("net_weight", (parseFloat(grossWeight) - parseFloat(tareWeight)));
+        let tareWeight = parseFloat(getValueOrWarn("tare_weight", "0"));
+        let netWeight = parseFloat(getValueOrWarn("net_weight", "0"));
+
+        // 🔄 Пересчитываем Gross перед отправкой
+        let grossWeight = tareWeight + netWeight;
 
         console.log(`📂 Exporting Scale Ticket: ${ticketNumber}, Time: ${dealTime}, Licence: ${licencePlate}, Gross: ${grossWeight}, Tare: ${tareWeight}, Net: ${netWeight}`);
 
@@ -387,7 +390,6 @@ document.addEventListener("DOMContentLoaded", function () {
         window.open(url, '_blank');
     };
 
-    // 🔘 Привязываем кнопку экспорта
     const exportBtn = document.getElementById("exportScaleTicketBtn");
     if (exportBtn) {
         exportBtn.addEventListener("click", exportScaleTicket);
@@ -396,7 +398,6 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("🚨 Export button NOT FOUND! Проверь ID: exportScaleTicketBtn");
     }
 
-    // 📌 Заполнение выпадающего списка licence_plate
     const licencePlates = ['SY1341', 'WB3291', '153'];
     const licenceSelect = document.getElementById("licence_plate");
 
