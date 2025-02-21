@@ -273,63 +273,152 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // 📌 Функция для загрузки данных по Scale Ticket Number
-window.fetchDealData = function () {
-    let ticketNumber = document.getElementById("ticket_number").value;
-
-    if (!ticketNumber || ticketNumber.length < 3) {
-        console.warn("⚠️ Введите минимум 3 символа для поиска сделки.");
-        return;
-    }
-
-    console.log(`🔍 Fetching deal data for ticket: ${ticketNumber}`);
-
-    fetch(`/get-deal-by-ticket/?ticket_number=${ticketNumber}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Server responded with ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                console.log("✅ Deal found:", data.deal);
-
-                document.getElementById("selectedDealId").value = data.deal.id;
-                document.getElementById("scaleticket_date").value = data.deal.date;
-                document.getElementById("scaleticket_received_quantity").value = data.deal.received_quantity;
-                document.getElementById("pallets").value = data.deal.received_pallets;
-                document.getElementById("supplier_name").value = data.deal.supplier_name;
-                document.getElementById("scaleticket_grade").value = data.deal.grade;
-            } else {
-                console.warn("❌ Deal not found for this Scale Ticket.");
-                alert("Deal not found for this Scale Ticket.");
-            }
-        })
-        .catch(error => console.error("🚨 Error fetching deal data:", error));
-};
 document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ Script loaded: Scale Ticket Export");
 
-    // Глобально объявляем функцию, чтобы она была доступна в onclick
+    // 📌 Автоматическое подставление текущего времени
+    function setCurrentTime() {
+        const now = new Date();
+        const formattedTime = now.toLocaleTimeString('en-US', { hour12: false }).slice(0, 5); // HH:MM формат
+        const timeInput = document.getElementById("deal_time");
+        if (timeInput) {
+            timeInput.value = formattedTime;
+        } else {
+            console.warn("⚠️ Поле 'time' не найдено в DOM.");
+        }
+    }
+
+    setCurrentTime(); // Устанавливаем текущее время при загрузке страницы
+
+    // 📌 Функция загрузки данных по Scale Ticket Number
+    window.fetchDealData = function () {
+        let ticketNumberElement = document.getElementById("ticket_number");
+        if (!ticketNumberElement) {
+            console.error("🚨 Ошибка: поле 'ticket_number' не найдено!");
+            return;
+        }
+        let ticketNumber = ticketNumberElement.value;
+
+        if (!ticketNumber || ticketNumber.length < 3) {
+            console.warn("⚠️ Введите минимум 3 символа для поиска сделки.");
+            return;
+        }
+
+        console.log(`🔍 Fetching deal data for ticket: ${ticketNumber}`);
+
+        fetch(`/get-deal-by-ticket/?ticket_number=${ticketNumber}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log("✅ Deal found:", data.deal);
+
+                    // 🛠️ Проверяем существование каждого поля перед присваиванием
+                    const setValueIfExists = (id, value) => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.value = value;
+                        } else {
+                            console.warn(`⚠️ Поле '${id}' не найдено в DOM.`);
+                        }
+                    };
+
+                    setValueIfExists("selectedDealId", data.deal.id);
+                    setValueIfExists("scaleticket_date", data.deal.date);
+                    setValueIfExists("scaleticket_received_quantity", data.deal.received_quantity);
+                    setValueIfExists("pallets", data.deal.received_pallets);
+                    setValueIfExists("supplier_name", data.deal.supplier_name);
+                    setValueIfExists("scaleticket_grade", data.deal.grade);
+                    setValueIfExists("gross_weight", data.deal.gross_weight || "0");
+
+                    // 🏋️‍♂️ Генерируем tare_weight в диапазоне 5270-5470 кг
+                    let randomTareWeight = 5170 + Math.floor(Math.random() * 301);
+                    setValueIfExists("tare_weight", randomTareWeight);
+
+                    // 📌 Пересчитываем net_weight
+                    let netWeight = parseFloat(data.deal.gross_weight || 0) - randomTareWeight;
+                    setValueIfExists("net_weight", netWeight > 0 ? netWeight : 0);
+                } else {
+                    console.warn("❌ Deal not found for this Scale Ticket.");
+                    alert("Deal not found for this Scale Ticket.");
+                }
+            })
+            .catch(error => console.error("🚨 Error fetching deal data:", error));
+    };
+
+    // 📌 Функция экспорта Scale Ticket в PDF
     window.exportScaleTicket = function (event) {
         event.preventDefault();
 
-        let ticketNumber = document.getElementById("ticket_number").value;
+        const getValueOrWarn = (id, defaultValue = "") => {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`⚠️ Поле '${id}' не найдено в DOM.`);
+                return defaultValue;
+            }
+            return element.value || defaultValue;
+        };
+
+        let ticketNumber = getValueOrWarn("ticket_number");
         if (!ticketNumber) {
             alert("⚠️ Please enter a scale ticket number before exporting.");
             return;
         }
 
-        console.log(`📂 Exporting Scale Ticket: ${ticketNumber}`);
-        window.open(`/export-scale-ticket/?ticket_number=${ticketNumber}`, '_blank');
+        let dealTime = getValueOrWarn("deal_time", "N/A");
+        let licencePlate = getValueOrWarn("licence_plate", "N/A");
+        let grossWeight = getValueOrWarn("gross_weight", "0");
+        let tareWeight = getValueOrWarn("tare_weight", "0");
+        let netWeight = getValueOrWarn("net_weight", (parseFloat(grossWeight) - parseFloat(tareWeight)));
+
+        console.log(`📂 Exporting Scale Ticket: ${ticketNumber}, Time: ${dealTime}, Licence: ${licencePlate}, Gross: ${grossWeight}, Tare: ${tareWeight}, Net: ${netWeight}`);
+
+        let url = `/export-scale-ticket/?ticket_number=${ticketNumber}`
+                + `&time=${encodeURIComponent(dealTime)}`
+                + `&licence_plate=${encodeURIComponent(licencePlate)}`
+                + `&gross_weight=${encodeURIComponent(grossWeight)}`
+                + `&tare_weight=${encodeURIComponent(tareWeight)}`
+                + `&net_weight=${encodeURIComponent(netWeight)}`;
+
+        window.open(url, '_blank');
     };
 
-    // Назначаем обработчик для кнопки экспорта
+    // 🔘 Привязываем кнопку экспорта
     const exportBtn = document.getElementById("exportScaleTicketBtn");
     if (exportBtn) {
         exportBtn.addEventListener("click", exportScaleTicket);
         console.log("✅ Export button connected.");
     } else {
         console.error("🚨 Export button NOT FOUND! Проверь ID: exportScaleTicketBtn");
+    }
+
+    // 📌 Заполнение выпадающего списка licence_plate
+    const licencePlates = ['SY1341', 'WB3291', '153'];
+    const licenceSelect = document.getElementById("licence_plate");
+
+    if (licenceSelect) {
+        console.log("🔹 Заполняем список номеров...");
+
+        const placeholderOption = document.createElement("option");
+        placeholderOption.value = "";
+        placeholderOption.textContent = "Select Licence Plate";
+        placeholderOption.disabled = true;
+        placeholderOption.selected = true;
+        licenceSelect.appendChild(placeholderOption);
+
+        licencePlates.forEach(plate => {
+            const option = document.createElement("option");
+            option.value = plate;
+            option.textContent = plate;
+            licenceSelect.appendChild(option);
+        });
+
+        console.log("✅ Licence plate dropdown filled.");
+    } else {
+        console.error("🚨 Licence plate dropdown (licence_plate) NOT FOUND!");
     }
 });

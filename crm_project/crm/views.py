@@ -1,36 +1,46 @@
 from django.core.serializers import serialize
-from django.shortcuts import render, redirect, get_object_or_404
+import os
 from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial
-from django.db.models import Sum
-from django.http import JsonResponse
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .serializers import ClientSerializer
-from .serializers import DealSerializer
+from rest_framework.decorators import action
+
+from .serializers import ClientSerializer,DealSerializer,PipeLineSerializer
+
 from .forms import ContactForm, CompanyForm, ContactMaterialForm, DealForm
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Sum
+from django.http import JsonResponse
 from django.http import HttpResponse
-from openpyxl import Workbook
-from datetime import datetime
 from django.db.models.functions import ExtractYear
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-import json
-from decimal import Decimal
-from openpyxl.styles import Font, PatternFill, Alignment
 from django.http import HttpResponseRedirect
 from django.db.models import Q
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+
+import json
+from decimal import Decimal
+
+
+from datetime import datetime
+
+from io import BytesIO
+
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
-from datetime import datetime
-from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
 
-from rest_framework.decorators import action
-from .serializers import PipeLineSerializer
 
 
 def index(request):
@@ -896,6 +906,7 @@ def get_deal_by_ticket(request):
 
 
 def export_scale_ticket_pdf(request):
+
     ticket_number = request.GET.get('ticket_number', None)
 
     if not ticket_number:
@@ -907,53 +918,127 @@ def export_scale_ticket_pdf(request):
     if not deals.exists():
         return HttpResponse("⚠️ No deals found for this ticket number.", status=404)
 
+    first_deal = deals.first()
+
+    total_material_weight = sum(deal.received_quantity * 1000 for deal in deals)  # Сумма веса всех материалов
+    total_pallets_weight = sum(
+        deal.received_pallets * 15 for deal in deals if deal.received_pallets)  # Сумма всех паллет
+
+    net_weight = total_material_weight + total_pallets_weight  # Итоговый net_weight
+
+    # Форматируем числа для вывода
+    net_weight_str = f"{net_weight:.1f} KG"
+
+    # Данные из формы (GET)
+    licence_plate = request.GET.get('licence_plate', "N/A")
+    gross_weight = request.GET.get('gross_weight', "0")
+    tare_weight = request.GET.get('tare_weight', "0")
+    net_weight = request.GET.get('net_weight') or str(float(gross_weight) - float(tare_weight))
+
+    # 📌 Форматируем числа
+    gross_weight = f"{float(gross_weight):.1f} KG"
+    tare_weight = f"{float(tare_weight):.1f} KG"
+    net_weight = f"{float(net_weight):.1f} KG"
+
+    # Время (из формы или сделки)
+    deal_time = request.GET.get('time', "N/A")
+
     # Создаём PDF
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter  # Размер страницы
+    width, height = letter
 
-    # Заголовок отчёта
-    pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawString(100, height - 50, f"Scale Ticket Report for {ticket_number}")
+    # Логотип
+    logo_path = os.path.join(os.path.dirname(__file__), 'pictures', 'logo.png')
+    if os.path.exists(logo_path):
+        pdf.drawImage(ImageReader(logo_path), 40, height - 80, width=70, height=50, mask='auto')
 
-    # Вывод даты (используем первую найденную сделку)
+    # Название компании
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.setFillColor(colors.darkblue)
+    pdf.drawString(130, height - 45, "Local to Global Recycling Inc.")
+
+    # Адрес
+    pdf.setFont("Helvetica", 8)
+    pdf.setFillColor(colors.black)
+    pdf.drawString(130, height - 55, "19090 Lougheed Hwy.")
+    pdf.drawString(130, height - 65, "Pitt Meadows, BC V3Y 2M6")
+
+
     pdf.setFont("Helvetica", 12)
-    pdf.drawString(100, height - 70, f"Date: {deals.first().date.strftime('%Y-%m-%d')}")
+    pdf.drawString(80, height - 110, f"Scale Ticket #: {ticket_number}")
 
-    # Вывод поставщика (используем первую найденную сделку)
-    supplier_name = deals.first().supplier.name if deals.first().supplier else "Unknown"
-    pdf.drawString(100, height - 90, f"Supplier: {supplier_name}")
+    # Дата и время
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(80, height - 130, f"Date: {first_deal.date.strftime('%Y-%m-%d')}")
+    pdf.drawString(80, height - 150, f"Time: {deal_time}")
+    pdf.drawString(80, height - 170, f"Customer:")
 
-    # Заголовки таблицы
-    data = [["Grade", "Received Quantity"]]  # Шапка таблицы
+    # Customer details with line breaks
+    customer_details = []
+    if first_deal.supplier:
+        customer_details.append(first_deal.supplier.name)
 
-    # Добавляем сделки в таблицу
+    # Вывод информации о клиенте с переносами строк
+    y_position = height - 190  # Отодвигаем ниже заголовка "Customer:"
+    for line in customer_details:
+        pdf.drawString(85, y_position, line.strip())  # Выводим строку
+        y_position -= 15  # Сдвигаем на 15 пикселей вниз
+
+
+    # Данные справа
+    pdf.drawString(350, height - 110, f"Licence: {licence_plate}")
+    pdf.drawString(350, height - 130, f"Gross: {gross_weight}")
+    pdf.drawString(350, height - 150, f"Tare: {tare_weight}")
+    pdf.drawString(350, height - 170, f"Net: {net_weight_str}")
+    pdf.drawString(350, height - 190, f"Pallets #: {first_deal.received_pallets}")
+
+    # Определяем позицию таблицы (отодвигаем её ниже)
+    y_position = height - 320
+
+    # Данные таблицы
+    data = [['MATERIAL', 'WEIGHT (KG)', 'PRICE ($/KG)', 'AMOUNT']]
+    total_amount = 0
+
     for deal in deals:
-        data.append([deal.grade, f"{deal.received_quantity:.4f}"])
+        received_kg = deal.received_quantity * 1000
+        sup_price = deal.supplier_price / 1000
+        amount = received_kg * sup_price
+        total_amount += amount
 
-    # Создаём таблицу с данными
-    table = Table(data, colWidths=[250, 150])  # Ширина колонок
+        data.append([deal.grade, f"{received_kg:.1f}", f"${sup_price:.2f}", f"${amount:.2f}"])
+
+    if total_pallets_weight > 0:
+        data.append(['Pallets', f"{total_pallets_weight:.1f}", '', ''])
+
+    # Создаем таблицу
+    table = Table(data, colWidths=[200, 100, 100, 100])
     table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),  # Серый фон для заголовка
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),  # Белый текст для заголовка
-        ("ALIGN", (0, 0), (-1, -1), "LEFT"),  # Выравнивание текста
-        ("GRID", (0, 0), (-1, -1), 1, colors.black),  # Границы таблицы
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),  # Жирный шрифт для заголовка
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),  # Отступ для заголовка
-        ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),  # Светло-серый фон для данных
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black)
     ]))
 
-    # Рисуем таблицу на PDF
+    # Отображаем таблицу в PDF
     table.wrapOn(pdf, width, height)
-    table.drawOn(pdf, 100, height - 200)
+    table.drawOn(pdf, 80, y_position)
 
-    # Сохраняем PDF
+    # Итоговая сумма (с отступом)
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(80, y_position - 25, f"Total: ${total_amount:.2f}")
+
+    # Сохранение PDF
     pdf.save()
     buffer.seek(0)
 
     response = HttpResponse(buffer, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="scale_ticket_{ticket_number}.pdf"'
+    response["Content-Disposition"] = f'attachment; filename=\"scale_ticket_{ticket_number}.pdf\"'
     return response
+
 
 
 # TACKS
