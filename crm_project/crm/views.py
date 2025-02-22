@@ -949,9 +949,14 @@ def export_scale_ticket_pdf(request):
     width, height = letter
 
     # Логотип
-    logo_path = os.path.join(os.path.dirname(__file__), 'pictures', 'logo.png')
+    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'company_logo.png')
     if os.path.exists(logo_path):
         pdf.drawImage(ImageReader(logo_path), 40, height - 80, width=70, height=50, mask='auto')
+
+        if os.path.exists(logo_path):
+            print(f"✅ Файл найден: {logo_path}")
+        else:
+            print(f"🚨 Файл НЕ найден: {logo_path}")
 
     # Название компании
     pdf.setFont("Helvetica-Bold", 12)

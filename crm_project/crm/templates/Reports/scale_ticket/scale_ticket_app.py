@@ -177,7 +177,7 @@ def save_pdf():
     GST = total * 0.05  # 5% TAX
 
     # Open dialog to choose save location
-    file_name = f"scale_ticket_{ticket_number}_{customer_name.replace(' ', '_').replace(',', '').lower()}.pdf"
+    file_name = f"Ticket # {ticket_number}_{customer_name.replace(' ', '_').replace(',', '').lower()}.pdf"
     file_path = os.path.join(reports_folder, file_name)  # Save in reports folder
 
     if file_path:
