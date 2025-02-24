@@ -906,7 +906,6 @@ def get_deal_by_ticket(request):
 
 
 def export_scale_ticket_pdf(request):
-
     ticket_number = request.GET.get('ticket_number', None)
 
     if not ticket_number:
@@ -920,103 +919,96 @@ def export_scale_ticket_pdf(request):
 
     first_deal = deals.first()
 
-    total_material_weight = sum(deal.received_quantity * 1000 for deal in deals)  # Сумма веса всех материалов
-    total_pallets_weight = sum(
-        deal.received_pallets * 15 for deal in deals if deal.received_pallets)  # Сумма всех паллет
+    # 📌 Считаем общий вес материалов и паллет
+    total_material_weight = sum(deal.received_quantity * 1000 for deal in deals)  # В кг
+    total_pallets_weight = sum(deal.received_pallets * 15 for deal in deals if deal.received_pallets)
 
-    net_weight = total_material_weight + total_pallets_weight  # Итоговый net_weight
-
-    # Форматируем числа для вывода
-    net_weight_str = f"{net_weight:.1f} KG"
-
-    # Данные из формы (GET)
+    # 📌 Получаем данные из формы (если переданы)
     licence_plate = request.GET.get('licence_plate', "N/A")
-    gross_weight = request.GET.get('gross_weight', "0")
-    tare_weight = request.GET.get('tare_weight', "0")
-    net_weight = request.GET.get('net_weight') or str(float(gross_weight) - float(tare_weight))
+    tare_weight = float(request.GET.get('tare_weight', 5170))  # 🚛 Базовый вес
+    net_weight = float(total_material_weight) + float(total_pallets_weight)  # 📦 Итоговый net_weight
+    gross_weight = float(tare_weight) + float(net_weight)  # 📌 Gross = Tare + Net
 
     # 📌 Форматируем числа
-    gross_weight = f"{float(gross_weight):.1f} KG"
-    tare_weight = f"{float(tare_weight):.1f} KG"
-    net_weight = f"{float(net_weight):.1f} KG"
+    gross_weight_str = f"{gross_weight:.1f} KG"
+    tare_weight_str = f"{tare_weight:.1f} KG"
+    net_weight_str = f"{net_weight:.1f} KG"
 
-    # Время (из формы или сделки)
+    # 🕒 Время (из формы или по умолчанию)
     deal_time = request.GET.get('time', "N/A")
+
+    # 🖨 Лог для отладки весов
+    print(f"📊 Scale Ticket #{ticket_number} | Gross: {gross_weight}, Tare: {tare_weight}, Net: {net_weight}")
 
     # Создаём PDF
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
 
-    # Логотип
+    # 🏢 Логотип
     logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'company_logo.png')
+
     if os.path.exists(logo_path):
         pdf.drawImage(ImageReader(logo_path), 40, height - 80, width=70, height=50, mask='auto')
+        print(f"✅ Логотип найден: {logo_path}")
+    else:
+        print(f"🚨 Логотип НЕ найден: {logo_path}")
 
-        if os.path.exists(logo_path):
-            print(f"✅ Файл найден: {logo_path}")
-        else:
-            print(f"🚨 Файл НЕ найден: {logo_path}")
-
-    # Название компании
+    # 📌 Название компании
     pdf.setFont("Helvetica-Bold", 12)
     pdf.setFillColor(colors.darkblue)
     pdf.drawString(130, height - 45, "Local to Global Recycling Inc.")
 
-    # Адрес
+    # 📍 Адрес
     pdf.setFont("Helvetica", 8)
     pdf.setFillColor(colors.black)
     pdf.drawString(130, height - 55, "19090 Lougheed Hwy.")
     pdf.drawString(130, height - 65, "Pitt Meadows, BC V3Y 2M6")
 
-
+    # 🏷 Заголовок Scale Ticket
     pdf.setFont("Helvetica", 12)
     pdf.drawString(80, height - 110, f"Scale Ticket #: {ticket_number}")
 
-    # Дата и время
+    # 📆 Дата и время
     pdf.setFont("Helvetica", 10)
     pdf.drawString(80, height - 130, f"Date: {first_deal.date.strftime('%Y-%m-%d')}")
     pdf.drawString(80, height - 150, f"Time: {deal_time}")
     pdf.drawString(80, height - 170, f"Customer:")
 
-    # Customer details with line breaks
-    customer_details = []
-    if first_deal.supplier:
-        customer_details.append(first_deal.supplier.name)
-
-    # Вывод информации о клиенте с переносами строк
-    y_position = height - 190  # Отодвигаем ниже заголовка "Customer:"
+    # 👤 Customer details (с переносами строк)
+    customer_details = [first_deal.supplier.name] if first_deal.supplier else ["Unknown"]
+    y_position = height - 190  # Опускаем ниже заголовка "Customer:"
     for line in customer_details:
-        pdf.drawString(85, y_position, line.strip())  # Выводим строку
-        y_position -= 15  # Сдвигаем на 15 пикселей вниз
+        pdf.drawString(85, y_position, line.strip())
+        y_position -= 15  # Отступ вниз
 
-
-    # Данные справа
+    # 📋 Данные справа
     pdf.drawString(350, height - 110, f"Licence: {licence_plate}")
-    pdf.drawString(350, height - 130, f"Gross: {gross_weight}")
-    pdf.drawString(350, height - 150, f"Tare: {tare_weight}")
+    pdf.drawString(350, height - 130, f"Gross: {gross_weight_str}")
+    pdf.drawString(350, height - 150, f"Tare: {tare_weight_str}")
     pdf.drawString(350, height - 170, f"Net: {net_weight_str}")
     pdf.drawString(350, height - 190, f"Pallets #: {first_deal.received_pallets}")
 
-    # Определяем позицию таблицы (отодвигаем её ниже)
+    # 📌 Позиция таблицы (ниже)
     y_position = height - 320
 
-    # Данные таблицы
+    # 📊 Данные таблицы
     data = [['MATERIAL', 'WEIGHT (KG)', 'PRICE ($/KG)', 'AMOUNT']]
     total_amount = 0
 
     for deal in deals:
         received_kg = deal.received_quantity * 1000
-        sup_price = deal.supplier_price / 1000
+        sup_price = deal.supplier_price / 1000  # ✅ Цена за кг
         amount = received_kg * sup_price
         total_amount += amount
 
         data.append([deal.grade, f"{received_kg:.1f}", f"${sup_price:.2f}", f"${amount:.2f}"])
 
+    # 🏋 Добавляем вес паллет, если есть
     if total_pallets_weight > 0:
         data.append(['Pallets', f"{total_pallets_weight:.1f}", '', ''])
 
-    # Создаем таблицу
+    # 📑 Создаем таблицу
     table = Table(data, colWidths=[200, 100, 100, 100])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
@@ -1028,20 +1020,20 @@ def export_scale_ticket_pdf(request):
         ('GRID', (0, 0), (-1, -1), 0.5, colors.black)
     ]))
 
-    # Отображаем таблицу в PDF
+    # 🖨 Вывод таблицы в PDF
     table.wrapOn(pdf, width, height)
     table.drawOn(pdf, 80, y_position)
 
-    # Итоговая сумма (с отступом)
+    # 💰 Итоговая сумма
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(80, y_position - 25, f"Total: ${total_amount:.2f}")
 
-    # Сохранение PDF
+    # 🛟 Сохранение PDF
     pdf.save()
     buffer.seek(0)
 
     response = HttpResponse(buffer, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename=\"scale_ticket_{ticket_number}.pdf\"'
+    response["Content-Disposition"] = f'attachment; filename=\"Ticket # {ticket_number}.pdf\"'
     return response
 
 
