@@ -707,7 +707,7 @@ def sales_analytics(request):
         'years': sorted(years),
         'months': months,
     }
-    return render(request, 'crm/sales_analytics.html', context)
+
 
 
 def add_contact_material(request, contact_id):

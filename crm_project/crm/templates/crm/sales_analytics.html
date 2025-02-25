@@ -26,7 +26,6 @@
 <form method="get" action="{% url 'sales_analytics' %}" class="filter-form">
     <label for="month">Month:</label>
     <select name="month" id="month">
-        <!-- Опция "All" для месяца, если месяц не выбран -->
         <option value="" {% if not month %}selected{% endif %}>All</option>
         {% for m in months %}
             <option value="{{ m }}" {% if m == month %}selected{% endif %}>
@@ -37,7 +36,6 @@
 
     <label for="year">Year:</label>
     <select name="year" id="year">
-        <!-- Опция "All" для года, если год не выбран -->
         <option value="" {% if not year %}selected{% endif %}>All</option>
         {% for y in years %}
             <option value="{{ y }}" {% if y == year %}selected{% endif %}>
@@ -46,7 +44,6 @@
         {% endfor %}
     </select>
 
-    <!-- Кнопка отправки формы фильтрации -->
     <button type="submit">Filter</button>
 </form>
 
@@ -55,10 +52,7 @@
      ================================================ -->
 <div class="analytics-container">
 
-    <!-- -----------------------------------------------
-         График по поставщикам
-         (Отображается через элемент <canvas>)
-         ----------------------------------------------- -->
+    <!-- График по поставщикам -->
     <div class="chart-container">
         {% if suppliers_income %}
             <canvas id="salesChart" width="200" height="100"></canvas>
@@ -67,64 +61,50 @@
         {% endif %}
     </div>
 
-    <!-- -----------------------------------------------
-         Статистика в виде плиток (табличек)
-         Блок статистики обернут в контейнер с классом "block stats-block"
-         Для плиток используется контейнер "tiles-container",
-         а каждая отдельная плитка оформлена классом "tile"
-         ----------------------------------------------- -->
+    <!-- Статистика в виде плиток (табличек) -->
     <div class="block stats-block">
       <h2>Statistics</h2>
       <div class="tiles-container">
-        <!-- Плитка Total Deals -->
         <div class="tile">
           <div class="icon"><i class="fas fa-users"></i></div>
           <h3>{{ total_deals }}</h3>
           <p>Total Deals</p>
         </div>
-        <!-- Плитка Total Sale -->
         <div class="tile">
           <div class="icon"><i class="fas fa-dollar-sign"></i></div>
           <h3>${{ total_sale|floatformat:1 }}</h3>
           <p>Total Sale</p>
         </div>
-        <!-- Плитка # of Pallets -->
         <div class="tile">
           <div class="icon"><i class="fas fa-box"></i></div>
           <h3>{{ total_pallets }}</h3>
           <p># of Pallets</p>
         </div>
-        <!-- Плитка Transportation Fee -->
         <div class="tile">
           <div class="icon"><i class="fas fa-truck"></i></div>
           <h3>${{ transportation_fee }}</h3>
           <p>Transportation Fee</p>
         </div>
-        <!-- Плитка Suppliers -->
         <div class="tile">
           <div class="icon"><i class="fas fa-truck-moving"></i></div>
           <h3>${{ suppliers_total|floatformat:1 }}</h3>
           <p>Suppliers</p>
         </div>
-        <!-- Плитка MT OCC11 -->
         <div class="tile">
           <div class="icon"><i class="fas fa-cogs"></i></div>
           <h3>{{ mt_occ11|floatformat:1 }}</h3>
           <p>MT OCC11</p>
         </div>
-        <!-- Плитка MT Plastic -->
         <div class="tile">
           <div class="icon"><i class="fas fa-cogs"></i></div>
-          <h3>{{ mt_plastic|floatformat:1 }}</h3>
+          <h3>${{ mt_plastic|floatformat:1 }}</h3>
           <p>MT Plastic</p>
         </div>
-        <!-- Плитка MT Mixed-containers -->
         <div class="tile">
           <div class="icon"><i class="fas fa-cogs"></i></div>
-          <h3>{{ mt_mixed_containers|floatformat:1 }}</h3>
+          <h3>${{ mt_mixed_containers|floatformat:1 }}</h3>
           <p>MT Mixed-containers</p>
         </div>
-        <!-- Плитка Income (можно задать растяжение на 2 колонки, если нужно) -->
         <div class="tile tile-income">
           <div class="icon"><i class="fas fa-dollar-sign"></i></div>
           <h3>${{ income|floatformat:1 }}</h3>
@@ -133,10 +113,7 @@
       </div>
     </div>
 
-    <!-- -----------------------------------------------
-         График Pallet Analytics
-         Блок с таблицей, где отображаются данные по паллетам
-         ----------------------------------------------- -->
+    <!-- График Pallet Analytics -->
     <div class="block">
         <h2>Pallet Analytics</h2>
         <form method="POST">
@@ -169,7 +146,6 @@
 <!-- ================================================
      Раздел Monthly Analytics (График по месяцам)
      ================================================ -->
-<!-- Контейнер для графика по месяцам (canvas) -->
 <div class="chart-container">
     <div class="monthly-header">
         <!-- Заголовок для графика по месяцам -->
@@ -177,7 +153,8 @@
         <!-- Элемент текущего показателя (круглый индикатор) -->
         <div id="currentMetricDisplay" class="current-metric">0</div>
     </div>
-    <canvas id="monthlyChart" width="200" height="100"></canvas>
+    <!-- Используем canvas с id "monthlyWormChart" -->
+    <canvas id="monthlyWormChart" width="200" height="100"></canvas>
 </div>
 
 <!-- Контейнер для кнопок переключения метрик для графика по месяцам -->
@@ -200,7 +177,7 @@
 <script>
     window.suppliersIncome = {{ suppliers_income|safe }};
     window.chartData = {{ chart_data|safe }};
-</script>
+</script>А
 
 <!-- ================================================
      Подключение внешнего JavaScript-файла для аналитики

@@ -1,77 +1,48 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // График по поставщикам (bar chart)
+  // ========= График по поставщикам (Bar Chart) =========
   if (document.getElementById('salesChart')) {
     const suppliersIncome = window.suppliersIncome;
     if (!suppliersIncome || Object.keys(suppliersIncome).length === 0) {
       console.error('No data available for sales analytics');
       alert('No data available for sales analytics.');
-    }
-    const salesLabels = Object.keys(suppliersIncome);
-    const salesData = Object.values(suppliersIncome);
-    var salesCtx = document.getElementById('salesChart').getContext('2d');
-    new Chart(salesCtx, {
-      type: 'bar',
-      data: {
-        labels: salesLabels,
-        datasets: [{
-          label: 'Income/Loss',
-          data: salesData,
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  }
+    } else {
+      const salesLabels = Object.keys(suppliersIncome);   // Например, ["Supplier A", "Supplier B", ...]
+      const salesData = Object.values(suppliersIncome);     // Например, [10000, 30000, ...]
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
 
-  // График по месяцам (line chart)
-  if (document.getElementById('monthlyChart')) {
-    const chartData = window.chartData;
-    var monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-    window.monthlyChart = new Chart(monthlyCtx, {
-      type: 'line',
-      data: {
-        labels: chartData.months.map(m => `Month ${m}`),
-        datasets: [{
-          label: 'Profit',
-          data: chartData.profit,
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
+      // Определяем цвета для каждого поставщика
+      const colorMap = {
+        "Supplier A": "#ff0000",
+        "Supplier B": "#ff9f00",
+        "Supplier C": "#ffff00",
+        "Supplier D": "#8a2be2"
+      };
+      const barColors = salesLabels.map(label => colorMap[label] || "#888");
 
-    // Глобальная функция для переключения метрик
-    window.updateMonthlyChart = function (metric) {
-      if (window.monthlyChart && window.chartData) {
-        window.monthlyChart.data.datasets[0].data = window.chartData[metric];
-        window.monthlyChart.data.datasets[0].label = metric.replace('_', ' ').toUpperCase();
-        window.monthlyChart.update();
-      }
+      new Chart(salesCtx, {
+        type: 'bar',
+        data: {
+          labels: salesLabels,
+          datasets: [{
+            label: 'Income/Loss',
+            data: salesData,
+            backgroundColor: barColors,
+            borderColor: barColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
     }
   }
-});
 
-document.addEventListener("DOMContentLoaded", function() {
-  // Предположим, что window.chartData содержит данные, например:
-  // { profit: [100, 120, 130, ...], pallets: [10, 12, 15, ...], ... }
-
-  // Определим объект с цветами для каждой метрики
+  // ========= Объект цветов для месячных метрик =========
   const hoverColors = {
     profit: '#4CAF50',
     pallets: '#2196F3',
@@ -84,26 +55,83 @@ document.addEventListener("DOMContentLoaded", function() {
     sales: '#F44336'
   };
 
-  // Функция обновления графика и текущего показателя
-  window.updateMonthlyChart = function(metric) {
+  // ========= График по месяцам (Line Chart – "червячок") =========
+  // Исправляем проверку: используем id "monthlyWormChart"
+  if (document.getElementById('monthlyWormChart')) {
+    const chartData = window.chartData;
+    const monthlyCtx = document.getElementById('monthlyWormChart').getContext('2d');
+
+    // Формируем массив объектов для графика: [{ x: 'Jan', y: chartData.profit[0] }, ...]
+    const wormData = chartData.months.map((month, idx) => ({
+      x: month,
+      y: chartData.profit[idx]
+    }));
+
+    // Создаём линейный градиент для базовой заливки/линии
+    const gradient = monthlyCtx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, '#ff0000');   // красный (верх)
+    gradient.addColorStop(0.5, '#ffff00');   // желтый (середина)
+    gradient.addColorStop(1, '#8a2be2');   // фиолетовый (низ)
+
+    window.monthlyChart = new Chart(monthlyCtx, {
+      type: 'line',
+      data: {
+        labels: chartData.months.map(m => `Month ${m}`),
+        datasets: [{
+          label: 'Profit',
+          data: wormData,
+          parsing: {
+            xAxisKey: 'x',
+            yAxisKey: 'y'
+          },
+          borderColor: gradient,
+          backgroundColor: gradient,
+          fill: false,
+          borderWidth: 5,
+          pointRadius: 0,
+
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'category',
+            ticks: { color: '#333', font: { size: 14 } }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#333', font: { size: 14 } }
+          }
+        }
+      }
+    });
+
+    // ========= Функция переключения метрик для месячного графика =========
+    window.updateMonthlyChart = function (metric) {
       if (window.monthlyChart && window.chartData) {
-        window.monthlyChart.data.datasets[0].data = window.chartData[metric];
+        const newData = chartData.months.map((month, idx) => ({
+          x: month,
+          y: chartData[metric][idx]
+        }));
+        window.monthlyChart.data.datasets[0].data = newData;
         window.monthlyChart.data.datasets[0].label = metric.replace('_', ' ').toUpperCase();
 
-        // Обновляем цвета графика:
-        window.monthlyChart.data.datasets[0].backgroundColor = hoverColors[metric] + "33"; // прозрачный фон
-        window.monthlyChart.data.datasets[0].borderColor = hoverColors[metric];
+        const color = hoverColors[metric] || '#888';
+        window.monthlyChart.data.datasets[0].borderColor = color;
+        window.monthlyChart.data.datasets[0].backgroundColor = color + '33';
 
         window.monthlyChart.update();
 
-        // Обновляем текущий показатель
-        const dataArray = window.chartData[metric];
+        const dataArray = chartData[metric];
         const currentValue = dataArray && dataArray.length ? dataArray[dataArray.length - 1] : 0;
         const currentDisplay = document.getElementById('currentMetricDisplay');
         if (currentDisplay) {
           currentDisplay.innerText = currentValue;
-          currentDisplay.style.backgroundColor = hoverColors[metric] || '#888';
+          currentDisplay.style.backgroundColor = color;
         }
       }
-    }
+    };
+  }
 });
