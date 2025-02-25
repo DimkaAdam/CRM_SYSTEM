@@ -203,8 +203,8 @@ canvas {
 /* Элемент текущего показателя */
 #currentMetricDisplay {
     display: inline-block;
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
     border-radius: 50%;
     background-color: #888;
     color: #fff;
@@ -215,18 +215,24 @@ canvas {
 }
 
 /* Контейнер для графика по месяцам */
-.monthly-chart-container,
-.chart-container.monthly {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
+
+.chart-container {
+    max-width: 1200px;  /* или любая нужная ширина */
+    margin: 0 auto;    /* центрирование контейнера */
+    padding: 10px;     /* можно уменьшить отступы */
+}
+
+#monthlyChart {
+    width: 100%;       /* занимает всю ширину родителя */
+    max-width: 600px;  /* ограничение по ширине */
+    height: auto;      /* автоматически вычисляемая высота */
 }
 
 /* Контейнер для кнопок переключения метрик */
 .chart-buttons {
     text-align: center;
     margin-top: 15px;
+
 }
 
 /* Стили для кнопок переключения метрик */
@@ -303,7 +309,7 @@ canvas {
     background-color: #ffffff; /* Белый фон для блока */
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Легкая тень */
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 /* Таблица */

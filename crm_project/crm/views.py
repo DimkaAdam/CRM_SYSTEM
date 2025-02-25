@@ -596,8 +596,10 @@ def sales_analytics(request):
         transport_cost=Sum('transport_cost'),
         supplier_total=Sum('supplier_total'),
         total_tonnage=Sum('received_quantity'),
-        occ11_tonnage=Sum('received_quantity', filter=Q(grade__icontains="OCC11")),
-        plastic_tonnage=Sum('received_quantity', filter=Q(grade="Flexible Plastic")),
+        occ11_tonnage=Sum('received_quantity', filter=Q(grade="OCC11") | Q(grade="OCC 11") | Q(grade="Loose OCC") | Q(
+            grade="OCC 11 Bale String")),
+
+    plastic_tonnage=Sum('received_quantity', filter=Q(grade="Flexible Plastic")),
         mixed_tonnage=Sum('received_quantity', filter=Q(grade="Mixed Container")),
         total_sales=Sum('total_amount')
     ).order_by('month')
