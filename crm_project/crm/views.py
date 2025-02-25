@@ -15,7 +15,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.http import HttpResponse
-from django.db.models.functions import ExtractYear
+from django.db.models.functions import ExtractYear, ExtractMonth
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -573,27 +573,62 @@ class DealViewSet(viewsets.ModelViewSet):
 
 
 
-
 def sales_analytics(request):
+    from django.db.models import Sum, Q
+    from django.db.models.functions import ExtractMonth, ExtractYear
+    from django.http import JsonResponse, HttpResponseRedirect
+    from datetime import datetime
+
     # Получаем текущий месяц и год
     now = datetime.now()
     current_month = now.month
     current_year = now.year
 
     # Получаем параметры фильтра из запроса
-    month = request.GET.get('month', str(current_month).zfill(2))  # Текущий месяц по умолчанию
-    year = request.GET.get('year', str(current_year))  # Текущий год по умолчанию
+    month = request.GET.get('month', str(current_month).zfill(2))  # По умолчанию текущий месяц
+    year = request.GET.get('year', str(current_year))               # По умолчанию текущий год
 
-    # Данные о сделках с учетом фильтра по месяцу и году
-    deals_filter = Deals.objects.all()
+    # --- Данные для графика по месяцам (фильтрация только по году) ---
+    deals_year = Deals.objects.filter(date__year=int(year))
+    monthly_data = deals_year.values(month=ExtractMonth('date')).annotate(
+        total_income=Sum('total_income_loss'),
+        total_pallets=Sum('shipped_pallets'),
+        transport_cost=Sum('transport_cost'),
+        supplier_total=Sum('supplier_total'),
+        total_tonnage=Sum('received_quantity'),
+        occ11_tonnage=Sum('received_quantity', filter=Q(grade__icontains="OCC11")),
+        plastic_tonnage=Sum('received_quantity', filter=Q(grade="Flexible Plastic")),
+        mixed_tonnage=Sum('received_quantity', filter=Q(grade="Mixed Container")),
+        total_sales=Sum('total_amount')
+    ).order_by('month')
+
+    chart_data = {
+        'months': [entry['month'] for entry in monthly_data],
+        'profit': [float(entry["total_income"] or 0) for entry in monthly_data],
+        'pallets': [float(entry['total_pallets'] or 0) for entry in monthly_data],
+        'hauler': [float(entry['transport_cost'] or 0) for entry in monthly_data],
+        'suppliers': [float(entry["supplier_total"] or 0) for entry in monthly_data],
+        'total_tonnage': [float(entry["total_tonnage"] or 0) for entry in monthly_data],
+        'occ11_tonnage': [float(entry["occ11_tonnage"] or 0) for entry in monthly_data],
+        'plastic_tonnage': [float(entry["plastic_tonnage"] or 0) for entry in monthly_data],
+        'mixed_tonnage': [float(entry["mixed_tonnage"] or 0) for entry in monthly_data],
+        'sales': [float(entry["total_sales"] or 0) for entry in monthly_data]
+    }
+
+    # Если запрос AJAX, возвращаем данные графика в JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse(chart_data)
+
+    # --- Данные для остальных статистик (фильтрация по месяцу и году) ---
+    deals_details = Deals.objects.all()
     if month and year:
-        deals_filter = deals_filter.filter(date__month=int(month), date__year=int(year))
-    elif month:  # Если указан только месяц
-        deals_filter = deals_filter.filter(date__month=int(month))
-    elif year:  # Если указан только год
-        deals_filter = deals_filter.filter(date__year=int(year))
+        deals_details = deals_details.filter(date__month=int(month), date__year=int(year))
+    elif month:
+        deals_details = deals_details.filter(date__month=int(month))
+    elif year:
+        deals_details = deals_details.filter(date__year=int(year))
 
-    suppliers_income = deals_filter.values('supplier').annotate(total_income_loss=Sum('total_income_loss'))
+    suppliers_income = deals_details.values('supplier').annotate(total_income_loss=Sum('total_income_loss'))
     suppliers_income_dict = {
         contact.company.name: float(entry['total_income_loss'] or 0)
         for entry in suppliers_income
@@ -602,17 +637,16 @@ def sales_analytics(request):
 
     occ11_filter = Q(grade="OCC11") | Q(grade="OCC 11") | Q(grade="Loose OCC") | Q(grade="OCC 11 Bale String")
 
-    total_deals = deals_filter.count()
-    total_sale = deals_filter.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    total_pallets = deals_filter.aggregate(Sum('shipped_pallets'))['shipped_pallets__sum'] or 0
-    transportation_fee = deals_filter.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
-    suppliers_total = deals_filter.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
-    mt_occ11 = deals_filter.filter(occ11_filter).aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
-    mt_plastic = deals_filter.filter(grade="Flexible Plastic").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
-    mt_mixed_containers = deals_filter.filter(grade="Mixed Container").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
-    income = deals_filter.aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
+    total_deals = deals_details.count()
+    total_sale = deals_details.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_pallets = deals_details.aggregate(Sum('shipped_pallets'))['shipped_pallets__sum'] or 0
+    transportation_fee = deals_details.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
+    suppliers_total = deals_details.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
+    mt_occ11 = deals_details.filter(occ11_filter).aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
+    mt_plastic = deals_details.filter(grade="Flexible Plastic").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
+    mt_mixed_containers = deals_details.filter(grade="Mixed Container").aggregate(Sum('received_quantity'))['received_quantity__sum'] or 0
+    income = deals_details.aggregate(Sum('total_income_loss'))['total_income_loss__sum'] or 0
 
-    # Данные о палетах
     company_pallets = CompanyPallets.objects.select_related('company_name')
 
     # Обработка формы обновления паллет
@@ -620,12 +654,35 @@ def sales_analytics(request):
         for pallet in company_pallets:
             new_pallet_count = request.POST.get(f"pallets_{pallet.id}")
             if new_pallet_count is not None:
-                # Обновляем количество паллет
                 pallet.pallets_count = int(new_pallet_count)
                 pallet.save()
-
-        # Перенаправляем после успешного обновления
         return HttpResponseRedirect(request.path)
+
+    years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()
+    months = range(1, 13)
+
+    # Объединяем все данные в один context
+    context = {
+        'chart_data': chart_data,
+        'year': year,
+        'suppliers_income': suppliers_income_dict,
+        'total_deals': total_deals,
+        'total_sale': total_sale,
+        'total_pallets': total_pallets,
+        'transportation_fee': transportation_fee,
+        'suppliers_total': suppliers_total,
+        'mt_occ11': mt_occ11,
+        'mt_plastic': mt_plastic,
+        'mt_mixed_containers': mt_mixed_containers,
+        'income': income,
+        'company_pallets': company_pallets,
+        'month': month,
+        'years': sorted(years),
+        'months': months,
+    }
+
+    return render(request, 'crm/sales_analytics.html', context)
+
 
     # Получаем доступные года и месяцы
     years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()

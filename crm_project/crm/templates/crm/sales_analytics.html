@@ -260,5 +260,60 @@
                 });
             </script>
 
+    <h2>Monthly Analytics</h2>
+
+    <!-- График по месяцам -->
+    <div class="chart-container">
+        <canvas id="monthlyChart" width="200" height="100"></canvas>
+    </div>
+
+    <!-- Кнопки для выбора метрики -->
+    <div class="chart-buttons">
+        <button onclick="updateMonthlyChart('profit')">Profit</button>
+        <button onclick="updateMonthlyChart('pallets')">Pallets</button>
+        <button onclick="updateMonthlyChart('hauler')">Transport Cost</button>
+        <button onclick="updateMonthlyChart('suppliers')">Supplier Payments</button>
+        <button onclick="updateMonthlyChart('total_tonnage')">Total Tonnage</button>
+        <button onclick="updateMonthlyChart('occ11_tonnage')">OCC11 Tonnage</button>
+        <button onclick="updateMonthlyChart('plastic_tonnage')">Plastic Tonnage</button>
+        <button onclick="updateMonthlyChart('mixed_tonnage')">Mixed Containers</button>
+        <button onclick="updateMonthlyChart('sales')">Sales</button>
+    </div>
+
+    <script>
+        let chartData = {{ chart_data|safe }};
+        let currentMetric = 'profit';
+
+        function updateMonthlyChart(metric) {
+            currentMetric = metric;
+            monthlyChart.data.datasets[0].data = chartData[metric];
+            monthlyChart.data.datasets[0].label = metric.replace('_', ' ').toUpperCase();
+            monthlyChart.update();
+        }
+
+        // График по месяцам
+        var ctx = document.getElementById('monthlyChart').getContext('2d');
+        var monthlyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.months.map(m => `Month ${m}`),
+                datasets: [{
+                    label: 'Profit',
+                    data: chartData.profit,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+
 <link rel="stylesheet" href="{% static 'crm/sales_analytics.css' %}">
 {% endblock %}

@@ -1,4 +1,8 @@
-/* sales analytics HTML settings */
+/* ================================
+   Sales Analytics HTML Settings
+================================ */
+
+/* Базовые стили для страницы */
 body {
     font-family: Arial, sans-serif;
     background-color: #f9f9f9;
@@ -33,70 +37,68 @@ canvas {
     margin-top: 20px;
 }
 
+/* Стили для блока с таблицей */
+.block {
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
 
-<style>
-    /* Контейнер для блока с таблицей */
-    .block {
-        padding: 20px;
-        background-color: #ffffff; /* Белый фон для блока */
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Легкая тень */
-        margin-bottom: 20px;
-    }
+/* Таблица */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
 
-    /* Таблица */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
+table th, table td {
+    padding: 12px 20px;
+    text-align: left;
+    font-family: 'Arial', sans-serif;
+}
 
-    table th, table td {
-        padding: 12px 20px;
-        text-align: left;
-        font-family: 'Arial', sans-serif;
-    }
+table th {
+    background-color: #f4f4f4;
+    color: #333;
+    font-weight: bold;
+    border-radius: 8px;
+}
 
-    table th {
-        background-color: #f4f4f4; /* Мягкий светлый фон для заголовков */
-        color: #333;
-        font-weight: bold;
-        border-radius: 8px;
-    }
+table td {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
 
-    table td {
-        background-color: #fff;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 14px;
-    }
+/* Чередование строк таблицы */
+tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
 
-    /* Стилизация строки таблицы */
-    tbody tr:nth-child(odd) {
-        background-color: #f9f9f9;
-    }
+tbody tr:nth-child(even) {
+    background-color: #fff;
+}
 
-    tbody tr:nth-child(even) {
-        background-color: #fff;
-    }
+/* Стилизация поля ввода для паллет */
+input[type="number"] {
+    width: 100px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
 
-    /* Стилизация поля ввода для паллет */
-    input[type="number"] {
-        width: 100px;
-        padding: 8px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 14px;
-        box-sizing: border-box;
-    }
+input[type="number"]:focus {
+    outline: none;
+    border-color: #007BFF;
+}
 
-    input[type="number"]:focus {
-        outline: none;
-        border-color: #007BFF;
-    }
-
-    /* Стили для кнопки Update */
-    .upt-btn {
+/* Кнопка Update */
+.upt-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -110,50 +112,140 @@ canvas {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 0;
     overflow: hidden;
-    }
+}
 
-    .upt-btn:hover {
-        background-color: #0056b3;
-        transform: scale(1.1);
-    }
+.upt-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.1);
+}
 
-    .upt-btn:active {
-        background-color: #003f8a;
-        transform: scale(1);
-    }
+.upt-btn:active {
+    background-color: #003f8a;
+    transform: scale(1);
+}
 
-    .upt-btn img {
-        width: 20px;
-        height: 20px;
-        pointer-events: none;
-        object-fit: cover;
-    }
+.upt-btn img {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    object-fit: cover;
+}
 
-    /* Форма фильтрации */
-    .filter-form {
-        margin-bottom: 20px;
-        display: flex;
-        flex-direction: row;
-        gap: 15px;  /* Увеличено расстояние между элементами */
-        max-width: 600px;  /* Устанавливаем максимальную ширину формы */
-        margin-left: auto; /* Выравниваем по центру */
-        margin-right: auto; /* Выравниваем по центру */
-        justify-content: flex-start;  /* Располагаем элементы слева */
-        align-items: center;  /* Выравнивание по вертикали */
-    }
+/* Форма фильтрации */
+.filter-form {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: flex-start;
+    align-items: center;
+}
 
-    .filter-form select,
-    .filter-form button {
-        width: 130px; /* Ограничиваем ширину элементов */
-        height: 40px;
-        padding: 8px;
-    }
+.filter-form select,
+.filter-form button {
+    width: 130px;
+    height: 40px;
+    padding: 8px;
+}
 
-    .filter-form button {
-        background-color: #007BFF;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-</style>
+.filter-form button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* ================================
+   Monthly Analytics Styles
+================================ */
+
+/* Элемент текущего показателя */
+#currentMetricDisplay {
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;       /* круглый элемент */
+    background-color: #888;   /* базовый цвет */
+    color: #fff;
+    text-align: center;
+    line-height: 60px;
+    font-size: 18px;
+    margin: 0 auto 15px;
+}
+
+/* Контейнер для графика по месяцам */
+.chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* Контейнер для кнопок переключения метрик */
+.chart-buttons {
+    text-align: center;
+    margin-top: 15px;
+}
+
+/* Стили для кнопок переключения метрик */
+.chart-buttons button {
+    border: none;
+    border-radius: 50px;       /* полугруглая форма */
+    padding: 10px 20px;
+    background-color: #888;    /* базовый цвет кнопок */
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease; /* плавное изменение всех свойств */
+    margin: 5px;
+}
+
+/* Hover эффекты для каждой кнопки с индивидуальными цветами и эффектами */
+.chart-buttons button.profit:hover {
+    background-color: #4CAF50; /* зелёный */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.5);
+}
+.chart-buttons button.pallets:hover {
+    background-color: #2196F3; /* синий */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(33, 150, 243, 0.5);
+}
+.chart-buttons button.hauler:hover {
+    background-color: #FF9800; /* оранжевый */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.5);
+}
+.chart-buttons button.suppliers:hover {
+    background-color: #9C27B0; /* пурпурный */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(156, 39, 176, 0.5);
+}
+.chart-buttons button.total_tonnage:hover {
+    background-color: #E91E63; /* розовый */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(233, 30, 99, 0.5);
+}
+.chart-buttons button.occ11_tonnage:hover {
+    background-color: #3F51B5; /* индиго */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(63, 81, 181, 0.5);
+}
+.chart-buttons button.plastic_tonnage:hover {
+    background-color: #00BCD4; /* циановый */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 188, 212, 0.5);
+}
+.chart-buttons button.mixed_tonnage:hover {
+    background-color: #CDDC39; /* лаймовый */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(205, 220, 57, 0.5);
+}
+.chart-buttons button.sales:hover {
+    background-color: #F44336; /* красный */
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(244, 67, 54, 0.5);
+}
