@@ -3,317 +3,207 @@
 {% block title %}Deals List{% endblock %}
 
 {% block content %}
-
 {% load static %}
 {% load custom_filters %}
+
+<!-- Подключение общих стилей для CRM -->
 <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Подключаем Chart.js -->
-<style>
-    .analytics-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px; /* Уменьшено расстояние между блоками */
-    }
 
-    .chart-container, .stats-container {
-        flex: 1;
-        min-width: 150px; /* Уменьшена минимальная ширина контейнеров */
-        padding: 10px; /* Уменьшены внутренние отступы */
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background: #f9f9f9;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .chart-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .stats-container {
-        font-family: Arial, sans-serif;
-    }
-
-    .stats-cards {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px; /* Уменьшено расстояние между карточками */
-    }
-
-    .stat-card {
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        padding: 10px; /* Уменьшены внутренние отступы */
-        text-align: center;
-        width: 90px; /* Уменьшена ширина карточек */
-        height: 90px; /* Уменьшена высота карточек */
-        flex: 1;
-        min-width: 100px; /* Уменьшена минимальная ширина карточек */
-    }
-
-    .stat-card .icon {
-        font-size: 30px; /* Уменьшен размер иконки */
-        margin-bottom: 5px;
-        color: #007bff;
-    }
-
-    .stat-card h3 {
-        font-size: 18px; /* Уменьшен размер значения */
-        color: #333;
-        margin: 5px 0; /* Уменьшены отступы вокруг значения */
-    }
-
-    .stat-card p {
-        font-size: 14px; /* Уменьшен размер текста в подписи */
-        color: #6c757d;
-    }
-
-    .stat-card:hover {
-        background-color: #f1f1f1;
-        transform: scale(1.05);
-        transition: 0.3s ease;
-    }
-</style>
-
-    </head>
-
-            <h1>Sales Analytics</h1>
-             <!-- Форма фильтрации -->
-                        <form method="get" action="{% url 'sales_analytics' %}" class="filter-form">
-                            <label for="month">Month:</label>
-                            <select name="month" id="month">
-                                <option value="" {% if not month %}selected{% endif %}>All</option>
-                                {% for m in months %}
-                                    <option value="{{ m }}" {% if m == month %}selected{% endif %}>
-                                        {{ m|get_month_name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-
-                            <label for="year">Year:</label>
-                            <select name="year" id="year">
-                                <option value="" {% if not year %}selected{% endif %}>All</option>
-                                {% for y in years %}
-                                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>
-                                        {{ y }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-
-                            <button type="submit">
-                                Filter
-                            </button>
-                        </form>
-
-            <div class="analytics-container">
-                <!-- График -->
-                <div class="chart-container">
-                    {% if suppliers_income %}
-                        <canvas id="salesChart" width="200" height="100"></canvas> <!-- Уменьшены размеры графика -->
-                    {% else %}
-                        <p>No data available for sales analytics.</p>
-                    {% endif %}
-                </div>
-
-                <!-- Статистика -->
-                <div class="stats-container">
-                    <h2>Statistics</h2>
-                    <div class="stats-cards">
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <h3>{{ total_deals }}</h3>
-                            <p>Total Deals</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-dollar-sign"></i>
-                            </div>
-                            <h3>${{ total_sale|floatformat:1 }}</h3>
-                            <p>Total Sale</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-box"></i>
-                            </div>
-                            <h3>{{ total_pallets }}</h3>
-                            <p># of Pallets</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-truck"></i>
-                            </div>
-                            <h3>${{ transportation_fee }}</h3>
-                            <p>Transportation Fee</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-truck-moving"></i>
-                            </div>
-                            <h3>${{ suppliers_total|floatformat:1 }}</h3>
-                            <p>Suppliers</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-cogs"></i>
-                            </div>
-                            <h3>{{ mt_occ11|floatformat:1 }}</h3>
-                            <p>MT OCC11</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-cogs"></i>
-                            </div>
-                            <h3>${{ mt_plastic|floatformat:1 }}</h3>
-                            <p>MT Plastic</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-cogs"></i>
-                            </div>
-                            <h3>${{ mt_mixed_containers|floatformat:1 }}</h3>
-                            <p>MT Mixed-containers</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="icon">
-                                <i class="fas fa-dollar-sign"></i>
-                            </div>
-                            <h3>${{ income|floatformat:1 }}</h3>
-                            <p>Income</p>
-                        </div>
-                    </div>
-                </div>
-
-
-                    <!-- График палет -->
-                    <div class="block">
-                        <h2>Pallet Analytics</h2>
-                        <form method="POST">
-                            {% csrf_token %}
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Company Name</th>
-                                        <th>Current Pallets</th>
-                                        <th>Edit Pallets</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for pallet in company_pallets %}
-                                        <tr>
-                                            <td>{{ pallet.company_name.name }}</td>
-                                            <td>{{ pallet.pallets_count }}</td>
-                                            <!-- Редактируемое поле для количества паллет -->
-                                            <td>
-                                                <input type="number" name="pallets_{{ pallet.id }}" value="{{ pallet.pallets_count }}" min="0">
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                            <button type="submit" name="update_pallets" class="upt-btn">
-                                <img src="{% static 'crm/images/icons/update.png' %}" alt="Update">
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-            <script>
-                // Данные для графика
-                const suppliersIncome = {{ suppliers_income|safe }};
-
-                // Проверяем, есть ли данные
-                if (!suppliersIncome || Object.keys(suppliersIncome).length === 0) {
-                    console.error('No data available for sales analytics');
-                    alert('No data available for sales analytics.');
-                }
-
-                // Подготовка данных для Chart.js
-                const labels = Object.keys(suppliersIncome);
-                const data = Object.values(suppliersIncome);
-
-                var ctx = document.getElementById('salesChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Income/Loss',
-                            data: data,
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            </script>
-
-    <h2>Monthly Analytics</h2>
-
-    <!-- График по месяцам -->
-    <div class="chart-container">
-        <canvas id="monthlyChart" width="200" height="100"></canvas>
-    </div>
-
-    <!-- Кнопки для выбора метрики -->
-    <div class="chart-buttons">
-        <button onclick="updateMonthlyChart('profit')">Profit</button>
-        <button onclick="updateMonthlyChart('pallets')">Pallets</button>
-        <button onclick="updateMonthlyChart('hauler')">Transport Cost</button>
-        <button onclick="updateMonthlyChart('suppliers')">Supplier Payments</button>
-        <button onclick="updateMonthlyChart('total_tonnage')">Total Tonnage</button>
-        <button onclick="updateMonthlyChart('occ11_tonnage')">OCC11 Tonnage</button>
-        <button onclick="updateMonthlyChart('plastic_tonnage')">Plastic Tonnage</button>
-        <button onclick="updateMonthlyChart('mixed_tonnage')">Mixed Containers</button>
-        <button onclick="updateMonthlyChart('sales')">Sales</button>
-    </div>
-
-    <script>
-        let chartData = {{ chart_data|safe }};
-        let currentMetric = 'profit';
-
-        function updateMonthlyChart(metric) {
-            currentMetric = metric;
-            monthlyChart.data.datasets[0].data = chartData[metric];
-            monthlyChart.data.datasets[0].label = metric.replace('_', ' ').toUpperCase();
-            monthlyChart.update();
-        }
-
-        // График по месяцам
-        var ctx = document.getElementById('monthlyChart').getContext('2d');
-        var monthlyChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: chartData.months.map(m => `Month ${m}`),
-                datasets: [{
-                    label: 'Profit',
-                    data: chartData.profit,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    </script>
-
+<!-- Подключение стилей для страницы Sales Analytics -->
 <link rel="stylesheet" href="{% static 'crm/sales_analytics.css' %}">
+
+<!-- Подключение Chart.js для построения графиков -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- ================================================
+     Заголовок страницы Sales Analytics
+     ================================================ -->
+<h1>Sales Analytics</h1>
+
+<!-- ================================================
+     Форма фильтрации по месяцу и году
+     ================================================ -->
+<form method="get" action="{% url 'sales_analytics' %}" class="filter-form">
+    <label for="month">Month:</label>
+    <select name="month" id="month">
+        <!-- Опция "All" для месяца, если месяц не выбран -->
+        <option value="" {% if not month %}selected{% endif %}>All</option>
+        {% for m in months %}
+            <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                {{ m|get_month_name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <label for="year">Year:</label>
+    <select name="year" id="year">
+        <!-- Опция "All" для года, если год не выбран -->
+        <option value="" {% if not year %}selected{% endif %}>All</option>
+        {% for y in years %}
+            <option value="{{ y }}" {% if y == year %}selected{% endif %}>
+                {{ y }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <!-- Кнопка отправки формы фильтрации -->
+    <button type="submit">Filter</button>
+</form>
+
+<!-- ================================================
+     Основной контейнер для аналитики
+     ================================================ -->
+<div class="analytics-container">
+
+    <!-- -----------------------------------------------
+         График по поставщикам
+         (Отображается через элемент <canvas>)
+         ----------------------------------------------- -->
+    <div class="chart-container">
+        {% if suppliers_income %}
+            <canvas id="salesChart" width="200" height="100"></canvas>
+        {% else %}
+            <p>No data available for sales analytics.</p>
+        {% endif %}
+    </div>
+
+    <!-- -----------------------------------------------
+         Статистика в виде плиток (табличек)
+         Блок статистики обернут в контейнер с классом "block stats-block"
+         Для плиток используется контейнер "tiles-container",
+         а каждая отдельная плитка оформлена классом "tile"
+         ----------------------------------------------- -->
+    <div class="block stats-block">
+      <h2>Statistics</h2>
+      <div class="tiles-container">
+        <!-- Плитка Total Deals -->
+        <div class="tile">
+          <div class="icon"><i class="fas fa-users"></i></div>
+          <h3>{{ total_deals }}</h3>
+          <p>Total Deals</p>
+        </div>
+        <!-- Плитка Total Sale -->
+        <div class="tile">
+          <div class="icon"><i class="fas fa-dollar-sign"></i></div>
+          <h3>${{ total_sale|floatformat:1 }}</h3>
+          <p>Total Sale</p>
+        </div>
+        <!-- Плитка # of Pallets -->
+        <div class="tile">
+          <div class="icon"><i class="fas fa-box"></i></div>
+          <h3>{{ total_pallets }}</h3>
+          <p># of Pallets</p>
+        </div>
+        <!-- Плитка Transportation Fee -->
+        <div class="tile">
+          <div class="icon"><i class="fas fa-truck"></i></div>
+          <h3>${{ transportation_fee }}</h3>
+          <p>Transportation Fee</p>
+        </div>
+        <!-- Плитка Suppliers -->
+        <div class="tile">
+          <div class="icon"><i class="fas fa-truck-moving"></i></div>
+          <h3>${{ suppliers_total|floatformat:1 }}</h3>
+          <p>Suppliers</p>
+        </div>
+        <!-- Плитка MT OCC11 -->
+        <div class="tile">
+          <div class="icon"><i class="fas fa-cogs"></i></div>
+          <h3>{{ mt_occ11|floatformat:1 }}</h3>
+          <p>MT OCC11</p>
+        </div>
+        <!-- Плитка MT Plastic -->
+        <div class="tile">
+          <div class="icon"><i class="fas fa-cogs"></i></div>
+          <h3>${{ mt_plastic|floatformat:1 }}</h3>
+          <p>MT Plastic</p>
+        </div>
+        <!-- Плитка MT Mixed-containers -->
+        <div class="tile">
+          <div class="icon"><i class="fas fa-cogs"></i></div>
+          <h3>${{ mt_mixed_containers|floatformat:1 }}</h3>
+          <p>MT Mixed-containers</p>
+        </div>
+        <!-- Плитка Income (можно задать растяжение на 2 колонки, если нужно) -->
+        <div class="tile tile-income">
+          <div class="icon"><i class="fas fa-dollar-sign"></i></div>
+          <h3>${{ income|floatformat:1 }}</h3>
+          <p>Income</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- -----------------------------------------------
+         График Pallet Analytics
+         Блок с таблицей, где отображаются данные по паллетам
+         ----------------------------------------------- -->
+    <div class="block">
+        <h2>Pallet Analytics</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Company Name</th>
+                        <th>Current Pallets</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pallet in company_pallets %}
+                        <tr>
+                            <td>{{ pallet.company_name.name }}</td>
+                            <td>
+                                <input type="number" name="pallets_{{ pallet.id }}" value="{{ pallet.pallets_count }}" min="0">
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit" name="update_pallets" class="upt-btn">
+                <img src="{% static 'crm/images/icons/update.png' %}" alt="Update">
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ================================================
+     Раздел Monthly Analytics (График по месяцам)
+     ================================================ -->
+<!-- Контейнер для графика по месяцам (canvas) -->
+<div class="chart-container">
+    <div class="monthly-header">
+        <!-- Заголовок для графика по месяцам -->
+        <h2>Monthly Analytics</h2>
+        <!-- Элемент текущего показателя (круглый индикатор) -->
+        <div id="currentMetricDisplay" class="current-metric">0</div>
+    </div>
+    <canvas id="monthlyChart" width="200" height="100"></canvas>
+</div>
+
+<!-- Контейнер для кнопок переключения метрик для графика по месяцам -->
+<div class="chart-buttons">
+    <button class="profit" onclick="updateMonthlyChart('profit')">Profit</button>
+    <button class="pallets" onclick="updateMonthlyChart('pallets')">Pallets</button>
+    <button class="hauler" onclick="updateMonthlyChart('hauler')">Transport Cost</button>
+    <button class="suppliers" onclick="updateMonthlyChart('suppliers')">Supplier Payments</button>
+    <button class="total_tonnage" onclick="updateMonthlyChart('total_tonnage')">Total Tonnage</button>
+    <button class="occ11_tonnage" onclick="updateMonthlyChart('occ11_tonnage')">OCC11 Tonnage</button>
+    <button class="plastic_tonnage" onclick="updateMonthlyChart('plastic_tonnage')">Plastic Tonnage</button>
+    <button class="mixed_tonnage" onclick="updateMonthlyChart('mixed_tonnage')">Mixed Containers</button>
+    <button class="sales" onclick="updateMonthlyChart('sales')">Sales</button>
+</div>
+
+<!-- ================================================
+     Объявление глобальных переменных для JavaScript
+     Эти переменные будут доступны во внешнем файле JS
+     ================================================ -->
+<script>
+    window.suppliersIncome = {{ suppliers_income|safe }};
+    window.chartData = {{ chart_data|safe }};
+</script>
+
+<!-- ================================================
+     Подключение внешнего JavaScript-файла для аналитики
+     ================================================ -->
+<script src="{% static 'crm/js/sales_analytics.js' %}"></script>
 {% endblock %}
