@@ -7,17 +7,26 @@ document.addEventListener("DOMContentLoaded", function () {
       alert('No data available for sales analytics.');
     } else {
       const salesLabels = Object.keys(suppliersIncome);   // Например, ["Supplier A", "Supplier B", ...]
-      const salesData = Object.values(suppliersIncome);     // Например, [10000, 30000, ...]
+      const salesData = Object.values(suppliersIncome);   // Например, [10000, 30000, ...]
+
       const salesCtx = document.getElementById('salesChart').getContext('2d');
 
-      // Определяем цвета для каждого поставщика
-      const colorMap = {
-        "Supplier A": "#ff0000",
-        "Supplier B": "#ff9f00",
-        "Supplier C": "#ffff00",
-        "Supplier D": "#8a2be2"
+      // Функция для генерации градиента в зависимости от значения
+      const getGradient = (value, ctx) => {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+        if (value >= 3500) {
+          gradient.addColorStop(0, '#fffa4d'); // Желтый
+        } else if (value >= 2000) {
+          gradient.addColorStop(0, '#ff5468'); // Фиолетовый
+        } else {
+          gradient.addColorStop(0, '#8543dd'); // Синий
+        }
+        gradient.addColorStop(1, '#4b35ac'); // Белый цвет в конце градиента
+
+        return gradient;
       };
-      const barColors = salesLabels.map(label => colorMap[label] || "#888");
+
+      const barColors = salesData.map(value => getGradient(value, salesCtx)); // Генерация градиентов для каждого значения
 
       new Chart(salesCtx, {
         type: 'bar',
@@ -26,8 +35,8 @@ document.addEventListener("DOMContentLoaded", function () {
           datasets: [{
             label: 'Income/Loss',
             data: salesData,
-            backgroundColor: barColors,
-            borderColor: barColors,
+            backgroundColor: barColors, // Использование сгенерированных градиентов
+            borderColor: barColors,     // Используем такие же цвета для границ
             borderWidth: 1
           }]
         },
@@ -56,7 +65,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   // ========= График по месяцам (Line Chart – "червячок") =========
-  // Исправляем проверку: используем id "monthlyWormChart"
   if (document.getElementById('monthlyWormChart')) {
     const chartData = window.chartData;
     const monthlyCtx = document.getElementById('monthlyWormChart').getContext('2d');
@@ -88,8 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
           backgroundColor: gradient,
           fill: false,
           borderWidth: 5,
-          pointRadius: 0,
-
+          pointRadius: 0
         }]
       },
       options: {
@@ -120,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const color = hoverColors[metric] || '#888';
         window.monthlyChart.data.datasets[0].borderColor = color;
-        window.monthlyChart.data.datasets[0].backgroundColor = color + '33';
+        window.monthlyChart.data.datasets[0].backgroundColor = color + '33'; // добавляем прозрачность
 
         window.monthlyChart.update();
 
