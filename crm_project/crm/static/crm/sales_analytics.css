@@ -1,387 +1,250 @@
 /* ================================
-   Sales Analytics HTML Settings
+   Контейнер аналитики с использованием CSS Grid
 ================================ */
-
-/* Базовые стили для страницы аналитики */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
-    margin: 0;
-    padding: 0;
-}
-
-h1 {
-    font-size: 24px;
-    margin-bottom: 20px;
-    color: #333;
-}
-
-canvas {
-    width: 100%;
-    max-width: 600px;
-    margin-top: 20px;
-}
-
-/* Контейнер для аналитики */
 .analytics-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); /* 300px * 0.7 = 210px */
+  gap: 14px; /* 20px * 0.7 ≈ 14px */
+  margin: 14px auto; /* 20px * 0.7 ≈ 14px */
 }
 
-/* Контейнер для графика */
+/* ================================
+   Унифицированный стиль для блоков
+================================ */
+.block {
+  padding: 14px; /* 20px * 0.7 */
+  background-color: #ffffff;
+  border-radius: 8.4px; /* 12px * 0.7 */
+  box-shadow: 0 1.4px 5.6px rgba(0, 0, 0, 0.05); /* 2px->1.4px, 8px->5.6px */
+  min-height: 175px; /* 250px * 0.7 */
+}
+
+/* ================================
+   Унифицированный стиль для графиков (chart-container)
+================================ */
 .chart-container {
-    flex: 1;
-    min-width: 150px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background: #f9f9f9;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  padding: 7px; /* 10px * 0.7 */
+  border: 1px solid #ddd;
+  border-radius: 5.6px; /* 8px * 0.7 */
+  background: #f9f9f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 175px; /* 250px * 0.7 */
 }
 
-
-
-/* ==========================================================================
-   Контейнер для плиток (Tiles Container)
-   ========================================================================== */
-
-.monthly-header {
-    text-align: center;
-    margin-bottom: 20px; /* Отступ снизу для отделения от графика */
-}
-
+/* ================================
+   Контейнер для плиток статистики
+================================ */
 .tiles-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    justify-content: center;
-    margin-top: 20px;
-    max-width: 800px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px; /* 20px * 0.7 */
+  max-width: 560px; /* 800px * 0.7 */
+  margin: 14px auto; /* 20px * 0.7 */
 }
 
-/* Плитка статистики */
+/* Единый стиль для плиток (карточек) */
 .tile {
   background-color: #f9f9f9;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  border-radius: 8.4px; /* 12px * 0.7 */
+  box-shadow: 0 2.8px 4.2px rgba(0, 0, 0, 0.1); /* 4px*0.7 = 2.8px, 6px*0.7 = 4.2px */
+  padding: 14px; /* 20px * 0.7 */
   text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .tile:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4.2px 7px rgba(0, 0, 0, 0.15); /* 6px*0.7 = 4.2px, 10px*0.7 = 7px */
 }
 
-/* Стили для иконки внутри плитки */
-.tile .icon {
-  font-size: 30px;
-  margin-bottom: 5px;
-  color: #007bff;
-}
-
-/* Стили для числового значения */
-.tile h3 {
-  font-size: 18px;
-  color: #333;
-  margin: 5px 0;
-}
-
-/* Стили для подписи */
-.tile p {
-  font-size: 14px;
-  color: #6c757d;
-}
-
-/* Для плитки Income растягиваем её на 2 колонки */
+/* Если нужно растянуть плитку (например, Income) на всю ширину контейнера */
 .tile-income {
   grid-column: span 4;
 }
 
-.current-metric {
-  display: block;            /* Отображается как блочный элемент */
-  margin: 0 auto 20px;       /* Центрирование по горизонтали и отступ снизу */
-  width: 60px;               /* Фиксированная ширина */
-  height: 60px;              /* Фиксированная высота */
-  border-radius: 50%;        /* Делает элемент круглым */
-  background-color: #888;    /* Фоновый цвет */
-  color: #fff;               /* Цвет текста */
-  text-align: center;        /* Выравнивание текста по центру */
-  line-height: 60px;         /* Вертикальное центрирование текста */
-  font-size: 18px;           /* Размер шрифта */
-}
-
-/* Статистика */
-
-.stats-container {
-    flex: 1;
-    padding: 10px;
-    font-family: Arial, sans-serif;
-}
-
-.stats-cards {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.stat-card {
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    padding: 10px;
-    text-align: center;
-    width: 90px;
-    height: 90px;
-    flex: 1;
-    min-width: 100px;
-    transition: transform 0.3s ease, background-color 0.3s ease;
-}
-
-.stat-card:hover {
-    background-color: #f1f1f1;
-    transform: scale(1.05);
-}
-
-.stat-card .icon {
-    font-size: 30px;
-    margin-bottom: 5px;
-    color: #007bff;
-}
-
-.stat-card h3 {
-    font-size: 18px;
-    color: #333;
-    margin: 5px 0;
-}
-
-.stat-card p {
-    font-size: 14px;
-    color: #6c757d;
-}
-
-/* Форма фильтрации */
-.filter-form {
-    margin-bottom: 20px;
-    display: flex;
-    gap: 15px;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-    justify-content: flex-start;
-    align-items: center;
-}
-
-.filter-form select,
-.filter-form button {
-    width: 130px;
-    height: 40px;
-    padding: 8px;
-}
-
-.filter-form button {
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
 /* ================================
-   Monthly Analytics Styles
+   Унифицированный стиль для таблиц
 ================================ */
-
-/* Элемент текущего показателя */
-#currentMetricDisplay {
-    display: inline-block;
-    width: 65px;
-    height: 65px;
-    border-radius: 50%;
-    background-color: #888;
-    color: #fff;
-    text-align: center;
-    line-height: 60px;
-    font-size: 18px;
-    margin: 0 auto 15px;
-}
-
-/* Контейнер для графика по месяцам */
-
-.chart-container {
-    max-width: 1200px;  /* или любая нужная ширина */
-    margin: 0 auto;    /* центрирование контейнера */
-    padding: 10px;     /* можно уменьшить отступы */
-}
-
-#monthlyChart {
-    width: 100%;       /* занимает всю ширину родителя */
-    max-width: 600px;  /* ограничение по ширине */
-    height: auto;      /* автоматически вычисляемая высота */
-}
-
-/* Контейнер для кнопок переключения метрик */
-.chart-buttons {
-    text-align: center;
-    margin-top: 15px;
-
-}
-
-/* Стили для кнопок переключения метрик */
-.chart-buttons button {
-    border: none;
-    border-radius: 50px;
-    padding: 10px 20px;
-    background-color: #888;
-    color: #fff;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin: 5px;
-}
-
-/* Hover эффекты для каждой кнопки с индивидуальными цветами */
-.chart-buttons button.profit:hover {
-    background-color: #4CAF50;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.5);
-}
-
-.chart-buttons button.pallets:hover {
-    background-color: #2196F3;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(33, 150, 243, 0.5);
-}
-
-.chart-buttons button.hauler:hover {
-    background-color: #FF9800;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.5);
-}
-
-.chart-buttons button.suppliers:hover {
-    background-color: #9C27B0;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(156, 39, 176, 0.5);
-}
-
-.chart-buttons button.total_tonnage:hover {
-    background-color: #E91E63;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(233, 30, 99, 0.5);
-}
-
-.chart-buttons button.occ11_tonnage:hover {
-    background-color: #3F51B5;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(63, 81, 181, 0.5);
-}
-
-.chart-buttons button.plastic_tonnage:hover {
-    background-color: #00BCD4;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 188, 212, 0.5);
-}
-
-.chart-buttons button.mixed_tonnage:hover {
-    background-color: #CDDC39;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(205, 220, 57, 0.5);
-}
-
-.chart-buttons button.sales:hover {
-    background-color: #F44336;
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(244, 67, 54, 0.5);
-}
-
-
-/* Контейнер для блока с таблицей */
-.block {
-    padding: 20px;
-    background-color: #ffffff; /* Белый фон для блока */
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Легкая тень */
-    margin-bottom: 30px;
-}
-
-/* Таблица */
 table {
-    /* Включаем раздельный режим и задаём небольшой отступ */
-    border-collapse: separate;
-    border-spacing: 4px;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2.8px; /* 4px * 0.7 */
 }
 
 table th,
 table td {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px; /* Скруглённые углы */
-    padding: 12px 20px;
-    text-align: left;
-    font-family: 'Arial', sans-serif;
+  padding: 8.4px 14px; /* 12px 20px * 0.7 */
+  border: 1px solid #ddd;
+  border-radius: 5.6px; /* 8px * 0.7 */
+  text-align: left;
+  font-family: Arial, sans-serif;
 }
 
 table th {
-    background-color: #f4f4f4; /* Мягкий светлый фон для заголовков */
-    color: #333;
-    font-weight: bold;
-    border-radius: 8px;
+  background-color: #f4f4f4;
+  color: #333;
+  font-weight: bold;
+  border-radius: 5.6px;
 }
 
-table td {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
+/* ================================
+   Стиль для элемента текущего показателя (круглый индикатор)
+================================ */
+.current-metric {
+  display: inline-block;
+  width: 45.5px;  /* 65px * 0.7 */
+  height: 45.5px; /* 65px * 0.7 */
+  border-radius: 50%;
+  background-color: #888;
+  color: #fff;
+  text-align: center;
+  line-height: 45.5px; /* 65px * 0.7 */
+  font-size: 12.6px; /* 18px * 0.7 */
+  margin: 0 auto 14px; /* 20px * 0.7 */
 }
 
-/* Стилизация строки таблицы */
-tbody tr:nth-child(odd) {
-    background-color: #f9f9f9;
+/* ================================
+   Стиль для формы фильтрации
+================================ */
+.filter-form {
+  margin-bottom: 14px; /* 20px * 0.7 */
+  display: flex;
+  gap: 10.5px; /* 15px * 0.7 */
+  max-width: 420px; /* 600px * 0.7 */
+  margin-left: auto;
+  margin-right: auto;
+  justify-content: flex-start;
+  align-items: center;
 }
 
-tbody tr:nth-child(even) {
-    background-color: #fff;
+.filter-form select,
+.filter-form button {
+  width: 91px;  /* 130px * 0.7 */
+  height: 28px; /* 40px * 0.7 */
+  padding: 5.6px; /* 8px * 0.7 */
 }
 
-/* Стилизация поля ввода для паллет */
-input[type="number"] {
-    width: 100px;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-    box-sizing: border-box;
+.filter-form button {
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 3.5px; /* 5px * 0.7 */
+  cursor: pointer;
 }
 
-input[type="number"]:focus {
-    outline: none;
-    border-color: #007BFF;
+/* ================================
+   Стили для Monthly Analytics
+================================ */
+
+/* Заголовок и индикатор для графика по месяцам */
+.monthly-header {
+  text-align: center;
+  margin-bottom: 14px; /* 20px * 0.7 */
 }
 
-/* Стили для кнопки Update */
+/* Ограничение для canvas графика */
+#monthlyChart,
+#monthlyWormChart {
+  width: 100%;
+  max-width: 420px; /* 600px * 0.7 */
+  height: auto;
+}
+
+/* Контейнер для кнопок переключения метрик */
+.chart-buttons {
+  text-align: center;
+  margin-top: 10.5px; /* 15px * 0.7 */
+}
+
+/* Стили для кнопок переключения метрик */
+.chart-buttons button {
+  border: none;
+  border-radius: 35px; /* 50px * 0.7 */
+  padding: 7px 14px;   /* 10px 20px * 0.7 */
+  background-color: #888;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 3.5px;       /* 5px * 0.7 */
+}
+
+.chart-buttons button.profit:hover {
+  background-color: #4CAF50;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(76, 175, 80, 0.5);
+}
+
+.chart-buttons button.pallets:hover {
+  background-color: #2196F3;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(33, 150, 243, 0.5);
+}
+
+.chart-buttons button.hauler:hover {
+  background-color: #FF9800;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(255, 152, 0, 0.5);
+}
+
+.chart-buttons button.suppliers:hover {
+  background-color: #9C27B0;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(156, 39, 176, 0.5);
+}
+
+.chart-buttons button.total_tonnage:hover {
+  background-color: #E91E63;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(233, 30, 99, 0.5);
+}
+
+.chart-buttons button.occ11_tonnage:hover {
+  background-color: #3F51B5;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(63, 81, 181, 0.5);
+}
+
+.chart-buttons button.plastic_tonnage:hover {
+  background-color: #00BCD4;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(0, 188, 212, 0.5);
+}
+
+.chart-buttons button.mixed_tonnage:hover {
+  background-color: #CDDC39;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(205, 220, 57, 0.5);
+}
+
+.chart-buttons button.sales:hover {
+  background-color: #F44336;
+  transform: scale(1.1);
+  box-shadow: 0 2.8px 5.6px rgba(244, 67, 54, 0.5);
+}
+
+/* ================================
+   Кнопка Update
+================================ */
 .upt-btn {
-display: flex;
-align-items: center;
-justify-content: center;
-width: 60px;
-height: 40px;
-background-color: #007BFF;
-border: none;
-border-radius: 10%;
-cursor: pointer;
-transition: background-color 0.3s ease, transform 0.2s ease;
-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-padding: 0;
-overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;   /* 60px * 0.7 */
+    height: 28px;  /* 40px * 0.7 */
+    background-color: #007BFF;
+    border: none;
+    border-radius: 7%; /* уменьшено пропорционально */
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2.8px 4.2px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    overflow: hidden;
 }
 
 .upt-btn:hover {
@@ -395,8 +258,8 @@ overflow: hidden;
 }
 
 .upt-btn img {
-    width: 20px;
-    height: 20px;
+    width: 14px;  /* 20px * 0.7 */
+    height: 14px; /* 20px * 0.7 */
     pointer-events: none;
     object-fit: cover;
 }
