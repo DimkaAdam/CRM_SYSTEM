@@ -8,7 +8,7 @@ from . import views
 from .views import (
     ClientCreateAPIView, DealCreateAPIView, PipelineViewSet,
     ClientViewSet, DealViewSet, export_company_report_pdf,
-    get_deal_by_ticket, export_scale_ticket_pdf
+    get_deal_by_ticket, export_scale_ticket_pdf,add_contact,
 )
 
 # 📌 Функция, которая рендерит шаблон с React
@@ -56,6 +56,7 @@ urlpatterns = [
     path("contacts/<int:contact_id>/add-material/", views.add_contact_material, name="add_contact_material"),
     path("contact-material/<int:pk>/edit/", views.edit_contact_material, name="edit_contact_material"),
     path('companies/<int:contact_id>/edit/', views.edit_contact, name='edit_contact'),
+    path('contacts/add/<int:company_id>/', add_contact, name='add_contact'),
 
 
 

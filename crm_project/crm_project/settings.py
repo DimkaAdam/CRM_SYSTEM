@@ -151,5 +151,8 @@ MATERIALS_LIST = {
     'Pallets': None,
     'Kraft Paper Bags': None,
     'Loose OCC': None,
+    'Printers Offcuts': None,
+    'Brown Printers Offcuts': None,
+
 
 }
