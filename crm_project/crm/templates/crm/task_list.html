@@ -3,8 +3,20 @@
 {% block title %}Tasks{% endblock %}
 
 {% block content %}
-    <div class="content">
-        <h1>Tasks</h1>
-        <p>The list of tasks will be shown here.</p>
-    </div>
+<h2>Список задач и событий</h2>
+
+{% if events %}
+    <ul>
+        {% for event in events %}
+            <li>
+                <strong>{{ event.summary }}</strong> <br>
+                Время: {{ event.start.dateTime|default:event.start.date }} <br>
+                Место: {{ event.location|default:"Не указано" }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Нет предстоящих событий.</p>
+{% endif %}
+
 {% endblock %}

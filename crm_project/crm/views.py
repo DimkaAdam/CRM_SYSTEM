@@ -40,7 +40,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
-
+from .google_calendar import get_calendar_events
 
 
 def index(request):
@@ -1099,8 +1099,8 @@ def export_scale_ticket_pdf(request):
 
 # TACKS
 def task_list(request):
-    tasks = Task.objects.all()
-    return render(request, 'crm/task_list.html', {'tasks': tasks})
+    events = get_calendar_events()  # Получаем события из Google Calendar
+    return render(request, "task_list.html", {"events": events})
 
 
 
