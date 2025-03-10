@@ -1,7 +1,7 @@
 {% extends 'crm/index.html' %}
 
 {% block title %}Tasks{% endblock %}
-
+{% load static %}
 {% block content %}
 <h2>Список задач и событий</h2>
 
@@ -44,5 +44,8 @@
 {% else %}
     <p>Нет предстоящих событий.</p>
 {% endif %}
+
+<script src="{% static 'crm/js/task_list.js' %}"></script>
+<link rel="stylesheet" href="{% static 'crm/task_list.css' %}">
 
 {% endblock %}
