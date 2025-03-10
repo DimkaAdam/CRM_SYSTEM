@@ -63,7 +63,11 @@ ROOT_URLCONF = 'crm_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'frontend', 'build')],  # Указываем путь к index.html
+        'DIRS': [
+            os.path.join(BASE_DIR, 'frontend', 'build'),
+            os.path.join(BASE_DIR, 'crm', 'templates'),
+        ],  # Указываем путь к index.html
+
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

@@ -1100,7 +1100,7 @@ def export_scale_ticket_pdf(request):
 # TACKS
 def task_list(request):
     events = get_calendar_events()  # Получаем события из Google Calendar
-    return render(request, "task_list.html", {"events": events})
+    return render(request, "crm/task_list.html", {"events": events})
 
 
 

@@ -11,7 +11,7 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 # Файл токенов (авторизация)
 TOKEN_FILE = "token.json"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Определяем текущую папку скрипта
-CREDENTIALS_FILE = os.path.join(BASE_DIR, "client_secret_124472844413-lbki9ff2v44ob7no7hnhnl6fvmomstjd.apps.googleusercontent.com.json")
+CREDENTIALS_FILE = os.path.join(BASE_DIR, "c_id.json")
 
 
 def get_calendar_events():
@@ -25,10 +25,7 @@ def get_calendar_events():
     # Если нет, запускаем авторизацию
     if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-        creds = flow.run_local_server(
-            port=8081,  # Локальный сервер OAuth будет работать на 8081
-            redirect_uri="http://localhost:8000/"  # Явно указываем правильный redirect_uri
-        )
+        creds = flow.run_local_server(port=8081)
 
         with open(TOKEN_FILE, "w") as token:
             token.write(creds.to_json())
