@@ -5,6 +5,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+
 # Область доступа
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
@@ -36,7 +37,7 @@ def get_calendar_events():
     # Получаем ближайшие события
     now = datetime.datetime.utcnow().isoformat() + "Z"
     events_result = service.events().list(
-        calendarId="primary",
+        calendarId="1ec5697815880daddff23f3b0dbcd7c004116959e2de8e5f5a5b80fb484dec38@group.calendar.google.com",
         timeMin=now,
         maxResults=10,
         singleEvents=True,
