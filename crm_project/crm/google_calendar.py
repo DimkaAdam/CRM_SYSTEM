@@ -26,7 +26,7 @@ def get_calendar_events():
     # Если нет, запускаем авторизацию
     if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-        creds = flow.run_local_server(port=8081)
+        creds = flow.run_local_server(port=8081,access_type="offline", prompt="consent")
 
         with open(TOKEN_FILE, "w") as token:
             token.write(creds.to_json())
@@ -37,7 +37,7 @@ def get_calendar_events():
     # Получаем ближайшие события
     now = datetime.datetime.utcnow().isoformat() + "Z"
     events_result = service.events().list(
-        calendarId="1ec5697815880daddff23f3b0dbcd7c004116959e2de8e5f5a5b80fb484dec38@group.calendar.google.com",
+        calendarId="dmitry@wastepaperbrokers.com",
         timeMin=now,
         maxResults=10,
         singleEvents=True,

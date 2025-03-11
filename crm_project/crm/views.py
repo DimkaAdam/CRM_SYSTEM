@@ -10,7 +10,9 @@ from rest_framework.decorators import action
 from .serializers import ClientSerializer,DealSerializer,PipeLineSerializer
 
 from .forms import ContactForm, CompanyForm, ContactMaterialForm, DealForm
-
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
 from django.http import JsonResponse
@@ -41,6 +43,9 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from .google_calendar import get_calendar_events
+
+
+
 
 
 def index(request):
@@ -1097,10 +1102,96 @@ def export_scale_ticket_pdf(request):
 
 
 
-# TACKS
+import os
+import json
+import datetime
+from django.http import JsonResponse
+from django.shortcuts import render
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+
+# Область доступа
+SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CREDENTIALS_FILE = os.path.join(BASE_DIR, "c_id.json")
+TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
+
+# ID календаря
+CALENDAR_ID = "dmitry@wastepaperbrokers.com"
+
+def get_calendar_events():
+    """Получает события из Google Calendar."""
+    creds = None
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+
+    if not creds or not creds.valid:
+        try:
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
+            creds = flow.run_local_server(port=8081, access_type="offline", prompt="consent")
+            with open(TOKEN_FILE, "w") as token:
+                token.write(creds.to_json())
+        except Exception as e:
+            return {"error": f"Ошибка авторизации: {str(e)}"}
+
+    try:
+        service = build("calendar", "v3", credentials=creds)
+        now = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+        events_result = service.events().list(
+            calendarId=CALENDAR_ID,
+            timeMin=now,
+            maxResults=20,
+            singleEvents=True,
+            orderBy="startTime",
+        ).execute()
+
+        events = events_result.get("items", [])
+    except Exception as e:
+        return {"error": f"Ошибка загрузки событий: {str(e)}"}
+
+    return events
+
 def task_list(request):
-    events = get_calendar_events()  # Получаем события из Google Calendar
-    return render(request, "crm/task_list.html", {"events": events})
+    """Django View для отображения списка задач."""
+    events = get_calendar_events()
+
+    if isinstance(events, dict) and "error" in events:
+        return JsonResponse(events, status=500)
+
+    formatted_events = [
+        {
+            "title": event.get("summary", "Без названия"),
+            "start": event["start"].get("dateTime", event["start"].get("date")),
+            "end": event["end"].get("dateTime", event["end"].get("date")),
+        }
+        for event in events
+    ]
+
+    return render(request, "crm/task_list.html", {"events_json": json.dumps(formatted_events)})
+
+def api_calendar_events(request):
+    """API для загрузки событий в JSON (для FullCalendar)."""
+    events = get_calendar_events()
+
+    if isinstance(events, dict) and "error" in events:
+        return JsonResponse(events, status=500)
+
+    formatted_events = [
+        {
+            "title": event.get("summary", "Без названия"),
+            "start": event["start"].get("dateTime", event["start"].get("date")),
+            "end": event["end"].get("dateTime", event["end"].get("date")),
+        }
+        for event in events
+    ]
+
+    return JsonResponse(formatted_events, safe=False)
+
+
+
+
 
 
 
