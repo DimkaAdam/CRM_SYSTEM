@@ -23,7 +23,6 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponseRedirect
 from django.db.models import Q
-
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 
@@ -267,9 +266,11 @@ def company_main(request):
 # DEALS
 def deal_list(request):
     # Получаем текущий месяц и год
-    today = datetime.today()
-    current_month = today.month
-    current_year = today.year
+    print("DEBUG: datetime is", datetime)
+    today_date = datetime.datetime.today()
+
+    current_month = today_date.month
+    current_year = today_date.year
 
     # Получаем базовый набор данных
     deals = Deals.objects.all()
