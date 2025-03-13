@@ -64,10 +64,10 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'frontend', 'build'),
-            os.path.join(BASE_DIR, 'crm', 'templates'),
-        ],  # Указываем путь к index.html
-
+            os.path.join(BASE_DIR, 'crm_project', 'crm', 'templates'),  # Общая папка шаблонов
+            os.path.join(BASE_DIR, 'crm_project', 'crm', 'templates', 'crm'),  # Вложенная папка
+            os.path.join(BASE_DIR, 'crm_project', 'crm', 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -79,7 +79,6 @@ TEMPLATES = [
         },
     },
 ]
-
 WSGI_APPLICATION = 'crm_project.wsgi.application'
 
 

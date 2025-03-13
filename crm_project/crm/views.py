@@ -463,24 +463,25 @@ def export_deals_to_excel(request):
     return response
 
 
-
-
-
 def get_deal_details(request, deal_id):
     deal = get_object_or_404(Deals, id=deal_id)
+
     return JsonResponse({
         'id': deal.id,
         'date': deal.date.strftime('%Y-%m-%d'),
-        'supplier': deal.supplier.name,
-        'buyer': deal.buyer.name,
+        'supplier': deal.supplier.name if deal.supplier else "",  # ✅ Защита от None
+        'buyer': deal.buyer.name if deal.buyer else "",  # ✅ Защита от None
         'grade': deal.grade,
         'shipped_quantity': deal.shipped_quantity,
+        'shipped_pallets': deal.shipped_pallets,  # ✅ Добавлено
         'received_quantity': deal.received_quantity,
+        'received_pallets': deal.received_pallets,  # ✅ Добавлено
         'supplier_price': deal.supplier_price,
         'buyer_price': deal.buyer_price,
         'total_amount': deal.total_amount,
         'transport_cost': deal.transport_cost,
         'transport_company': deal.transport_company,
+        'scale_ticket': deal.scale_ticket,
     })
 
 

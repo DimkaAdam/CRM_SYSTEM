@@ -1,23 +1,24 @@
-// Открыть боковую панель для создания новой сделки
+// 📌 Открыть боковую панель для создания новой сделки
 document.getElementById('addNewDealBtn').addEventListener('click', function () {
     document.getElementById('dealFormSidebar').style.width = '400px';
 });
 
-// Закрыть боковую панель для создания новой сделки
+// 📌 Закрыть боковую панель для создания новой сделки
 document.getElementById('closeSidebarBtn').addEventListener('click', function () {
     document.getElementById('dealFormSidebar').style.width = '0';
 });
 
-// Обработать отправку формы для новой сделки
+// 📌 Обработать отправку формы для новой сделки
 document.getElementById('dealForm').addEventListener('submit', function (e) {
     e.preventDefault();
+
     const receivedQuantityElement = document.getElementById('received_quantity');
     const buyerPriceElement = document.getElementById('buyer_price');
     const supplierPriceElement = document.getElementById('supplier_price');
     const transportCostElement = document.getElementById('transport_cost');
 
     if (!receivedQuantityElement || !buyerPriceElement || !supplierPriceElement || !transportCostElement) {
-        console.error('Элементы формы не найдены!');
+        console.error('🚨 Элементы формы не найдены!');
         return;
     }
 
@@ -26,17 +27,10 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
     const supplier_price = parseFloat(supplierPriceElement.value);
     const transport_cost = parseFloat(transportCostElement.value);
 
-    // Вычисление общих сумм
-    const total_amount = received_quantity * buyer_price; // Общая сумма от покупателя
-    const supplier_total = received_quantity * supplier_price; // Общая сумма для поставщика
-    const total_income_loss = total_amount - supplier_total - transport_cost; // Убыток/прибыль
-    const supplierId = document.getElementById('supplier').value;
-    const buyer = document.getElementById('buyer').value;
-
     const data = {
         date: document.getElementById('date').value,
-        supplier: supplierId,
-        buyer: buyer,
+        supplier: document.getElementById('supplier').value,
+        buyer: document.getElementById('buyer').value,
         grade: document.getElementById('grade').value,
         shipped_quantity: document.getElementById('shipped_quantity').value,
         shipped_pallets: document.getElementById('shipped_pallets').value,
@@ -49,7 +43,7 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
         scale_ticket: document.getElementById('scale_ticket').value
     };
 
-    fetch('http://127.0.0.1:8000/api/deals/', {
+    fetch('/api/deals/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -59,9 +53,8 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Deal created:', data);
+        console.log('✅ Deal created:', data);
 
-        // Обновляем таблицу сделок
         const dealTable = document.getElementById('dealTable').getElementsByTagName('tbody')[0];
         const newRow = dealTable.insertRow();
         newRow.innerHTML = `
@@ -79,39 +72,37 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
             <td>${data.transport_company}</td>
             <td>${data.total_income_loss}</td>
             <td>${data.scale_ticket}</td>
-
         `;
         document.getElementById('dealFormSidebar').style.width = '0';
         document.getElementById('dealForm').reset();
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => console.error('🚨 Ошибка при создании сделки:', error));
 });
 
-// Открыть сайдбар с деталями сделки
+// 📌 Обработчик клика по строке сделки
 document.querySelectorAll('.deal-row').forEach(row => {
     row.addEventListener('click', () => {
-        const dealId = row.dataset.id; // Получаем ID сделки из атрибута data-id
-        fetch(`/deals/${dealId}/`) // Запрашиваем детали сделки
+        const dealId = row.dataset.id;
+        console.log(`🔍 Запрос на сделку ID: ${dealId}`);
+
+        fetch(`/deals/${dealId}/`)
             .then(response => response.json())
             .then(data => {
-                // Заполняем данные в сайдбар
+                console.log("📂 Полученные данные сделки:", data);
+
                 document.getElementById('dealDate').innerText = data.date;
                 document.getElementById('dealSupplier').innerText = data.supplier;
                 document.getElementById('dealBuyer').innerText = data.buyer;
                 document.getElementById('dealGrade').innerText = data.grade;
                 document.getElementById('dealTotalAmount').innerText = data.total_amount;
+                document.getElementById('dealScaleTicket').innerText = data.scale_ticket || "No Scale Ticket";
 
-                // Сохраняем текущий ID сделки для последующих операций
                 document.getElementById('viewDealSidebar').dataset.dealId = dealId;
-
-                // Открываем сайдбар с деталями сделки
-                const sidebar = document.getElementById('viewDealSidebar');
-                sidebar.style.width = '400px'; // Показываем сайдбар
+                document.getElementById('viewDealSidebar').style.width = '400px';
             })
-            .catch(error => console.error('Error fetching deal details:', error));
+            .catch(error => console.error("🚨 Ошибка загрузки сделки:", error));
     });
 });
-
 // Закрыть сайдбар
 document.getElementById('closeViewDealSidebarBtn').addEventListener('click', () => {
     const sidebar = document.getElementById('viewDealSidebar');
@@ -128,7 +119,7 @@ document.getElementById('editDealBtn').addEventListener('click', () => {
     const dealId = document.getElementById('viewDealSidebar').dataset.dealId; // Получаем ID сделки из data-атрибута
 
     // Делаем fetch запрос, чтобы получить данные для редактирования
-    fetch(`/deals/${dealId}/`)
+    fetch(/deals/${dealId}/)
         .then(response => response.json())
         .then(data => {
             // Заполняем поля формы редактирования данными текущей сделки
@@ -177,7 +168,7 @@ document.getElementById('editDealForm').addEventListener('submit', (e) => {
 
     };
 
-    fetch(`/deals/${dealId}/edit/`, {
+    fetch(/deals/${dealId}/edit/, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -202,24 +193,21 @@ document.getElementById('editDealForm').addEventListener('submit', (e) => {
 
 // Удаление сделки
 document.getElementById('deleteDealBtn').addEventListener('click', () => {
-    const dealId = document.getElementById('viewDealSidebar').dataset.dealId; // Получаем ID текущей сделки
+    const dealId = document.getElementById('viewDealSidebar').dataset.dealId;
     if (confirm('Are you sure you want to delete this deal?')) {
         fetch(`/deals/${dealId}/delete/`, {
             method: 'DELETE',
         })
-            .then(response => {
-                if (response.ok) {
-                    alert('Deal deleted successfully!');
-                    // Закрываем сайдбар
-                    const sidebar = document.getElementById('viewDealSidebar');
-                    sidebar.style.width = '0';
-                    // Удаляем строку из таблицы
-                    document.querySelector(`.deal-row[data-id="${dealId}"]`).remove();
-                } else {
-                    alert('Failed to delete deal.');
-                }
-            })
-            .catch(error => console.error('Error deleting deal:', error));
+        .then(response => {
+            if (response.ok) {
+                alert('✅ Сделка удалена!');
+                document.getElementById('viewDealSidebar').style.width = '0';
+                document.querySelector(`.deal-row[data-id="${dealId}"]`).remove();
+            } else {
+                alert('❌ Ошибка при удалении сделки.');
+            }
+        })
+        .catch(error => console.error('🚨 Ошибка удаления сделки:', error));
     }
 });
 
@@ -302,12 +290,12 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        console.log(`🔍 Fetching deal data for ticket: ${ticketNumber}`);
+        console.log(🔍 Fetching deal data for ticket: ${ticketNumber});
 
-        fetch(`/get-deal-by-ticket/?ticket_number=${ticketNumber}`)
+        fetch(/get-deal-by-ticket/?ticket_number=${ticketNumber})
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Server responded with ${response.status}`);
+                    throw new Error(Server responded with ${response.status});
                 }
                 return response.json();
             })
@@ -320,7 +308,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         if (element) {
                             element.value = value;
                         } else {
-                            console.warn(`⚠️ Поле '${id}' не найдено в DOM.`);
+                            console.warn(⚠️ Поле '${id}' не найдено в DOM.);
                         }
                     };
 
@@ -343,7 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     let grossWeight = randomTareWeight + netWeight;
                     setValueIfExists("gross_weight", grossWeight);
 
-                    console.log(`📌 Пересчет весов: Tare = ${randomTareWeight}, Net = ${netWeight}, Gross = ${grossWeight}`);
+                    console.log(📌 Пересчет весов: Tare = ${randomTareWeight}, Net = ${netWeight}, Gross = ${grossWeight});
                 } else {
                     console.warn("❌ Deal not found for this Scale Ticket.");
                     alert("Deal not found for this Scale Ticket.");
@@ -358,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const getValueOrWarn = (id, defaultValue = "") => {
             const element = document.getElementById(id);
             if (!element) {
-                console.warn(`⚠️ Поле '${id}' не найдено в DOM.`);
+                console.warn(⚠️ Поле '${id}' не найдено в DOM.);
                 return defaultValue;
             }
             return element.value || defaultValue;
@@ -378,14 +366,14 @@ document.addEventListener("DOMContentLoaded", function () {
         // 🔄 Пересчитываем Gross перед отправкой
         let grossWeight = tareWeight + netWeight;
 
-        console.log(`📂 Exporting Scale Ticket: ${ticketNumber}, Time: ${dealTime}, Licence: ${licencePlate}, Gross: ${grossWeight}, Tare: ${tareWeight}, Net: ${netWeight}`);
+        console.log(📂 Exporting Scale Ticket: ${ticketNumber}, Time: ${dealTime}, Licence: ${licencePlate}, Gross: ${grossWeight}, Tare: ${tareWeight}, Net: ${netWeight});
 
-        let url = `/export-scale-ticket/?ticket_number=${ticketNumber}`
-                + `&time=${encodeURIComponent(dealTime)}`
-                + `&licence_plate=${encodeURIComponent(licencePlate)}`
-                + `&gross_weight=${encodeURIComponent(grossWeight)}`
-                + `&tare_weight=${encodeURIComponent(tareWeight)}`
-                + `&net_weight=${encodeURIComponent(netWeight)}`;
+        let url = /export-scale-ticket/?ticket_number=${ticketNumber}
+                + &time=${encodeURIComponent(dealTime)}
+                + &licence_plate=${encodeURIComponent(licencePlate)}
+                + &gross_weight=${encodeURIComponent(grossWeight)}
+                + &tare_weight=${encodeURIComponent(tareWeight)}
+                + &net_weight=${encodeURIComponent(netWeight)};
 
         window.open(url, '_blank');
     };
