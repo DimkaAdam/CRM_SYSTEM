@@ -267,7 +267,7 @@ def company_main(request):
 def deal_list(request):
     # Получаем текущий месяц и год
     print("DEBUG: datetime is", datetime)
-    today_date = datetime.datetime.today()
+    today_date = datetime.today()  # ✅ Теперь работает
 
     current_month = today_date.month
     current_year = today_date.year
@@ -1102,16 +1102,6 @@ def export_scale_ticket_pdf(request):
     response["Content-Disposition"] = f'attachment; filename=\"Ticket # {ticket_number}.pdf\"'
     return response
 
-
-
-import os
-import json
-import datetime
-from django.http import JsonResponse
-from django.shortcuts import render
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
 
 # Область доступа
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
