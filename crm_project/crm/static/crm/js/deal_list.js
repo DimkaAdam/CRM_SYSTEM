@@ -1,3 +1,4 @@
+// Глобальные функции открытия и закрытия сайдбара Scale Ticket
 window.openScaleTicketSidebar = function () {
     console.log("📂 Opening Scale Ticket Sidebar...");
     const sidebar = document.getElementById("scaleTicketSidebar");
@@ -5,9 +6,9 @@ window.openScaleTicketSidebar = function () {
         console.error("⚠️ Scale Ticket Sidebar НЕ найден в DOM!");
         return;
     }
-    sidebar.style.display = "block"; // Показываем сайдбар
+    sidebar.style.display = "block";
     setTimeout(() => {
-        sidebar.classList.add("open"); // Добавляем анимацию
+        sidebar.classList.add("open");
     }, 10);
 };
 
@@ -15,11 +16,63 @@ window.closeScaleTicketSidebar = function () {
     console.log("📂 Closing Scale Ticket Sidebar...");
     const sidebar = document.getElementById("scaleTicketSidebar");
     if (!sidebar) return;
-    sidebar.classList.remove("open"); // Убираем анимацию
+    sidebar.classList.remove("open");
     setTimeout(() => {
-        sidebar.style.display = "none"; // Прячем сайдбар
+        sidebar.style.display = "none";
     }, 300);
 };
+
+// Функция загрузки данных по Scale Ticket Number
+window.fetchDealData = function () {
+    let ticketNumberElement = document.getElementById("ticket_number");
+    if (!ticketNumberElement) {
+        console.error("🚨 Ошибка: поле 'ticket_number' не найдено!");
+        return;
+    }
+    let ticketNumber = ticketNumberElement.value;
+
+    if (!ticketNumber || ticketNumber.length < 3) {
+        console.warn("⚠️ Введите минимум 3 символа для поиска сделки.");
+        return;
+    }
+
+    console.log(`🔍 Fetching deal data for ticket: ${ticketNumber}`);
+
+    fetch(`/get-deal-by-ticket/?ticket_number=${ticketNumber}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("✅ Deal found:", data.deal);
+
+                document.getElementById("selectedDealId").value = data.deal.id;
+                document.getElementById("scaleticket_date").value = data.deal.date;
+                document.getElementById("scaleticket_received_quantity").value = data.deal.received_quantity;
+                document.getElementById("pallets").value = data.deal.received_pallets;
+                document.getElementById("supplier_name").value = data.deal.supplier_name;
+                document.getElementById("scaleticket_grade").value = data.deal.grade;
+
+                // 🏋️‍♂️ Генерируем случайный tare_weight
+                let tareWeight = 5170 + Math.floor(Math.random() * 301);
+                document.getElementById("tare_weight").value = tareWeight;
+
+                // 📌 Рассчитываем net_weight (если отсутствует, считаем по received_quantity)
+                let netWeight = parseFloat(data.deal.net_weight_str || data.deal.received_quantity * 1000 || 0);
+                document.getElementById("scaleticket_received_quantity").value = netWeight / 1000; // В тоннах
+
+                // 📌 Рассчитываем Gross Weight = Tare Weight + Net Weight
+                let grossWeight = tareWeight + netWeight;
+                document.getElementById("gross_weight").value = grossWeight;
+
+                console.log(`📌 Пересчет весов: Tare = ${tareWeight}, Net = ${netWeight}, Gross = ${grossWeight}`);
+            } else {
+                console.warn("❌ Deal not found for this Scale Ticket.");
+                alert("Deal not found for this Scale Ticket.");
+            }
+        })
+        .catch(error => console.error("🚨 Error fetching deal data:", error));
+};
+
+
 
 
 // Открыть боковую панель для создания новой сделки
