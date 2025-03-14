@@ -151,6 +151,49 @@
 
 /* сайдбар */
 
+/* ==========================================================================
+   Панель масштабирования билетов (Scale Ticket Sidebar)
+   ========================================================================== */
+
+#scaleTicketSidebar {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 350px;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(129, 190, 206, 0.8), rgba(55, 139, 164, 0.8), rgba(3, 98, 128, 0.8)); /* Полупрозрачный градиент */
+    color: white;
+    overflow-y: auto; /* Включаем вертикальную прокрутку */
+    transition: right 0.3s ease-in-out;
+    padding: 20px; /* Добавляем отступы */
+    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column; /* Размещаем элементы в колонку */
+}
+
+/* Контейнер для контента внутри сайдбара */
+#scaleTicketSidebar form {
+    flex-grow: 1; /* Позволяет форме занимать доступное пространство */
+    overflow-y: auto; /* Включает прокрутку внутри формы */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Промежутки между элементами */
+}
+
+/* Контейнер для кнопок */
+#scaleTicketSidebar .sidebar-buttons {
+    margin-top: auto; /* Прижимает кнопки к нижней части */
+    display: flex;
+    justify-content: space-between;
+    padding-top: 15px;
+}
+
+
+
+#scaleTicketSidebar.open {
+    right: 0; /* Панель выезжает при добавлении класса .open */
+}
 
 
 /* Сайдбар для добавления новой сделки */

@@ -476,24 +476,3 @@
 }
 
 
-/* ==========================================================================
-   Панель масштабирования билетов (Scale Ticket Sidebar)
-   ========================================================================== */
-
-#scaleTicketSidebar {
-    position: fixed;
-    top: 0;
-    right: -400px; /* Начальная позиция — скрыта за пределами экрана */
-    width: 350px;
-    height: 100%;
-    background-color: #ffffff;
-    overflow-x: hidden;
-    transition: right 0.3s ease-in-out;
-    padding-top: 20px;
-    box-shadow: -4px 0px 8px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
-
-#scaleTicketSidebar.open {
-    right: 0; /* Панель выезжает при добавлении класса .open */
-}
