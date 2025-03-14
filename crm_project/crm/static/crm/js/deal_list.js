@@ -122,7 +122,8 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
         supplier_price: supplier_price,
         buyer_price: buyer_price,
         transport_cost: transport_cost,
-        transport_company: document.getElementById('transport_company').value
+        transport_company: document.getElementById('transport_company').value,
+        scale_ticket: document.getElementById("ticket_number").value
     };
 
     fetch('http://127.0.0.1:8000/api/deals/', {
@@ -176,7 +177,7 @@ document.querySelectorAll('.deal-row').forEach(row => {
                 document.getElementById('dealBuyer').innerText = data.buyer;
                 document.getElementById('dealGrade').innerText = data.grade;
                 document.getElementById('dealTotalAmount').innerText = data.total_amount;
-
+                document.getElementById('dealScaleTicket').innerText = data.total_amount;
                 // Сохраняем текущий ID сделки для последующих операций
                 document.getElementById('viewDealSidebar').dataset.dealId = dealId;
 
@@ -299,3 +300,27 @@ document.getElementById('deleteDealBtn').addEventListener('click', () => {
     }
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+    const exportButton = document.getElementById("exportScaleTicketBtn");
+    if (exportButton) {
+        exportButton.addEventListener("click", function(event) {
+            event.preventDefault();
+            exportScaleTicket(event);
+        });
+
+        // Добавляем анимацию при клике
+        exportButton.addEventListener("mousedown", function () {
+            exportButton.classList.add("clicked");
+        });
+
+        exportButton.addEventListener("mouseup", function () {
+            setTimeout(() => {
+                exportButton.classList.remove("clicked");
+            }, 200);
+        });
+
+        console.log("✅ Export PDF button connected.");
+    } else {
+        console.error("❌ Export PDF button NOT FOUND!");
+    }
+});

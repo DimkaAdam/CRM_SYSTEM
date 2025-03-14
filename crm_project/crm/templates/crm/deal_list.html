@@ -93,7 +93,7 @@
                 <label for="grade">Material:</label>
                 <input type="text" id="scaleticket_grade" name="grade" readonly>
                 <!-- Кнопка для экспорта в PDF -->
-                <a id="exportScaleTicketBtn" href="#" onclick="exportScaleTicket(event)">
+                <a id="exportScaleTicketBtn" href="#" onclick="exportScaleTicket(event)" >
                     <button>Export Scale Ticket to PDF</button>
                 </a>
             </form>
@@ -273,7 +273,7 @@
                     <td>{{ deal.total_amount }}</td>
                     <td>{{ deal.transport_cost }}</td>
                     <td>{{ deal.transport_company }}</td>
-                    <td>{{ deal.scale_ticket}}</td>
+                    <td>{{ deal.scale_ticket|default:"N/A" }}</td>
                     <td>{{ deal.total_income_loss }}</td>
 
                 </tr>

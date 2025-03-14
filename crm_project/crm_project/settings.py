@@ -156,6 +156,7 @@ MATERIALS_LIST = {
     'Loose OCC': None,
     'Printers Offcuts': None,
     'Brown Printers Offcuts': None,
+    'Stock Rolls': None,
 
 
 }

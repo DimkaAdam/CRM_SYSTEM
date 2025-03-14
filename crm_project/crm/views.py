@@ -30,7 +30,7 @@ import json
 from decimal import Decimal
 
 
-from datetime import datetime
+from datetime import datetime,timezone
 
 from io import BytesIO
 
@@ -496,7 +496,6 @@ def edit_deal(request, deal_id):
         supplier_id = data.get('supplier')
         buyer_id = data.get('buyer')
 
-        # Убедитесь, что ID являются валидными
         if supplier_id:
             deal.supplier = get_object_or_404(Company, id=supplier_id)
         if buyer_id:
@@ -515,6 +514,7 @@ def edit_deal(request, deal_id):
         deal.received_pallets = data.get('received_pallets', deal.received_pallets)
         deal.transport_cost = Decimal(data.get('transport_cost', deal.transport_cost))
         deal.transport_company = data.get('transport_company', deal.transport_company)
+        deal.scale_ticket = data.get('scale_ticket', deal.scale_ticket)  # ✅ Теперь scale_ticket обновляется
 
         # Выполняем расчеты для итоговых сумм
         deal.total_amount = deal.received_quantity * deal.buyer_price
@@ -524,7 +524,6 @@ def edit_deal(request, deal_id):
         # Сохраняем обновленную сделку
         deal.save()
 
-        # Возвращаем успешный ответ с данными обновленной сделки
         return JsonResponse({
             'status': 'success',
             'deal': {
@@ -535,6 +534,7 @@ def edit_deal(request, deal_id):
                 'grade': deal.grade,
                 'total_amount': str(deal.total_amount),
                 'total_income_loss': str(deal.total_income_loss),
+                'scale_ticket': deal.scale_ticket  # ✅ Теперь отправляется обратно в UI
             }
         })
 
@@ -568,8 +568,12 @@ class DealCreateAPIView(APIView):
     def post(self, request):
         serializer = DealSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            scale_ticket = request.data.get("scale_ticket")  # ✅ Берем scale_ticket
+
+            # ✅ Создаем объект, передавая scale_ticket
+            deal = serializer.save(scale_ticket=scale_ticket)
+
+            return Response(DealSerializer(deal).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1129,7 +1133,7 @@ def get_calendar_events():
 
     try:
         service = build("calendar", "v3", credentials=creds)
-        now = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+        now = datetime.now(timezone.utc).replace(microsecond=0).isoformat() + "Z"
 
         events_result = service.events().list(
             calendarId=CALENDAR_ID,

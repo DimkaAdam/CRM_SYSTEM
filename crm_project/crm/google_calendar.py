@@ -1,6 +1,6 @@
 import os
 import json
-import datetime
+from datetime import datetime, timezone
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -35,7 +35,7 @@ def get_calendar_events():
     service = build("calendar", "v3", credentials=creds)
 
     # Получаем ближайшие события
-    now = datetime.datetime.utcnow().isoformat() + "Z"
+    now = datetime.now(timezone.utc).isoformat()
     events_result = service.events().list(
         calendarId="dmitry@wastepaperbrokers.com",
         timeMin=now,
