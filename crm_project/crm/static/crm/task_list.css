@@ -1,7 +1,19 @@
-
-#calendar {
-    max-width: 600px; /* Ограничиваем ширину */
-    height: 400px; /* Ограничиваем высоту */
-    margin: right; /* Центрируем */
+.calendar-container {
+    display: flex;
+    flex-direction: row; /* ✅ Размещаем элементы в ряд */
+    gap: 20px;
+    align-items: flex-start; /* ✅ Выравниваем по верхнему краю */
 }
 
+#mini-calendar {
+    width: 250px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+}
+
+#calendar {
+    flex-grow: 1;
+    min-height: 600px; /* ✅ Увеличиваем высоту основного календаря */
+}

@@ -44,6 +44,7 @@ from reportlab.lib.utils import ImageReader
 from .google_calendar import get_calendar_events
 
 
+from .models import Event
 
 
 
@@ -1150,40 +1151,53 @@ def get_calendar_events():
     return events
 
 def task_list(request):
-    """Django View для отображения списка задач."""
-    events = get_calendar_events()
+    """Рендерим страницу с календарём"""
+    return render(request, "crm/task_list.html")
 
-    if isinstance(events, dict) and "error" in events:
-        return JsonResponse(events, status=500)
 
-    formatted_events = [
+def get_events(request):
+    """Возвращает события в формате JSON для FullCalendar"""
+    events = Event.objects.all()
+    event_list = [
         {
-            "title": event.get("summary", "Без названия"),
-            "start": event["start"].get("dateTime", event["start"].get("date")),
-            "end": event["end"].get("dateTime", event["end"].get("date")),
+            "id": event.id,
+            "title": event.title,
+            "start": event.start.strftime("%Y-%m-%dT%H:%M:%S"),
+            "end": event.end.strftime("%Y-%m-%dT%H:%M:%S") if event.end else None,
+            "allDay": event.all_day,
         }
         for event in events
     ]
+    return JsonResponse(event_list, safe=False)
 
-    return render(request, "crm/task_list.html", {"events_json": json.dumps(formatted_events)})
 
-def api_calendar_events(request):
-    """API для загрузки событий в JSON (для FullCalendar)."""
-    events = get_calendar_events()
+@csrf_exempt
+def add_event(request):
+    """Добавляет событие в базу"""
+    if request.method == "POST":
+        data = json.loads(request.body)
+        title = data.get("title")
+        start = datetime.fromisoformat(data.get("start"))
+        end = datetime.fromisoformat(data.get("end")) if data.get("end") else None
+        all_day = data.get("allDay", False)
 
-    if isinstance(events, dict) and "error" in events:
-        return JsonResponse(events, status=500)
+        event = Event.objects.create(title=title, start=start, end=end, all_day=all_day)
+        return JsonResponse({"status": "success", "id": event.id})
 
-    formatted_events = [
-        {
-            "title": event.get("summary", "Без названия"),
-            "start": event["start"].get("dateTime", event["start"].get("date")),
-            "end": event["end"].get("dateTime", event["end"].get("date")),
-        }
-        for event in events
-    ]
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
-    return JsonResponse(formatted_events, safe=False)
+
+@csrf_exempt
+def delete_event(request, event_id):
+    """Удаляет событие"""
+    if request.method == "DELETE":
+        event = Event.objects.filter(id=event_id).first()
+        if event:
+            event.delete()
+            return JsonResponse({"status": "deleted"})
+        return JsonResponse({"error": "Event not found"}, status=404)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 

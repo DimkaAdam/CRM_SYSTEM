@@ -180,3 +180,15 @@ class PipeLine(models.Model):
 
     def __str__(self):
         return f"{self.company.name} - {self.get_stage_display()}"
+
+
+
+
+class Event(models.Model):
+    title = models.CharField(max_length=200)  # Название события
+    start = models.DateTimeField()  # Дата и время начала
+    end = models.DateTimeField(null=True, blank=True)  # Дата и время окончания (необязательно)
+    all_day = models.BooleanField(default=False)  # Весь день
+
+    def __str__(self):
+        return self.title

@@ -8,7 +8,7 @@ from . import views
 from .views import (
     ClientCreateAPIView, DealCreateAPIView, PipelineViewSet,
     ClientViewSet, DealViewSet, export_company_report_pdf,
-    get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list,get_calendar_events,api_calendar_events,
+    get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event
 )
 
 # 📌 Функция, которая рендерит шаблон с React
@@ -85,10 +85,9 @@ urlpatterns = [
     path("export-scale-ticket/", export_scale_ticket_pdf, name="export_scale_ticket"),
 
      #Tasks
-    path('tasks/', task_list, name='task_list'),
-    path('api/calendar-events/', get_calendar_events, name='calendar-events'),
-    path("api/calendar-events/", api_calendar_events, name="api_calendar_events"),
-    # 📌 Перенаправляем все неизвестные URL в React (SPA)
-    re_path(r"^.*$", TemplateView.as_view(template_name="index.html"), name="index"),
+    path("tasks/", task_list, name="task_list"),
+    path("api/events/", get_events, name="get_events"),
+    path("api/events/add/", add_event, name="add_event"),
+    path("api/events/delete/<int:event_id>/", delete_event, name="delete_event"),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
