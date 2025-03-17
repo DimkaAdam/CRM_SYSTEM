@@ -409,6 +409,8 @@ def export_deals_to_excel(request):
 
         ws.append(row)
 
+        last_row = len(deals) + 1  # Последняя строка данных
+
         # Применяем стили к строке данных
         for col_num, value in enumerate(row, 1):
             cell = ws.cell(row=row_num, column=col_num)
@@ -424,9 +426,10 @@ def export_deals_to_excel(request):
         ("Transportation cost", "=SUM(M2:M{})".format(len(deals) + 1)),  # Транспортные расходы
         ("Suppliers", "=SUM(J2:J{})".format(len(deals) + 1)),  # Итоги для поставщиков
         ("MT OCC11",
-         "=SUMPRODUCT((D2:D{}=\"OCC11\")+(D2:D{}=\"OCC 11\")+(D2:D{}=\"OCC 11 Bale String\")+(D2:D{}=\"Loose OCC\"), E2:E{})".format(
-             len(deals) + 1, len(deals) + 1, len(deals) + 1, len(deals) + 1, len(deals) + 1
-         )),  # MT OCC11
+         "=SUMPRODUCT((D2:D{}=\"OCC11\")+(D2:D{}=\"OCC 11\")+(D2:D{}=\"OCC 11 Bale String\")+"
+         "(D2:D{}=\"Loose OCC\")+(D2:D{}=\"Stock Rolls\")+(D2:D{}=\"Printers Offcuts\"), E2:E{})".format(
+             last_row, last_row, last_row, last_row, last_row, last_row
+         ))
         ("MT Plastic", "=SUMIF(D2:D{}, \"Flexible Plastic\", E2:E{})".format(len(deals) + 1, len(deals) + 1)),  # MT Plastic
         ("MT Mixed-containers", "=SUMIF(D2:D{}, \"Mixed Container\", E2:E{})".format(len(deals) + 1, len(deals) + 1)),  # MT Mixed-containers
         ("INCOME", "=SUM(O2:O{})".format(len(deals) + 1))  # Общая прибыль/убыток
@@ -583,7 +586,13 @@ class DealViewSet(viewsets.ModelViewSet):
     serializer_class = DealSerializer
 
 
-
+def get_licence_plates(request):
+    plates = [
+        'SY1341',
+        'WB3291',
+        '153'
+    ]
+    return JsonResponse({"plates": plates})
 
 def sales_analytics(request):
     from django.db.models import Sum, Q
@@ -609,12 +618,13 @@ def sales_analytics(request):
         supplier_total=Sum('supplier_total'),
         total_tonnage=Sum('received_quantity'),
         occ11_tonnage=Sum('received_quantity', filter=Q(grade="OCC11") | Q(grade="OCC 11") | Q(grade="Loose OCC") | Q(
-            grade="OCC 11 Bale String")),
+            grade="OCC 11 Bale String") | Q(
+            grade="Printers Offcuts") | Q(grade="Stock Rolls")),
 
-    plastic_tonnage=Sum('received_quantity', filter=Q(grade="Flexible Plastic")),
-        mixed_tonnage=Sum('received_quantity', filter=Q(grade="Mixed Container")),
-        total_sales=Sum('total_amount')
-    ).order_by('month')
+        plastic_tonnage=Sum('received_quantity', filter=Q(grade="Flexible Plastic")),
+            mixed_tonnage=Sum('received_quantity', filter=Q(grade="Mixed Container")),
+            total_sales=Sum('total_amount')
+        ).order_by('month')
 
     chart_data = {
         'months': [entry['month'] for entry in monthly_data],

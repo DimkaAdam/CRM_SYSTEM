@@ -324,3 +324,34 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("❌ Export PDF button NOT FOUND!");
     }
 });
+
+
+// Функция загрузки номеров лицензий
+window.loadLicencePlates = function () {
+    let licencePlateSelect = document.getElementById("licence_plate");
+    if (!licencePlateSelect) {
+        console.error("🚨 Поле 'licence_plate' не найдено!");
+        return;
+    }
+
+    // Очищаем список перед загрузкой
+    licencePlateSelect.innerHTML = '<option value="">-- Select Licence Plate --</option>';
+
+    // Список номеров (можно заменить на fetch('/api/licence-plates/'))
+    let plateNumbers = ['SY1341', 'WB3291', '153'];
+
+    // Добавляем номера в выпадающий список
+    plateNumbers.forEach(plate => {
+        let option = document.createElement("option");
+        option.value = plate;
+        option.textContent = plate;
+        licencePlateSelect.appendChild(option);
+    });
+
+    console.log("✅ Licence plates loaded:", plateNumbers);
+};
+
+// Загружаем номера при открытии сайдбара
+document.getElementById("scaleTicketSidebar").addEventListener("click", function () {
+    loadLicencePlates();
+});
