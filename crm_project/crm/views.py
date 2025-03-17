@@ -31,7 +31,7 @@ from decimal import Decimal
 
 
 from datetime import datetime,timezone
-
+from django.utils import timezone as t
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -1134,7 +1134,7 @@ def get_calendar_events():
 
     try:
         service = build("calendar", "v3", credentials=creds)
-        now = datetime.now(timezone.utc).replace(microsecond=0).isoformat() + "Z"
+        now = datetime.now(t.utc).replace(microsecond=0).isoformat() + "Z"
 
         events_result = service.events().list(
             calendarId=CALENDAR_ID,
@@ -1170,21 +1170,42 @@ def get_events(request):
     ]
     return JsonResponse(event_list, safe=False)
 
-
 @csrf_exempt
 def add_event(request):
-    """Добавляет событие в базу"""
-    if request.method == "POST":
+    """Добавляет новое событие в календарь"""
+    try:
         data = json.loads(request.body)
         title = data.get("title")
-        start = datetime.fromisoformat(data.get("start"))
-        end = datetime.fromisoformat(data.get("end")) if data.get("end") else None
-        all_day = data.get("allDay", False)
+        start = data.get("start")
 
-        event = Event.objects.create(title=title, start=start, end=end, all_day=all_day)
-        return JsonResponse({"status": "success", "id": event.id})
+        if not title or not start:
+            return JsonResponse({"error": "title и start обязательны"}, status=400)
 
-    return JsonResponse({"error": "Invalid request"}, status=400)
+        # ✅ Преобразуем дату
+        start_datetime = datetime.fromisoformat(start)
+
+        # ✅ Проверяем, есть ли уже таймзона, если нет — добавляем
+        if start_datetime.tzinfo is None:
+            start_datetime = timezone.make_aware(start_datetime)
+
+        # ✅ Создаем событие в БД
+        event = Event.objects.create(
+            title=title,
+            start=start_datetime,
+            all_day=False
+        )
+
+        return JsonResponse({"status": "success", "event": {
+            "id": event.id,
+            "title": event.title,
+            "start": event.start.isoformat(),
+            "allDay": event.all_day
+        }})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
 
 
 @csrf_exempt

@@ -1,19 +1,150 @@
+/* 📌 Основной контейнер */
 .calendar-container {
     display: flex;
-    flex-direction: row; /* ✅ Размещаем элементы в ряд */
     gap: 20px;
-    align-items: flex-start; /* ✅ Выравниваем по верхнему краю */
+    align-items: flex-start;
 }
 
+/* 🍏 Мини-календарь */
 #mini-calendar {
-    width: 250px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background: #fff;
+    width: 320px;  /* 🔄 Было 280px */
+    padding: 15px;
+    border-radius: 16px;
+    background: linear-gradient(to bottom, #f9f9f9, #e8e8e8);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+#mini-calendar .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+#mini-calendar .calendar-header button {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #007aff;
+    transition: transform 0.2s ease-in-out, color 0.2s;
+}
+
+#mini-calendar .calendar-header button:hover {
+    color: #0051a8;
+    transform: scale(1.2);  /* 🔄 Анимация увеличения */
+}
+
+#mini-calendar .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+#mini-calendar .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#mini-calendar .days div {
+    padding: 6px;
+    border-radius: 8px;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+#mini-calendar .days div:hover {
+    background: rgba(0, 122, 255, 0.2);
+}
+
+#mini-calendar .days .today {
+    background: #007aff;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(0, 122, 255, 0.5);  /* 🔵 Улучшенный эффект */
+}
+
+/* 📅 FullCalendar (растянутый) */
 #calendar {
     flex-grow: 1;
-    min-height: 600px; /* ✅ Увеличиваем высоту основного календаря */
+    width: 100%;
+    max-width: none;  /* 🔄 Снял ограничение ширины */
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* 📅 Верхняя панель FullCalendar */
+.fc-header-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.fc-toolbar-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* 🔘 Кнопки навигации */
+.fc-button {
+    background: #f5f5f7;
+    border: none;
+    border-radius: 8px;
+    color: #007aff;
+    font-size: 14px;
+    padding: 6px 12px;
+    transition: 0.2s;
+}
+
+.fc-button:hover {
+    background: #e5e5ea;
+}
+
+/* 🗓 Ячейки дней */
+.fc-daygrid-day {
+    border-radius: 10px;
+    transition: 0.2s;
+}
+
+.fc-daygrid-day:hover {
+    background: rgba(0, 122, 255, 0.08);
+}
+
+/* 🔵 Текущий день */
+.fc-day-today {
+    background: rgba(0, 122, 255, 0.1) !important;
+    border-radius: 10px;
+}
+
+/* 📌 События */
+.fc-event {
+    background: #007aff;
+    color: white;
+    border-radius: 10px;
+    padding: 8px;
+    font-size: 14px;  /* 🔄 Увеличил размер */
+    font-weight: 600;
+}
+
+.fc-event:hover {
+    background: #0051a8;
+}
+
+/* 🕒 Временные слоты */
+.fc-timegrid-slot {
+    height: 60px;  /* 🔄 Увеличил интервалы */
 }

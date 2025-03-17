@@ -5,12 +5,23 @@
 
 
 <div class="calendar-container">
-    <!-- Маленький календарь слева -->
-    <div id="mini-calendar"></div>
+    <!-- Мини-календарь -->
+    <div id="mini-calendar">
+        <div class="calendar-header">
+            <button id="prev-month">&lt;</button>
+            <span id="current-month">March 2025</span>
+            <button id="next-month">&gt;</button>
+        </div>
+        <div class="weekdays">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div class="days" id="calendar-days"></div>
+    </div>
 
-    <!-- Основной календарь справа -->
+    <!-- Полноразмерный календарь -->
     <div id="calendar"></div>
 </div>
+
 
 <!-- Подключаем FullCalendar -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
@@ -20,6 +31,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
 
 
 <script src="{% static 'crm/js/task_list.js' %}"></script>
