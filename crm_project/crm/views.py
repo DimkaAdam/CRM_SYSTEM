@@ -1,6 +1,6 @@
 from django.core.serializers import serialize
 import os
-from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial
+from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,ScheduledShipment
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -1246,10 +1246,10 @@ def get_grades(request):
     return JsonResponse(list(settings.MATERIALS_LIST.keys()), safe=False)
 
 
-@csrf_exempt  # ✅ Убираем CSRF-токен, т.к. fetch() не отправляет его
-def add_shipment(request):
+@csrf_exempt
+def add_scheduled_shipment(request):
     """
-    Добавляет новую отгрузку.
+    Добавляет новую запланированную отгрузку.
     """
     if request.method == "POST":
         data = json.loads(request.body)
@@ -1257,38 +1257,51 @@ def add_shipment(request):
             supplier = Company.objects.get(id=data["supplier"])
             buyer = Company.objects.get(id=data["buyer"])
 
-            Deals.objects.create(
+            shipment = ScheduledShipment.objects.create(
                 supplier=supplier,
                 buyer=buyer,
-                date=data["datetime"],
+                date=data["datetime"].split("T")[0],
+                time=data["datetime"].split("T")[1],
                 grade=data["grade"]
             )
-            return JsonResponse({"status": "success"})
+            return JsonResponse({"status": "success", "shipment_id": shipment.id})
         except Company.DoesNotExist:
-            return JsonResponse({"error": "Компания не найдена"}, status=400)
+            return JsonResponse({"error": "Supplier or Buyer not found"}, status=400)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
-def get_shipments(request):
+def get_scheduled_shipments(request):
     """
-    Returns shipments for the next 7 days only.
+    Возвращает список всех запланированных отгрузок.
     """
-    today = datetime.now().date()
-    next_week = today + timedelta(days=7)  # 📌 Ограничение в 7 дней
-    shipments = Deals.objects.filter(date__range=(today, next_week)).order_by("date")
-
+    shipments = ScheduledShipment.objects.all().order_by("date")
     shipment_list = [
         {
+            "id": shipment.id,
             "date": shipment.date.strftime("%Y-%m-%d"),
-            "time": shipment.date.strftime("%H:%M"),
-            "supplier": shipment.supplier.name if shipment.supplier else "N/A",
-            "buyer": shipment.buyer.name if shipment.buyer else "N/A",
+            "time": shipment.time.strftime("%H:%M"),
+            "supplier": shipment.supplier.name,
+            "buyer": shipment.buyer.name,
             "grade": shipment.grade
         }
         for shipment in shipments
     ]
     return JsonResponse(shipment_list, safe=False)
 
+@csrf_exempt
+def delete_scheduled_shipment(request, shipment_id):
+    """
+    Удаляет запланированную отгрузку.
+    """
+    if request.method == "DELETE":
+        try:
+            shipment = ScheduledShipment.objects.get(id=shipment_id)
+            shipment.delete()
+            return JsonResponse({"status": "deleted"})
+        except ScheduledShipment.DoesNotExist:
+            return JsonResponse({"error": "Shipment not found"}, status=404)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 def pipeline(request):

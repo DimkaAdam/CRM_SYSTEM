@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // 🔹 Инициализация основного календаря
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
@@ -7,15 +8,44 @@ document.addEventListener('DOMContentLoaded', function () {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        events: "/api/events/",
+        events: "/api/scheduled-shipments/",  // ✅ Загружаем только запланированные отгрузки
         editable: true,
         selectable: true,
         nowIndicator: true,
+        eventClick: function (info) {
+            if (confirm("❌ Do you really want to delete this shipment?")) {
+                let shipmentId = info.event.id;
+
+                fetch(`/api/scheduled-shipments/delete/${shipmentId}/`, {
+                    method: "DELETE"
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "deleted") {
+                        info.event.remove();
+                        removeShipmentFromList(shipmentId);
+                        alert("✅ Shipment deleted successfully!");
+                    } else {
+                        alert("❌ Error deleting shipment.");
+                    }
+                })
+                .catch(error => {
+                    console.error("🚨 Error deleting shipment:", error);
+                    alert("❌ Server error");
+                });
+            }
+        }
     });
 
-    calendar.render();
+    calendar.render();  // ✅ Запускаем FullCalendar
 
-    // 📌 Загружаем список поставщиков, покупателей и грейдов ОДНИМ ЗАПРОСОМ
+    // 📌 Удаление отгрузки из списка
+    function removeShipmentFromList(shipmentId) {
+        let shipmentRows = document.querySelectorAll(`#shipment-list tr[data-id="${shipmentId}"]`);
+        shipmentRows.forEach(row => row.remove());
+    }
+
+    // 📌 Загрузка списка поставщиков, покупателей и грейдов
     function loadData() {
         Promise.all([
             fetch("/api/clients/").then(res => res.json()),
@@ -43,49 +73,52 @@ document.addEventListener('DOMContentLoaded', function () {
 
     loadData();
 
-    // 📌 Загружаем список отгрузок и добавляем их в календарь
+    // 📌 Загрузка отгрузок (только запланированные)
     function loadShipments() {
-        fetch("/api/shipments/")
+        fetch("/api/scheduled-shipments/")
             .then(response => response.json())
             .then(data => {
                 let shipmentListContainer = document.getElementById("shipment-list");
-                shipmentListContainer.innerHTML = ""; // Очищаем перед обновлением
+                shipmentListContainer.innerHTML = "";  // ✅ Очищаем перед обновлением
 
-                let shipmentsByDay = {}; // Объект для группировки по дням недели
+                let shipmentsByDay = {};
                 let today = new Date();
                 let nextWeek = new Date();
-                nextWeek.setDate(today.getDate() + 7); // 📌 Ограничение в 7 дней
+                nextWeek.setDate(today.getDate() + 7);
 
-                // 📌 Очищаем старые события перед добавлением новых
-                calendar.getEvents().forEach(event => event.remove());
+                calendar.getEvents().forEach(event => event.remove());  // ✅ Удаляем старые события
 
                 data.forEach(shipment => {
-                    let date = new Date(`${shipment.date}T${shipment.time}:00Z`); // 📌 Принудительно в UTC
-                    let dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }); // 📌 Указываем "UTC"
+                    let date = new Date(`${shipment.date}T${shipment.time}:00Z`);
+                    let dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
 
-                    if (date >= today && date <= nextWeek) { // 📌 Фильтруем по 7 дням
+                    if (date >= today && date <= nextWeek) {
                         if (!shipmentsByDay[dayOfWeek]) {
                             shipmentsByDay[dayOfWeek] = [];
                         }
-
                         shipmentsByDay[dayOfWeek].push(shipment);
 
-                        // 📌 Добавляем отгрузку в FullCalendar
+                        // ✅ Добавляем в FullCalendar
                         calendar.addEvent({
+                            id: shipment.id,
                             title: `${shipment.supplier} → ${shipment.buyer} (${shipment.grade})`,
-                            start: date.toISOString(), // 📌 Используем точное время UTC
+                            start: date.toISOString(),
                             allDay: false
                         });
                     }
                 });
 
-                // 📌 Создаем блоки по дням недели
+                // ✅ Отображаем список по дням недели
                 Object.keys(shipmentsByDay).forEach(day => {
                     let dayContainer = document.createElement("div");
                     dayContainer.classList.add("shipment-day");
 
                     let title = document.createElement("h4");
                     title.textContent = day;
+                    title.style.backgroundColor = "#007aff";
+                    title.style.color = "white";
+                    title.style.padding = "5px";
+                    title.style.borderRadius = "5px";
                     dayContainer.appendChild(title);
 
                     let table = document.createElement("table");
@@ -102,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </thead>
                         <tbody>
                             ${shipmentsByDay[day].map(shipment => `
-                                <tr>
+                                <tr data-id="${shipment.id}">
                                     <td>${shipment.date}</td>
                                     <td>${shipment.time}</td>
                                     <td>${shipment.supplier}</td>
@@ -119,10 +152,64 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(error => console.error("🚨 Error loading shipments:", error));
     }
 
+    loadShipments();  // ✅ Загружаем отгрузки только один раз
 
-    loadShipments(); // ✅ Загружаем отгрузки сразу при загрузке страницы
+     // 📌 Функция отрисовки мини-календаря
+    function renderMiniCalendar() {
+        const miniCalendarDays = document.getElementById("calendar-days");
+        const currentMonth = document.getElementById("current-month");
+        miniCalendarDays.innerHTML = ""; // Очищаем календарь
 
-    // 📌 Обработчик формы добавления отгрузки
+        let firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+        let lastDate = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        let today = new Date();
+
+        currentMonth.textContent = date.toLocaleString("default", { month: "long", year: "numeric" });
+
+        for (let i = 0; i < firstDay; i++) {
+            let emptyCell = document.createElement("div");
+            emptyCell.classList.add("empty-day");
+            miniCalendarDays.appendChild(emptyCell);
+        }
+
+        for (let i = 1; i <= lastDate; i++) {
+            let dayCell = document.createElement("div");
+            dayCell.textContent = i;
+            dayCell.classList.add("calendar-day");
+
+            if (today.getDate() === i && today.getMonth() === date.getMonth() && today.getFullYear() === date.getFullYear()) {
+                dayCell.classList.add("today");
+            }
+
+            dayCell.addEventListener("click", function () {
+                let selectedDate = new Date(date.getFullYear(), date.getMonth(), i);
+                calendar.changeView('timeGridDay');
+                calendar.gotoDate(selectedDate);
+            });
+
+            miniCalendarDays.appendChild(dayCell);
+        }
+    }
+
+    // 📌 Обработчики переключения месяцев в мини-календаре
+    const prevMonthBtn = document.getElementById("prev-month");
+    const nextMonthBtn = document.getElementById("next-month");
+
+    prevMonthBtn.addEventListener("click", function () {
+        date.setMonth(date.getMonth() - 1);
+        renderMiniCalendar();
+    });
+
+    nextMonthBtn.addEventListener("click", function () {
+        date.setMonth(date.getMonth() + 1);
+        renderMiniCalendar();
+    });
+
+    let date = new Date();
+    renderMiniCalendar();  // ✅ Инициализация мини-календаря
+
+
+    // 📌 Форма добавления отгрузки
     document.getElementById("add-shipment-form").addEventListener("submit", function (e) {
         e.preventDefault();
 
@@ -144,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function () {
             grade: grade
         };
 
-        fetch("/api/shipments/add/", {
+        fetch("/api/scheduled-shipments/add/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(shipmentData)
@@ -153,15 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             if (data.status === "success") {
                 alert("✅ Shipment added!");
-
-                // 📌 Добавляем новую отгрузку в FullCalendar
-                calendar.addEvent({
-                    title: `${document.getElementById("supplier").selectedOptions[0].text} → ${document.getElementById("buyer").selectedOptions[0].text} (${grade})`,
-                    start: `${date}T${time}`,
-                    allDay: false
-                });
-
-                loadShipments(); // ✅ Обновляем список отгрузок
+                loadShipments();  // ✅ Обновляем список после добавления
             } else {
                 alert("❌ Error adding shipment");
             }

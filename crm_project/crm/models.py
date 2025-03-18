@@ -192,3 +192,14 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class ScheduledShipment(models.Model):
+    supplier = models.ForeignKey("Company", on_delete=models.CASCADE, related_name="scheduled_shipments")
+    buyer = models.ForeignKey("Company", on_delete=models.CASCADE, related_name="scheduled_receipts")
+    date = models.DateField()
+    time = models.TimeField()
+    grade = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.supplier} → {self.buyer} ({self.grade}) on {self.date} at {self.time}"
