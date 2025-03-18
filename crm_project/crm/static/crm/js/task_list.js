@@ -60,11 +60,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 calendar.getEvents().forEach(event => event.remove());
 
                 data.forEach(shipment => {
-                    let date = new Date(shipment.date);
+                    let date = new Date(`${shipment.date}T${shipment.time}:00Z`); // 📌 Принудительно в UTC
+                    let dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }); // 📌 Указываем "UTC"
 
                     if (date >= today && date <= nextWeek) { // 📌 Фильтруем по 7 дням
-                        let dayOfWeek = date.toLocaleString("en-US", { weekday: "long" });
-
                         if (!shipmentsByDay[dayOfWeek]) {
                             shipmentsByDay[dayOfWeek] = [];
                         }
@@ -74,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         // 📌 Добавляем отгрузку в FullCalendar
                         calendar.addEvent({
                             title: `${shipment.supplier} → ${shipment.buyer} (${shipment.grade})`,
-                            start: `${shipment.date}T${shipment.time}`,
+                            start: date.toISOString(), // 📌 Используем точное время UTC
                             allDay: false
                         });
                     }
@@ -119,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(error => console.error("🚨 Error loading shipments:", error));
     }
+
 
     loadShipments(); // ✅ Загружаем отгрузки сразу при загрузке страницы
 
