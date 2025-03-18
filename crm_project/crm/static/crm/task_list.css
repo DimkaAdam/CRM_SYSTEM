@@ -148,3 +148,121 @@
 .fc-timegrid-slot {
     height: 60px;  /* 🔄 Увеличил интервалы */
 }
+
+@media (max-width: 768px) {
+    .calendar-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #mini-calendar {
+        width: 100%;
+    }
+}
+
+#shipment-form {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#shipment-form h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#shipment-form label {
+    display: block;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+#shipment-form select,
+#shipment-form input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#shipment-form button {
+    width: 100%;
+    padding: 10px;
+    background: #007aff;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    margin-top: 15px;
+    cursor: pointer;
+}
+
+#shipment-form button:hover {
+    background: #005bb5;
+}
+#shipment-list-container {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#shipment-list {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#shipment-list th, #shipment-list td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#shipment-list th {
+    background-color: #007aff;
+    color: white;
+}
+
+#shipment-list-container {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.shipment-day {
+    margin-bottom: 15px;
+}
+
+.shipment-day h4 {
+    background-color: #007aff;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.shipment-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.shipment-table th, .shipment-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.shipment-table th {
+    background-color: #007aff;
+    color: white;
+}

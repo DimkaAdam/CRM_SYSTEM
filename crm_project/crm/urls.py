@@ -8,7 +8,7 @@ from . import views
 from .views import (
     ClientCreateAPIView, DealCreateAPIView, PipelineViewSet,
     ClientViewSet, DealViewSet, export_company_report_pdf,
-    get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event,get_licence_plates
+    get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event,get_licence_plates,get_grades,add_shipment,get_shipments,
 )
 
 # 📌 Функция, которая рендерит шаблон с React
@@ -90,5 +90,9 @@ urlpatterns = [
     path("api/events/", get_events, name="get_events"),
     path("api/events/add/", add_event, name="add_event"),
     path("api/events/delete/<int:event_id>/", delete_event, name="delete_event"),
+    path("api/grades/", get_grades, name="get_grades"),  # ✅ Новый API
+    path("api/shipments/add/", add_shipment, name="add_shipment"),
+    path("api/shipments/", get_shipments, name="get_shipments"),
+
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

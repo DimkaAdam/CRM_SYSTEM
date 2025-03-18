@@ -7,133 +7,168 @@ document.addEventListener('DOMContentLoaded', function () {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        events: function(fetchInfo, successCallback, failureCallback) {
-            fetch("/api/events/")
-                .then(response => response.json())
-                .then(events => {
-                    console.log("📌 События загружены:", events);
-                    successCallback(events);
-                })
-                .catch(error => {
-                    console.error("❌ Ошибка загрузки событий:", error);
-                    failureCallback(error);
-                });
-        },
+        events: "/api/events/",
         editable: true,
         selectable: true,
         nowIndicator: true,
-
-        dateClick: function(info) {
-            let title = prompt("Введите название события:");
-            if (!title) return;
-
-            let startTime = prompt("Введите время начала (HH:MM, 24h формат):", "10:00");
-            if (!startTime || !/^\d{2}:\d{2}$/.test(startTime)) {
-                alert("❌ Некорректный формат времени. Используйте HH:MM (например, 09:30).");
-                return;
-            }
-
-            let [hours, minutes] = startTime.split(":").map(Number);
-            let fullDateTime = new Date(info.date);
-            fullDateTime.setHours(hours, minutes, 0);
-
-            console.log("📩 Отправляем запрос:", fullDateTime.toISOString());
-
-            fetch("/api/events/add/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: title,
-                    start: fullDateTime.toISOString(),
-                    allDay: false
-                })
-            }).then(response => response.json())
-              .then(data => {
-                  console.log("📌 Ответ сервера:", data);
-                  if (data.status === "success") {
-                      calendar.refetchEvents(); // ✅ Пробуем обновить события
-
-                      // ❗ Если `refetchEvents()` не сработал, добавляем событие вручную
-                      calendar.addEvent({
-                          id: data.event.id,  // ❗ ВАЖНО: добавь ID, если сервер его возвращает
-                          title: data.event.title,
-                          start: data.event.start,
-                          allDay: false
-                      });
-                  } else {
-                      alert("❌ Ошибка при добавлении события");
-                  }
-              });
-
-        },
-
-        eventClick: function(info) {
-            if (confirm("Удалить событие?")) {
-                fetch(`/api/events/delete/${info.event.id}/`, {
-                    method: "DELETE"
-                }).then(response => response.json())
-                  .then(data => {
-                      console.log("📌 Удаление события:", data);
-                      if (data.status === "deleted") {
-                          info.event.remove();
-                      }
-                  });
-            }
-        }
     });
 
-    calendar.render(); // ✅ Исправленная ошибка
+    calendar.render();
 
-    // 🎯 Мини-календарь
-    const calendarDays = document.getElementById("calendar-days");
-    const currentMonth = document.getElementById("current-month");
-    const prevMonthBtn = document.getElementById("prev-month");
-    const nextMonthBtn = document.getElementById("next-month");
+    // 📌 Загружаем список поставщиков, покупателей и грейдов ОДНИМ ЗАПРОСОМ
+    function loadData() {
+        Promise.all([
+            fetch("/api/clients/").then(res => res.json()),
+            fetch("/api/grades/").then(res => res.json())
+        ])
+        .then(([clientsData, gradesData]) => {
+            let supplierSelect = document.getElementById("supplier");
+            let buyerSelect = document.getElementById("buyer");
+            let gradeSelect = document.getElementById("shipment-grade");
 
-    let date = new Date();
-
-    function renderCalendar() {
-        calendarDays.innerHTML = "";
-        let firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-        let lastDate = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-        let today = new Date();
-
-        currentMonth.textContent = date.toLocaleString("default", { month: "long", year: "numeric" });
-
-        for (let i = 0; i < firstDay; i++) {
-            let emptyCell = document.createElement("div");
-            emptyCell.classList.add("empty-day");
-            calendarDays.appendChild(emptyCell);
-        }
-
-        for (let i = 1; i <= lastDate; i++) {
-            let dayCell = document.createElement("div");
-            dayCell.textContent = i;
-            dayCell.classList.add("calendar-day");
-
-            if (today.getDate() === i && today.getMonth() === date.getMonth() && today.getFullYear() === date.getFullYear()) {
-                dayCell.classList.add("today");
-            }
-
-            dayCell.addEventListener("click", function () {
-                let selectedDate = new Date(date.getFullYear(), date.getMonth(), i);
-                calendar.changeView('timeGridDay');
-                calendar.gotoDate(selectedDate);
+            clientsData.suppliers.forEach(client => {
+                supplierSelect.appendChild(new Option(client.name, client.id));
             });
 
-            calendarDays.appendChild(dayCell);
-        }
+            clientsData.buyers.forEach(client => {
+                buyerSelect.appendChild(new Option(client.name, client.id));
+            });
+
+            gradesData.forEach(grade => {
+                gradeSelect.appendChild(new Option(grade, grade));
+            });
+        })
+        .catch(error => console.error("🚨 Error loading clients/grades:", error));
     }
 
-    prevMonthBtn.addEventListener("click", function () {
-        date.setMonth(date.getMonth() - 1);
-        renderCalendar();
-    });
+    loadData();
 
-    nextMonthBtn.addEventListener("click", function () {
-        date.setMonth(date.getMonth() + 1);
-        renderCalendar();
-    });
+    // 📌 Загружаем список отгрузок и добавляем их в календарь
+    function loadShipments() {
+        fetch("/api/shipments/")
+            .then(response => response.json())
+            .then(data => {
+                let shipmentListContainer = document.getElementById("shipment-list");
+                shipmentListContainer.innerHTML = ""; // Очищаем перед обновлением
 
-    renderCalendar();
+                let shipmentsByDay = {}; // Объект для группировки по дням недели
+                let today = new Date();
+                let nextWeek = new Date();
+                nextWeek.setDate(today.getDate() + 7); // 📌 Ограничение в 7 дней
+
+                // 📌 Очищаем старые события перед добавлением новых
+                calendar.getEvents().forEach(event => event.remove());
+
+                data.forEach(shipment => {
+                    let date = new Date(shipment.date);
+
+                    if (date >= today && date <= nextWeek) { // 📌 Фильтруем по 7 дням
+                        let dayOfWeek = date.toLocaleString("en-US", { weekday: "long" });
+
+                        if (!shipmentsByDay[dayOfWeek]) {
+                            shipmentsByDay[dayOfWeek] = [];
+                        }
+
+                        shipmentsByDay[dayOfWeek].push(shipment);
+
+                        // 📌 Добавляем отгрузку в FullCalendar
+                        calendar.addEvent({
+                            title: `${shipment.supplier} → ${shipment.buyer} (${shipment.grade})`,
+                            start: `${shipment.date}T${shipment.time}`,
+                            allDay: false
+                        });
+                    }
+                });
+
+                // 📌 Создаем блоки по дням недели
+                Object.keys(shipmentsByDay).forEach(day => {
+                    let dayContainer = document.createElement("div");
+                    dayContainer.classList.add("shipment-day");
+
+                    let title = document.createElement("h4");
+                    title.textContent = day;
+                    dayContainer.appendChild(title);
+
+                    let table = document.createElement("table");
+                    table.classList.add("shipment-table");
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Supplier</th>
+                                <th>Buyer</th>
+                                <th>Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${shipmentsByDay[day].map(shipment => `
+                                <tr>
+                                    <td>${shipment.date}</td>
+                                    <td>${shipment.time}</td>
+                                    <td>${shipment.supplier}</td>
+                                    <td>${shipment.buyer}</td>
+                                    <td>${shipment.grade}</td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    `;
+                    dayContainer.appendChild(table);
+                    shipmentListContainer.appendChild(dayContainer);
+                });
+            })
+            .catch(error => console.error("🚨 Error loading shipments:", error));
+    }
+
+    loadShipments(); // ✅ Загружаем отгрузки сразу при загрузке страницы
+
+    // 📌 Обработчик формы добавления отгрузки
+    document.getElementById("add-shipment-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        let supplier = document.getElementById("supplier").value;
+        let buyer = document.getElementById("buyer").value;
+        let date = document.getElementById("shipment-date").value;
+        let time = document.getElementById("shipment-time").value;
+        let grade = document.getElementById("shipment-grade").value;
+
+        if (!supplier || !buyer || !date || !time || !grade) {
+            alert("❌ Please fill in all fields!");
+            return;
+        }
+
+        let shipmentData = {
+            supplier: supplier,
+            buyer: buyer,
+            datetime: `${date}T${time}:00`,
+            grade: grade
+        };
+
+        fetch("/api/shipments/add/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(shipmentData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert("✅ Shipment added!");
+
+                // 📌 Добавляем новую отгрузку в FullCalendar
+                calendar.addEvent({
+                    title: `${document.getElementById("supplier").selectedOptions[0].text} → ${document.getElementById("buyer").selectedOptions[0].text} (${grade})`,
+                    start: `${date}T${time}`,
+                    allDay: false
+                });
+
+                loadShipments(); // ✅ Обновляем список отгрузок
+            } else {
+                alert("❌ Error adding shipment");
+            }
+        })
+        .catch(error => {
+            console.error("Error adding shipment:", error);
+            alert("❌ Server error");
+        });
+    });
 });

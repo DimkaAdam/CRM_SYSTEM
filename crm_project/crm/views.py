@@ -30,7 +30,7 @@ import json
 from decimal import Decimal
 
 
-from datetime import datetime,timezone
+from datetime import datetime,timezone,timedelta
 from django.utils import timezone as t
 from io import BytesIO
 
@@ -1161,8 +1161,15 @@ def get_calendar_events():
     return events
 
 def task_list(request):
-    """Рендерим страницу с календарём"""
-    return render(request, "crm/task_list.html")
+    suppliers = Company.objects.filter(contacts__company_type="suppliers")
+    buyers = Company.objects.filter(contacts__company_type="buyers")
+
+    context = {
+        'suppliers': suppliers,
+        'buyers': buyers,
+        'materials_list': settings.MATERIALS_LIST,  # ✅ Передаем MATERIALS_LIST правильно
+    }
+    return render(request, 'crm/task_list.html', context)
 
 
 def get_events(request):
@@ -1232,13 +1239,61 @@ def delete_event(request, event_id):
 
 
 
+def get_grades(request):
+    """
+    Возвращает список всех материалов (грейдов).
+    """
+    return JsonResponse(list(settings.MATERIALS_LIST.keys()), safe=False)
 
+
+@csrf_exempt  # ✅ Убираем CSRF-токен, т.к. fetch() не отправляет его
+def add_shipment(request):
+    """
+    Добавляет новую отгрузку.
+    """
+    if request.method == "POST":
+        data = json.loads(request.body)
+        try:
+            supplier = Company.objects.get(id=data["supplier"])
+            buyer = Company.objects.get(id=data["buyer"])
+
+            Deals.objects.create(
+                supplier=supplier,
+                buyer=buyer,
+                date=data["datetime"],
+                grade=data["grade"]
+            )
+            return JsonResponse({"status": "success"})
+        except Company.DoesNotExist:
+            return JsonResponse({"error": "Компания не найдена"}, status=400)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+def get_shipments(request):
+    """
+    Returns shipments for the next 7 days only.
+    """
+    today = datetime.now().date()
+    next_week = today + timedelta(days=7)  # 📌 Ограничение в 7 дней
+    shipments = Deals.objects.filter(date__range=(today, next_week)).order_by("date")
+
+    shipment_list = [
+        {
+            "date": shipment.date.strftime("%Y-%m-%d"),
+            "time": shipment.date.strftime("%H:%M"),
+            "supplier": shipment.supplier.name if shipment.supplier else "N/A",
+            "buyer": shipment.buyer.name if shipment.buyer else "N/A",
+            "grade": shipment.grade
+        }
+        for shipment in shipments
+    ]
+    return JsonResponse(shipment_list, safe=False)
 
 
 
 def pipeline(request):
     pipeline = PipeLine.objects.all()
-    return render(request, 'crm/pipeline_list.html', {'pipeline': pipeline()})
+    return render(request, 'crm/pipeline_list.html', {'pipeline': pipeline})
 
 class PipelineViewSet(viewsets.ModelViewSet):
     queryset = PipeLine.objects.all()
