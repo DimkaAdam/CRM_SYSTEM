@@ -144,6 +144,7 @@ class Task(models.Model):
 class CompanyPallets(models.Model):
     company_name = models.ForeignKey(Company,on_delete=models.CASCADE, related_name='pallets')
     pallets_count = models.IntegerField(default=0)
+    cages_count = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.company_name}: {self.pallets_count} pallets"

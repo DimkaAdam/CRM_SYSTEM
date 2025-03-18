@@ -429,10 +429,10 @@ def export_deals_to_excel(request):
          "=SUMPRODUCT((D2:D{}=\"OCC11\")+(D2:D{}=\"OCC 11\")+(D2:D{}=\"OCC 11 Bale String\")+"
          "(D2:D{}=\"Loose OCC\")+(D2:D{}=\"Stock Rolls\")+(D2:D{}=\"Printers Offcuts\"), E2:E{})".format(
              last_row, last_row, last_row, last_row, last_row, last_row
-         ))
-        ("MT Plastic", "=SUMIF(D2:D{}, \"Flexible Plastic\", E2:E{})".format(len(deals) + 1, len(deals) + 1)),  # MT Plastic
-        ("MT Mixed-containers", "=SUMIF(D2:D{}, \"Mixed Container\", E2:E{})".format(len(deals) + 1, len(deals) + 1)),  # MT Mixed-containers
-        ("INCOME", "=SUM(O2:O{})".format(len(deals) + 1))  # Общая прибыль/убыток
+         )),
+        ("MT Plastic", "=SUMIF(D2:D{}, \"Flexible Plastic\", E2:E{})".format(last_row, last_row)),
+        ("MT Mixed-containers", "=SUMIF(D2:D{}, \"Mixed Container\", E2:E{})".format(last_row, last_row)),
+        ("INCOME", "=SUM(O2:O{})".format(last_row))
     ]
 
     # Заполняем сводные данные
@@ -677,9 +677,14 @@ def sales_analytics(request):
     if request.method == 'POST' and 'update_pallets' in request.POST:
         for pallet in company_pallets:
             new_pallet_count = request.POST.get(f"pallets_{pallet.id}")
+            new_cages_count = request.POST.get(f"cages_{pallet.id}")  # Получаем данные клеток
+
             if new_pallet_count is not None:
                 pallet.pallets_count = int(new_pallet_count)
-                pallet.save()
+            if new_cages_count is not None:
+                pallet.cages_count = int(new_cages_count)
+
+            pallet.save()
         return HttpResponseRedirect(request.path)
 
     years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()

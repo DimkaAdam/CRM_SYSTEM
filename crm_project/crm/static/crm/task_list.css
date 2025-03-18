@@ -257,3 +257,83 @@
     border-radius: 5px;
     margin-top: 20px;
 }
+
+
+/* 📌 Стили для кнопки копирования */
+.copy {
+    position: relative;
+    background-color: #353434;
+    color: #CCCCCC;
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    transition: background 0.3s, color 0.3s, transform 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 🖱️ Анимация при наведении */
+.copy:hover {
+    background-color: #464646;
+    color: #8bb9fe;
+    transform: scale(1.05);
+}
+
+/* ✨ Анимация при нажатии */
+.copy:active {
+    transform: scale(0.95);
+}
+
+/* 📌 Стили для всплывающей подсказки */
+.tooltip {
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #f4f3f3;
+    color: rgb(50, 50, 50);
+    font-size: 12px;
+    font-family: Menlo, Roboto Mono, monospace;
+    padding: 6px 8px;
+    border-radius: 4px;
+    opacity: 0;
+    visibility: hidden;
+    white-space: nowrap;
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* 🎯 Показываем tooltip при фокусе или наведении */
+.copy:hover .tooltip,
+.copy:focus .tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-5px);
+}
+
+/* ✅ Показываем "Copied!" */
+.copy.copied .tooltip::before {
+    content: "Copied!";
+}
+
+/* 📌 Стили для иконок */
+.copy svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+/* 🔄 Анимация смены иконок */
+.checkmark {
+    display: none;
+}
+
+.copy:focus .clipboard {
+    display: none;
+}
+
+.copy:focus .checkmark {
+    display: block;
+}
