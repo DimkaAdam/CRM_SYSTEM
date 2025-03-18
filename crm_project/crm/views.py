@@ -426,9 +426,9 @@ def export_deals_to_excel(request):
         ("Transportation cost", "=SUM(M2:M{})".format(len(deals) + 1)),  # Транспортные расходы
         ("Suppliers", "=SUM(J2:J{})".format(len(deals) + 1)),  # Итоги для поставщиков
         ("MT OCC11",
-         "=SUMPRODUCT((D2:D{}=\"OCC11\")+(D2:D{}=\"OCC 11\")+(D2:D{}=\"OCC 11 Bale String\")+"
-         "(D2:D{}=\"Loose OCC\")+(D2:D{}=\"Stock Rolls\")+(D2:D{}=\"Printers Offcuts\"), E2:E{})".format(
-             last_row, last_row, last_row, last_row, last_row, last_row
+         "=SUMPRODUCT((D2:D{0}=\"OCC11\")+(D2:D{0}=\"OCC 11\")+(D2:D{0}=\"OCC 11 Bale String\")+"
+         "(D2:D{0}=\"Loose OCC\")+(D2:D{0}=\"Stock Rolls\")+(D2:D{0}=\"Printers Offcuts\"), E2:E{0})".format(
+             last_row
          )),
         ("MT Plastic", "=SUMIF(D2:D{}, \"Flexible Plastic\", E2:E{})".format(last_row, last_row)),
         ("MT Mixed-containers", "=SUMIF(D2:D{}, \"Mixed Container\", E2:E{})".format(last_row, last_row)),
@@ -659,7 +659,9 @@ def sales_analytics(request):
         for contact in Contact.objects.filter(company__id=entry['supplier'])
     }
 
-    occ11_filter = Q(grade="OCC11") | Q(grade="OCC 11") | Q(grade="Loose OCC") | Q(grade="OCC 11 Bale String")
+    occ11_filter = Q(grade__iexact="OCC11") | Q(grade__iexact="OCC 11") | Q(grade__iexact="Loose OCC") | \
+                   Q(grade__iexact="OCC 11 Bale String") | Q(grade__iexact="Printers Offcuts") | Q(
+        grade__iexact="Stock Rolls")
 
     total_deals = deals_details.count()
     total_sale = deals_details.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
