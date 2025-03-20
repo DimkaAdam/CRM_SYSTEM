@@ -92,10 +92,11 @@ urlpatterns = [
     path("api/events/add/", add_event, name="add_event"),
     path("api/events/delete/<int:event_id>/", delete_event, name="delete_event"),
     path("api/grades/", get_grades, name="get_grades"),  # ✅ Новый API
-  path("api/scheduled-shipments/", get_scheduled_shipments, name="get_scheduled_shipments"),
-  path("api/scheduled-shipments/add/", add_scheduled_shipment, name="add_scheduled_shipment"),
-  path("api/scheduled-shipments/delete/<int:shipment_id>/", delete_scheduled_shipment,
+    path("api/scheduled-shipments/", get_scheduled_shipments, name="get_scheduled_shipments"),
+    path("api/scheduled-shipments/add/", add_scheduled_shipment, name="add_scheduled_shipment"),
+    path("api/scheduled-shipments/delete/<int:shipment_id>/", delete_scheduled_shipment,
        name="delete_scheduled_shipment"),
+    path('generate-bol-pdf/', generate_bol_pdf, name='generate_bol_pdf'),
 
 
 

@@ -66,6 +66,49 @@
     <div id="shipment-list">
         <!-- Сюда динамически будут добавляться отгрузки, разделенные по дням недели -->
     </div>
+    <button id="generate-bol-btn" class="bol-button">Generate BOL</button>
+
+</div>
+
+<div id="bol-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="close-bol-modal">&times;</span>
+        <h2>Generate Bill of Lading</h2>
+        <form id="bol-form">
+            <label for="BOLSupplier">Ship To (Company):</label>
+            <select id="bolSupplier" required>
+                <option value="" disabled selected>Select a Supplier</option>
+            </select>
+
+            <label for="ship-to-address">Ship To (Address):</label>
+            <input type="text" id="ship-to-address" readonly>
+
+            <label for="bol-number">BOL Number:</label>
+            <input type="text" id="bol-number" required>
+
+            <label for="load-number">Load Number:</label>
+            <input type="text" id="load-number" required>
+
+            <label for="ship-date">Ship Date:</label>
+            <input type="date" id="ship-date" required>
+
+            <label for="due-date">Due Date:</label>
+            <input type="date" id="due-date" required>
+
+            <label for="carrier">Carrier:</label>
+            <select id="carrier" required></select>
+
+            <label for="po-number">PO Number:</label>
+            <input type="text" id="po-number">
+
+            <label>Freight Charge Terms:</label>
+            <label><input type="radio" name="freight" value="Prepaid" required> Prepaid</label>
+            <label><input type="radio" name="freight" value="Collect"> Collect</label>
+            <label><input type="radio" name="freight" value="3rd Party"> 3rd Party</label>
+
+            <button type="submit">Generate PDF</button>
+        </form>
+    </div>
 </div>
 
 

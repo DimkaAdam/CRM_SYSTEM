@@ -303,3 +303,83 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
+document.getElementById('generate-bol-btn').addEventListener('click', function() {
+    document.getElementById('bol-modal').style.display = 'block';
+    loadDealDetails();
+});
+
+// Закрытие модального окна
+document.getElementById('close-bol-modal').addEventListener('click', function() {
+    document.getElementById('bol-modal').style.display = 'none';
+});
+
+// Автоматическое подтягивание адреса при выборе компании
+document.getElementById('ship-to-company').addEventListener('change', function() {
+    document.getElementById('ship-to-address').value = this.options[this.selectedIndex].dataset.address;
+});
+
+// Загружаем данные из сделок, как в deal_list.js
+function loadDealDetails() {
+    let selectedDealId = getSelectedDealId();
+    if (!selectedDealId) {
+        alert("❌ Выберите сделку перед генерацией BOL!");
+        return;
+    }
+
+    fetch(`/deals/${selectedDealId}/`)  // ✅ Используем API сделок
+        .then(res => res.json())
+        .then(data => {
+            let selectCompany = document.getElementById('ship-to-company');
+            selectCompany.innerHTML = `<option value="${data.buyer_id}" selected>${data.buyer}</option>`;
+            document.getElementById('ship-to-address').value = data.buyer_address || "";
+            document.getElementById('carrier').innerHTML = `<option value="${data.transport_company}" selected>${data.transport_company}</option>`;
+            document.getElementById('bol-number').value = `BOL-${selectedDealId}`;
+            document.getElementById('load-number').value = `LOAD-${selectedDealId}`;
+            document.getElementById('ship-date').value = data.date;
+            document.getElementById('po-number').value = data.scale_ticket || "";
+        })
+        .catch(error => console.error('❌ Ошибка загрузки сделки:', error));
+}
+
+// Получаем ID выбранной сделки
+function getSelectedDealId() {
+    let selectedDeal = document.querySelector('.deal-selected');
+    return selectedDeal ? selectedDeal.dataset.dealId : null;
+}
+
+// Генерация PDF BOL
+document.getElementById('bol-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    generateBOLPDF();
+});
+
+function generateBOLPDF() {
+    let bolData = {
+        shipTo: document.getElementById('ship-to-company').value,
+        shipToAddress: document.getElementById('ship-to-address').value,
+        bolNumber: document.getElementById('bol-number').value,
+        loadNumber: document.getElementById('load-number').value,
+        shipDate: document.getElementById('ship-date').value,
+        dueDate: document.getElementById('due-date').value,
+        carrier: document.getElementById('carrier').value,
+        poNumber: document.getElementById('po-number').value,
+        freightTerms: document.querySelector('input[name="freight"]:checked').value
+    };
+
+    fetch('/generate-bol-pdf/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify(bolData)
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        let url = window.URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = `BOL_${bolData.bolNumber}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+}
+

@@ -1310,6 +1310,31 @@ def delete_scheduled_shipment(request, shipment_id):
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
+def generate_bol_pdf(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename=BOL_{data["bolNumber"]}.pdf'
+
+        p = canvas.Canvas(response)
+        p.drawString(100, 800, "Bill of Lading")
+        p.drawString(100, 780, f"Ship To: {data['shipTo']}")
+        p.drawString(100, 760, f"Address: {data['shipToAddress']}")
+        p.drawString(100, 740, f"BOL #: {data['bolNumber']}")
+        p.drawString(100, 720, f"Load #: {data['loadNumber']}")
+        p.drawString(100, 700, f"Ship Date: {data['shipDate']}")
+        p.drawString(100, 680, f"Due Date: {data['dueDate']}")
+        p.drawString(100, 660, f"Carrier: {data['carrier']}")
+        p.drawString(100, 640, f"PO #: {data['poNumber']}")
+        p.drawString(100, 620, f"Freight Terms: {data['freightTerms']}")
+
+        p.showPage()
+        p.save()
+        return response
+
+    return HttpResponse(status=400)
+
 
 def pipeline(request):
     pipeline = PipeLine.objects.all()
