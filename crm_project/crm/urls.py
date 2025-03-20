@@ -9,7 +9,7 @@ from .views import (
     ClientCreateAPIView, DealCreateAPIView, PipelineViewSet,
     ClientViewSet, DealViewSet, export_company_report_pdf,
     get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event,
-    get_licence_plates,get_grades,get_scheduled_shipments,add_scheduled_shipment,delete_scheduled_shipment
+    get_licence_plates,get_grades,get_scheduled_shipments,add_scheduled_shipment,delete_scheduled_shipment,generate_bol_pdf
 )
 
 # 📌 Функция, которая рендерит шаблон с React
