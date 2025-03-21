@@ -141,20 +141,31 @@ def delete_contact(request, contact_id):
 def view_contact(request, id):
     contact = get_object_or_404(Contact, id=id)
 
+    # 🆕 Обработка смены стадии — ДО формы!
+    if request.method == "POST" and "change_stage" in request.POST:
+        stage = request.POST.get("stage")
+        pipeline, created = PipeLine.objects.get_or_create(contact=contact)
+        pipeline.stage = stage
+        pipeline.save()
+        return redirect("view_contact", id=contact.id)  # 👈 сразу обновим страницу
+
+    # 🔄 Обработка формы редактирования контакта
     if request.method == "POST":
         form = ContactForm(request.POST, instance=contact)
         if form.is_valid():
             form.save()
-            return redirect('view_contact', id=contact.id)
+            return redirect("view_contact", id=contact.id)
     else:
         form = ContactForm(instance=contact)
 
     employees = contact.employees.all()
+    pipeline = PipeLine.objects.filter(contact=contact).first()
 
     return render(request, 'crm/view_contact.html', {
         'contact': contact,
         'form': form,
-        'employees': employees  # ✅ добавили сотрудников
+        'employees': employees,
+        'pipeline': pipeline,
     })
 
 

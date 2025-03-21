@@ -1,0 +1,19 @@
+.kanban-board {
+    display: flex; /* Выстраивает колонки в ряд */
+    gap: 20px; /* Расстояние между колонками */
+    padding: 20px;
+    overflow-x: auto; /* Прокрутка, если не влезает */
+}
+
+.kanban-column {
+    flex: 1; /* Равномерное распределение ширины */
+    background: #f4f4f4;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 200px; /* Минимальная ширина колонки */
+}
+
+.kanban-column h3 {
+    text-align: center;
+}
