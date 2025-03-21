@@ -7,6 +7,8 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
     <link rel="stylesheet" href="{% static 'crm/deal_list.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
 </head>
 <body>
     <!-- upper panel -->
@@ -34,12 +36,11 @@
 
                 </div>
                 <li><a href="{% url 'contacts_list' %}">Contacts</a></li>
-                <li><a href="{% url 'deal_list' %}">Deals</a></li>
+                <li><a href="{% url 'deal_list' %}">Transactions</a></li>
                 <li><a href="{% url 'task_list' %}">Tasks</a></li>
-                <li><a href="{% url 'pipeline_list' %}">My Pipelines</a></li>
-                <li><a href="{% url 'pipeline' %}">Pipelines</a></li>
+                <li><a href="{% url 'kanban_board' %}">Kanban Board</a></li>
                 <li><a href="{% url 'report_list' %}">Reports</a></li>
-                <li><a href="{% url 'sales_analytics' %}">Sales Analytic</a></li>
+                <li><a href="{% url 'sales_analytics' %}">Dashboard</a></li>
             </ul>
         </nav>
 

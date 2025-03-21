@@ -1,146 +1,171 @@
 {% extends 'crm/index.html' %}
 {% load static %}
 {% block title %}View Contact{% endblock %}
+
 {% block content %}
+<!-- Режим просмотра -->
+<div id="view-info" class="view-container">
+    <h1 class="company-name">{{ contact.company.name }}</h1>
 
-    <!-- Режим просмотра -->
-    <div id="view-info" class="view-container">
-        <h1 class="company-name">{{ contact.company.name }}</h1>
-        <div class="info-item">
-            <img src="{% static 'crm/images/icons/location-dot.png' %}" alt="Address Icon" class="icon">
-            <span class="info-text">{{ contact.address }}</span>
-        </div>
-        <div class="info-item">
-            <img src="{% static 'crm/images/icons/type.png' %}" alt="Type Icon" class="icon">
-            <span class="info-text">{{ contact.get_company_type_display }}</span>
-        </div>
-        <h2 class="section-title">Prices:</h2>
-        {% if contact.contact_materials.all %}
-            <ul class="materials-list">
-                {% for contact_material in contact.contact_materials.all %}
-                    <li class="material-item">
-                        {{ contact_material.material }} - ${{ contact_material.price|default:"0.00" }}
-                        <a href="{% url 'edit_contact_material' contact_material.id %}" class="edit-link">Edit</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="no-materials">No materials linked to this contact.</p>
-        {% endif %}
+    <!-- Информация о контакте -->
+    <div class="info-item">
+        <img src="{% static 'crm/images/icons/location-dot.png' %}" alt="Address Icon" class="icon">
+        <span class="info-text">{{ contact.address }}</span>
+    </div>
+    <div class="info-item">
+        <img src="{% static 'crm/images/icons/type.png' %}" alt="Type Icon" class="icon">
+        <span class="info-text">{{ contact.get_company_type_display }}</span>
     </div>
 
-    <!-- Режим редактирования -->
-    <div id="edit-form-container" class="edit-container" style="display: none;">
-        <h2 class="section-title">Edit Contact</h2>
-        <form class="contact-edit-form" method="POST" action="{% url 'edit_contact' contact.id %}">
+    <!-- Сотрудники -->
+    <h2 class="section-title">Employees:</h2>
+    {% if employees %}
+        <ul class="materials-list">
+            {% for employee in employees %}
+                <li class="material-item">
+                    <div>
+                        <strong>{{ employee.name }}</strong><br>
+                        Position: {{ employee.position }}<br>
+                        Email: {{ employee.email }}<br>
+                        Phone: {{ employee.phone }}<br>
+                        <a href="{% url 'edit_employee' employee.id %}" class="edit-link">Edit</a> |
+                        <form method="POST" action="{% url 'delete_employee' employee.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="edit-link" onclick="return confirm('Delete this employee?')">Delete</button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="no-materials">No employees found for this contact.</p>
+    {% endif %}
+
+    <!-- Кнопка показать/скрыть форму -->
+    <button type="button" class="btn add-btn" onclick="toggleEmployeeForm()" style="margin-top: 20px;">
+        ➕ Add Employee
+    </button>
+
+    <!-- Форма добавления сотрудника -->
+    <div id="employee-form" style="display: none; margin-top: 15px;">
+        <form method="POST" action="{% url 'add_employee' contact.id %}" class="filter-item">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn save-btn">Save Changes</button>
+            <label>Name:</label><br>
+            <input type="text" name="name" required><br><br>
+
+            <label>Email:</label><br>
+            <input type="email" name="email" required><br><br>
+
+            <label>Phone:</label><br>
+            <input type="text" name="phone"><br><br>
+
+            <label>Position:</label><br>
+            <input type="text" name="position"><br><br>
+
+            <button type="submit" class="btn add-btn" style="margin-top: 10px;">Submit</button>
         </form>
     </div>
 
-    <!-- Форма добавления нового материала -->
-    <div class="add-material-container">
-        <form method="POST" action="{% url 'add_contact_material' contact.id %}">
-            {% csrf_token %}
-            {{ form.material.as_p }}
-            {{ form.price.as_p }}
+    <!-- Цены -->
+    <h2 class="section-title">Prices:</h2>
+    {% if contact.contact_materials.all %}
+        <ul class="materials-list">
+            {% for contact_material in contact.contact_materials.all %}
+                <li class="material-item">
+                    {{ contact_material.material }} - ${{ contact_material.price|default:"0.00" }}
+                    <a href="{% url 'edit_contact_material' contact_material.id %}" class="edit-link">Edit</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="no-materials">No materials linked to this contact.</p>
+    {% endif %}
+</div>
 
-            <button type="submit" class="btn add-btn">
-                <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
-            </button>
+<!-- Режим редактирования -->
+<div id="edit-form-container" class="edit-container" style="display: none;">
+    <h2 class="section-title">Edit Contact</h2>
+    <form class="contact-edit-form" method="POST" action="{% url 'edit_contact' contact.id %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn save-btn">Save Changes</button>
+    </form>
+</div>
 
-        </form>
-
-    <!-- Кнопки переключения -->
-    <div class="buttons-container">
-        <button id="edit-button" onclick="toggleEditForm()" class="btn edit-btn">
-            <img src="{% static 'crm/images/icons/edit.png' %}" alt="Edit Icon" class="icon">
+<!-- Добавление материала -->
+<div class="add-material-container">
+    <form method="POST" action="{% url 'add_contact_material' contact.id %}">
+        {% csrf_token %}
+        {{ form.material.as_p }}
+        {{ form.price.as_p }}
+        <button type="submit" class="btn add-btn">
+            <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
         </button>
-        <a href="{% url 'contacts_list' %}">
-            <button class="btn back-btn">
-                Back to Contacts
-            </button>
-        </a>
-    </div>
+    </form>
+</div>
+
+<!-- Кнопки -->
+<div class="buttons-container">
+    <button id="edit-button" onclick="toggleEditForm()" class="btn edit-btn">
+        <img src="{% static 'crm/images/icons/edit.png' %}" alt="Edit Icon" class="icon">
+    </button>
+    <a href="{% url 'contacts_list' %}">
+        <button class="btn back-btn">Back to Contacts</button>
+    </a>
 </div>
 
 <script>
     function toggleEditForm() {
         const viewInfo = document.getElementById('view-info');
         const editForm = document.getElementById('edit-form-container');
+        editForm.style.display = (editForm.style.display === 'none') ? 'block' : 'none';
+        viewInfo.style.display = (viewInfo.style.display === 'none') ? 'block' : 'none';
+    }
 
-        // Переключение видимости режима просмотра и редактирования
-        if (editForm.style.display === 'none') {
-            editForm.style.display = 'block';
-            viewInfo.style.display = 'none';
-        } else {
-            editForm.style.display = 'none';
-            viewInfo.style.display = 'block';
-        }
+    function toggleEmployeeForm() {
+        const form = document.getElementById('employee-form');
+        form.style.display = (form.style.display === 'none') ? 'block' : 'none';
     }
 </script>
 
 {% block extra_styles %}
 <style>
-    @font-face {
-        font-family: 'Lora-Bold';
-        src: url("{% static 'crm/fonts/Lora-Bold.ttf' %}") format('truetype');
-        font-weight: bold;
-        font-style: normal;
+    .filter-item input,
+    .filter-item select {
+        padding: 10px 15px;
+        border: 1px solid #aaa;
+        border-radius: 25px;
+        background: white;
+        font-size: 14px;
+        outline: none;
+        transition: 0.3s;
+        width: 100%;
+        max-width: 400px;
     }
 
-    .company-name {
-        font-family: 'Lora-Bold', sans-serif;
-        font-size: 6.8em;
-        font-weight: bold;
-        color: #0056b3;
+    .filter-item input:hover,
+    .filter-item select:hover {
+        border-color: #3f5efb;
     }
 
-    .content {
-        max-width: 900px;
-        margin: 0 auto;
-        background: #fff;
-        border-radius: 10px;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        padding: 30px;
+    .filter-item input:focus,
+    .filter-item select:focus {
+        border-color: #3f5efb;
+        box-shadow: 0 0 5px rgba(63, 94, 251, 0.5);
     }
 
-    .company-name {
+        .company-name {
         font-size: 2.8em;
         font-weight: bold;
         color: #0056b3;
         text-align: left;
         margin-bottom: 30px;
     }
-
-    .info-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .icon {
-        width: 24px;
-        height: 24px;
-        margin-right: 10px;
-    }
-
-    .info-text {
-        font-size: 1.3em;
-    }
-
-    .section-title {
-        margin-top: 25px;
-        font-size: 1.8em;
-        color: #444;
-    }
-
-    .materials-list {
-        list-style: none;
-        padding: 0;
-    }
-
+    .info-item { display: flex; align-items: center; margin-bottom: 20px; }
+    .icon { width: 24px; height: 24px; margin-right: 10px; }
+    .info-text { font-size: 1.3em; }
+    .section-title { margin-top: 25px; font-size: 1.8em; color: #444; }
+    .materials-list { list-style: none; padding: 0; }
     .material-item {
         padding: 15px;
         background: #f9f9f9;
@@ -150,19 +175,10 @@
         justify-content: space-between;
         align-items: center;
         border-left: 5px solid #0056b3;
-        width: 30%;
     }
+    .edit-link { text-decoration: none; color: #007bff; }
+    .edit-link:hover { text-decoration: underline; }
 
-    .edit-link {
-        text-decoration: none;
-        color: #007bff;
-    }
-
-    .edit-link:hover {
-        text-decoration: underline;
-    }
-
-    /* Стиль для кнопок */
     .btn {
         padding: 10px 20px;
         border: none;
@@ -175,47 +191,22 @@
         align-items: center;
         justify-content: center;
     }
-
-    .btn.add-btn {
-        background: linear-gradient(135deg, #ff7e5f, #feb47b); /* Градиент для кнопки */
-        color: white;
-    }
-
-    .btn.edit-btn {
-        background: linear-gradient(135deg, #007bff, #0056b3); /* Градиент для кнопки Edit */
-        color: white;
-    }
-
-    .btn.back-btn {
-        background: linear-gradient(135deg, #28a745, #218838); /* Градиент для кнопки Back */
-        color: white;
-    }
-
-    .btn:hover {
-        transform: scale(1.05); /* Эффект увеличения при наведении */
-    }
-
-    .btn:active {
-        transform: scale(1); /* Эффект сжатия при нажатии */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Легкая тень при нажатии */
-    }
-
-    /* Контейнер для кнопок */
+    .btn.add-btn { background: linear-gradient(135deg, #ff7e5f, #feb47b); color: white; }
+    .btn.edit-btn { background: linear-gradient(135deg, #007bff, #0056b3); color: white; }
+    .btn.back-btn { background: linear-gradient(135deg, #28a745, #218838); color: white; }
+    .btn:hover { transform: scale(1.05); }
+    .btn:active { transform: scale(1); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
     .buttons-container {
         display: flex;
-        gap: 15px; /* Расстояние между кнопками */
+        gap: 15px;
         justify-content: flex-start;
         margin-top: 30px;
     }
-
-    /* Кнопка с иконкой */
     .btn .icon {
         margin-right: 8px;
         width: 18px;
         height: 18px;
         object-fit: cover;
-    }
 </style>
-
 {% endblock %}
 {% endblock %}

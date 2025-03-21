@@ -166,21 +166,22 @@ class ContactMaterial(models.Model):
         return f"{self.contact.company.name} - {self.material} (${self.price or 'Not set'})"
 
 
-
 class PipeLine(models.Model):
-    STAGES = [
-        ('new', 'New'),
-        ('send_email', 'Send Email'),
-        ('meeting', 'Meeting'),
-        ('account', 'Account'),
-        ('deal', 'Deal'),
-    ]
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, null=True)
+    order = models.PositiveIntegerField(default=0)
 
-    company = models.ForeignKey('Company', on_delete=models.CASCADE, null=True, blank=True)  # Связь с моделью компании
-    stage = models.CharField(max_length=20, choices=STAGES, default='new')  # Этап воронки
+
+    STAGES = [
+        ("new", "New"),
+        ("send_email", "Send Email"),
+        ("meeting", "Meeting"),
+        ("account", "Account"),
+        ("deal", "Deal"),
+    ]
+    stage = models.CharField(max_length=20, choices=STAGES, default="new")
 
     def __str__(self):
-        return f"{self.company.name} - {self.get_stage_display()}"
+        return f"{self.contact} - {self.stage}"
 
 
 

@@ -1,8 +1,16 @@
 {% extends 'crm/index.html' %}
 
 {% block title %}My Pipelines{% endblock %}
+{% load static %}
 
 {% block content %}
     <div id="root"></div>  <!-- ✅ React рендерится ВНУТРИ CRM -->
-    <script src="/static/js/main.3bb3ce0a.js"></script>  <!-- ✅ Загружаем React вручную -->
+
+    {% if main_js %}
+        <script src="{% static 'js/' %}{{ main_js }}"></script>
+    {% else %}
+        <p style="color: red; font-weight: bold;">❌ Ошибка: main.js не найден!</p>
+    {% endif %}
+
+    <link rel="stylesheet" href="{% static 'crm/kanban.css' %}">
 {% endblock %}

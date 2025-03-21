@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'crm',
     'rest_framework',
     'corsheaders',
-    'pipeline',
+
 ]
 
 MIDDLEWARE = [
@@ -129,15 +129,12 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
-# ✅ Пути для статических файлов React
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "frontend", "build", "static"),  # 📌 Для CSS и JS
-]
 
 # ✅ Пути для шаблонов Django
 TEMPLATES[0]["DIRS"] = [
     os.path.join(BASE_DIR, "frontend", "build"),  # 📌 Указываем путь к index.html
 ]
+
 
 
 # Default primary key field type

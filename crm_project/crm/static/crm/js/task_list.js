@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('generate-bol-btn').addEventListener('click', function() {
+        document.getElementById('bol-modal').style.display = 'block';
+        loadDealDetails();
+    });
+
     // 🔹 Инициализация основного календаря
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -300,23 +305,26 @@ document.addEventListener('DOMContentLoaded', function () {
             alert("❌ Server error");
         });
     });
+
+    // Закрытие модального окна
+    document.getElementById('close-bol-modal').addEventListener('click', function() {
+        document.getElementById('bol-modal').style.display = 'none';
+    });
+
+    // Автоматическое подтягивание адреса при выборе компании
+    document.getElementById('bolSupplier').addEventListener('change', function() {
+        document.getElementById('ship-to-address').value = this.options[this.selectedIndex].dataset.address;
+    });
+
+    // Генерация PDF BOL
+    document.getElementById('bol-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        generateBOLPDF();
+    });
 });
 
 
-document.getElementById('generate-bol-btn').addEventListener('click', function() {
-    document.getElementById('bol-modal').style.display = 'block';
-    loadDealDetails();
-});
 
-// Закрытие модального окна
-document.getElementById('close-bol-modal').addEventListener('click', function() {
-    document.getElementById('bol-modal').style.display = 'none';
-});
-
-// Автоматическое подтягивание адреса при выборе компании
-document.getElementById('ship-to-company').addEventListener('change', function() {
-    document.getElementById('ship-to-address').value = this.options[this.selectedIndex].dataset.address;
-});
 
 // Загружаем данные из сделок, как в deal_list.js
 function loadDealDetails() {
@@ -329,7 +337,7 @@ function loadDealDetails() {
     fetch(`/deals/${selectedDealId}/`)  // ✅ Используем API сделок
         .then(res => res.json())
         .then(data => {
-            let selectCompany = document.getElementById('ship-to-company');
+            let selectCompany = document.getElementById('bolSupplier');
             selectCompany.innerHTML = `<option value="${data.buyer_id}" selected>${data.buyer}</option>`;
             document.getElementById('ship-to-address').value = data.buyer_address || "";
             document.getElementById('carrier').innerHTML = `<option value="${data.transport_company}" selected>${data.transport_company}</option>`;
@@ -347,15 +355,11 @@ function getSelectedDealId() {
     return selectedDeal ? selectedDeal.dataset.dealId : null;
 }
 
-// Генерация PDF BOL
-document.getElementById('bol-form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    generateBOLPDF();
-});
+
 
 function generateBOLPDF() {
     let bolData = {
-        shipTo: document.getElementById('ship-to-company').value,
+        shipTo: document.getElementById('bolSupplier').value,
         shipToAddress: document.getElementById('ship-to-address').value,
         bolNumber: document.getElementById('bol-number').value,
         loadNumber: document.getElementById('load-number').value,

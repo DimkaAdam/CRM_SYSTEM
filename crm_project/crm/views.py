@@ -42,7 +42,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from .google_calendar import get_calendar_events
-
+import glob
 
 from .models import Event
 
@@ -145,12 +145,18 @@ def view_contact(request, id):
         form = ContactForm(request.POST, instance=contact)
         if form.is_valid():
             form.save()
-            return redirect('view_contact', id = contact.id)
+            return redirect('view_contact', id=contact.id)
     else:
-        form=ContactForm(instance=contact)
+        form = ContactForm(instance=contact)
 
+    employees = contact.employees.all()
 
-    return render(request, 'crm/view_contact.html', {'contact': contact, 'form': form})
+    return render(request, 'crm/view_contact.html', {
+        'contact': contact,
+        'form': form,
+        'employees': employees  # ✅ добавили сотрудников
+    })
+
 
 
 def manage_employees(request, company_id):
@@ -177,6 +183,19 @@ def manage_employees(request, company_id):
         return redirect('manage_employees', company_id=company.id)
 
     return render(request, 'crm/manage_employees.html', {'company': company, 'contacts': contacts})
+
+def edit_employee(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+
+    if request.method == 'POST':
+        employee.name = request.POST.get('name')
+        employee.email = request.POST.get('email')
+        employee.phone = request.POST.get('phone')
+        employee.position = request.POST.get('position')
+        employee.save()
+        return redirect('view_contact', id=employee.contact.id)
+
+    return render(request, 'crm/edit_employee.html', {'employee': employee})
 
 
 def get_employees(request, company_id):
@@ -225,13 +244,13 @@ def add_employee(request, contact_id):
         # Перенаправляем на страницу контактов после добавления
         return redirect('contacts_list')
 
-    return render(request, 'add_employee.html', {'contact': contact})
+    return render(request, 'crm/add_employee.html', {'contact': contact})
 
 def delete_employee(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     if request.method == 'POST':
         employee.delete()
-        return redirect('contacts')
+        return redirect('contacts_list')
 
 
 def load_employees(request, contact_id):
@@ -1336,26 +1355,42 @@ def generate_bol_pdf(request):
     return HttpResponse(status=400)
 
 
-def pipeline(request):
-    pipeline = PipeLine.objects.all()
-    return render(request, 'crm/pipeline_list.html', {'pipeline': pipeline})
+from django.views.decorators.csrf import csrf_exempt
 
-class PipelineViewSet(viewsets.ModelViewSet):
-    queryset = PipeLine.objects.all()
-    serializer_class = PipeLineSerializer
+@csrf_exempt
+def update_stage(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            pipeline_id = data.get("id")
+            new_stage = data.get("stage")
+            new_order = data.get("order", 0)
 
-    @action(detail=True, methods=['post'])
-    def move(self, request, pk=None):
-        """Обновление стадии компании"""
-        pipeline = self.get_object()
-        new_stage = request.data.get('stage')
+            pipeline = PipeLine.objects.get(id=pipeline_id)
+            pipeline.stage = new_stage
+            pipeline.order = new_order
+            pipeline.save()
 
-        if new_stage not in dict(PipeLine.STAGES):
-            return Response({'error': 'Invalid stage'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"status": "success", "stage": new_stage, "order": new_order})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
-        pipeline.stage = new_stage
-        pipeline.save()
-        return Response({'status': 'stage updated'})
 
-def pipeline_list(request):
-    return JsonResponse({"message": "This is the pipeline list."})
+from django.template.defaulttags import register
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key, [])
+
+def kanban_board(request):
+    stages = ["new", "send_email", "meeting", "account", "deal"]
+    pipeline = PipeLine.objects.select_related("contact", "contact__company").all()
+
+    grouped = {stage: [] for stage in stages}
+    for item in pipeline:
+        grouped[item.stage].append(item)
+
+    return render(request, "crm/kanban_board.html", {
+        "stages": stages,
+        "grouped_pipeline": grouped
+    })

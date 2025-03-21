@@ -6,21 +6,18 @@ from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
 from . import views
 from .views import (
-    ClientCreateAPIView, DealCreateAPIView, PipelineViewSet,
+    ClientCreateAPIView, DealCreateAPIView,
     ClientViewSet, DealViewSet, export_company_report_pdf,
     get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event,
-    get_licence_plates,get_grades,get_scheduled_shipments,add_scheduled_shipment,delete_scheduled_shipment,generate_bol_pdf
+    get_licence_plates,get_grades,get_scheduled_shipments,add_scheduled_shipment,delete_scheduled_shipment,generate_bol_pdf,update_stage,
 )
 
-# 📌 Функция, которая рендерит шаблон с React
-def pipeline_view(request):
-    return render(request, "crm/pipeline_list.html")  # ✅ Загружаем страницу с React
 
 # 📌 Роутер для API
 router = DefaultRouter()
 router.register(r'clients', ClientViewSet, basename='client')
 router.register(r'deals', DealViewSet, basename='deal')
-router.register(r'pipeline', PipelineViewSet)
+
 
 # 📌 Основные маршруты
 urlpatterns = [
@@ -33,8 +30,12 @@ urlpatterns = [
     path('contact/view/<int:id>/', views.view_contact, name='view_contact'),
 
     # 📌 React Kanban-доска
-    path("pipeline/", pipeline_view, name="pipeline"),  # ✅ Открывает HTML-шаблон с React
-    path("pipeline/api/", views.pipeline_list, name="pipeline_list"),  # ✅ API с данными
+    path("api/update_stage/", views.update_stage, name="update_stage"),
+    path("kanban/", views.kanban_board, name="kanban_board"),
+    path("api/update_stage/", update_stage, name="update_stage"),
+
+
+
 
     # 📌 API для работы с клиентами и сделками
     path("api/clients/", ClientCreateAPIView.as_view(), name="api_add_client"),
@@ -71,6 +72,8 @@ urlpatterns = [
     path("contacts/<int:contact_id>/employees/", views.load_employees, name="load_employees"),
     path("contacts/<int:contact_id>/add_employee/", views.add_employee, name="add_employee"),
     path("contacts/<int:employee_id>/delete_employee/", views.delete_employee, name="delete_employee"),
+    path("contacts/<int:employee_id>/edit_employee/", views.edit_employee, name="edit_employee"),
+
 
 
     # 📌 Работа с сделками

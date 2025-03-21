@@ -25,8 +25,6 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
     const buyer_price = parseFloat(buyerPriceElement.value);
     const supplier_price = parseFloat(supplierPriceElement.value);
     const transport_cost = parseFloat(transportCostElement.value);
-    const scaleTicketElement = document.getElementById('scale_ticket');
-    const scale_ticket = scaleTicketElement ? scaleTicketElement.value.trim() : null;
 
     // Вычисление общих сумм
     const total_amount = received_quantity * buyer_price; // Общая сумма от покупателя
@@ -48,7 +46,7 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
         buyer_price: buyer_price,
         transport_cost: transport_cost,
         transport_company: document.getElementById('transport_company').value,
-        scale_ticket: document.getElementById('editScaleTicket').value,
+        scale_ticket: document.getElementById('scale_ticket').value
     };
 
     fetch('http://127.0.0.1:8000/api/deals/', {
@@ -102,7 +100,6 @@ document.querySelectorAll('.deal-row').forEach(row => {
                 document.getElementById('dealBuyer').innerText = data.buyer;
                 document.getElementById('dealGrade').innerText = data.grade;
                 document.getElementById('dealTotalAmount').innerText = data.total_amount;
-                document.getElementById('dealScaleTicket').innerText = data.scale_ticket;
 
                 // Сохраняем текущий ID сделки для последующих операций
                 document.getElementById('viewDealSidebar').dataset.dealId = dealId;
@@ -147,8 +144,7 @@ document.getElementById('editDealBtn').addEventListener('click', () => {
             document.getElementById('editBuyerPrice').value = data.buyer_price; // Цена покупателя
             document.getElementById('editTransportCost').value = data.transport_cost; // Стоимость доставки
             document.getElementById('editTransportCompany').value = data.transport_company; // Транспортная компания
-            document.getElementById('editScaleTicket').value = data.scale_ticket ? data.scale_ticket : 'N/A';
-
+            document.getElementById('editScaleTicket').value = data.scale_ticket;
         })
         .catch(error => console.error('Error fetching data for editing:', error));
 });
@@ -197,7 +193,7 @@ document.getElementById('editDealForm').addEventListener('submit', (e) => {
             document.getElementById('dealBuyer').innerText = data.buyer;
             document.getElementById('dealGrade').innerText = data.grade;
             document.getElementById('dealTotalAmount').innerText = data.total_amount;
-            document.getElementById('dealScaleTicket').innerText = data.scale_ticket;
+
             document.getElementById('dealDetailsContent').style.display = 'block';
             document.getElementById('editDealForm').style.display = 'none';
         })
