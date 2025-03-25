@@ -94,8 +94,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 calendar.getEvents().forEach(event => event.remove());  // ✅ Удаляем старые события
 
                 data.forEach(shipment => {
-                    let date = new Date(`${shipment.date}T${shipment.time}:00Z`);
-                    let dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+                    let date = new Date(`${shipment.date}T${shipment.time}`);
+                    let dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long", timeZone: "America/Vancouver" });
 
                     if (date >= today && date <= nextWeek) {
                         if (!shipmentsByDay[dayOfWeek]) {
@@ -190,8 +190,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            let date = new Date(`${shipments[0].date}T${shipments[0].time}:00Z`);
-            let dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+            let date = new Date(`${shipments[0].date}T${shipments[0].time}`);
+            let dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long", timeZone: "America/Vancouver" });
 
             let text = `${dayOfWeek}:\n` + shipments.map(shipment =>
                 `   - ${shipment.supplier} → ${shipment.buyer} | ${shipment.grade}`

@@ -13,45 +13,45 @@
             <button id="next-month">&gt;</button>
         </div>
         <div class="weekdays">
-            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
         </div>
         <div class="days" id="calendar-days"></div>
 
         <!-- Форма для добавления отгрузки -->
         <div id="shipment-form">
-            <h3>Добавить отгрузку</h3>
+            <h3>New Shipment</h3>
             <form id="add-shipment-form">
-                <label>Откуда (Поставщик):</label>
+                <label>From:</label>
                 <select id="supplier" name="supplier" required>
-                    <option value="" disabled selected>Выберите поставщика</option>
+                    <option value="" disabled selected>supplier</option>
                     {% for supplier in suppliers %}
                         <option value="{{ supplier.id }}">{{ supplier.name }}</option>
                     {% endfor %}
                 </select>
 
-                <label>Куда (Покупатель):</label>
+                <label>Where:</label>
                 <select id="buyer" name="buyer" required>
-                    <option value="" disabled selected>Выберите покупателя</option>
+                    <option value="" disabled selected>buyer</option>
                     {% for buyer in buyers %}
                         <option value="{{ buyer.id }}">{{ buyer.name }}</option>
                     {% endfor %}
                 </select>
 
-                <label>Дата:</label>
+                <label>Date:</label>
                 <input type="date" id="shipment-date" required>
 
-                <label>Время:</label>
+                <label>Time:</label>
                 <input type="time" id="shipment-time" required>
 
                 <!-- Грейд (материал) -->
-                <label>Грейд:</label>
+                <label>Material:</label>
                 <select id="shipment-grade" name="grade" required>
-                    <option value="" disabled selected>Выберите грейд</option>
+                    <option value="" disabled selected>grade</option>
                     {% for key, value in materials_list.items %}
                         <option value="{{ key }}">{{ key }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit">Добавить</button>
+                <button type="submit">add</button>
             </form>
         </div>
     </div>
