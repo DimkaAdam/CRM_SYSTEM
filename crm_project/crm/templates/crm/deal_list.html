@@ -138,7 +138,15 @@
                 <input type="number" id="supplier_price" step="0.01" placeholder="Supplier Price">
                 <input type="number" id="buyer_price" step="0.01" placeholder="Buyer Price" required>
                 <input type="number" id="transport_cost" step="0.01" placeholder="Transport Cost" required>
-                <input type="text" id="transport_company" placeholder="Transport Company" required>
+
+
+                <select id="transport_company" name="Hauler" required>
+                    <option value="" disabled selected>Select a Hauler</option>
+                    {% for transport_company in hauler %}
+                        <option value="{{ transport_company.id }}">{{ transport_company.name }}</option>
+                    {% endfor %}
+                </select>
+
                 <input type="text" id="scale_ticket" placeholder="Scale Ticket" required>
                 <button type="submit" class="submit-btn">Submit Deal</button>
             </form>

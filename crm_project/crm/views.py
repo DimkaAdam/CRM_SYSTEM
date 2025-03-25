@@ -309,6 +309,7 @@ def deal_list(request):
     # Фильтруем компании по типу через связанные контакты
     suppliers = Company.objects.filter(contacts__company_type="suppliers").distinct()  # Только поставщики
     buyers = Company.objects.filter(contacts__company_type="buyers").distinct()  # Только покупатели
+    hauler = Company.objects.filter(contacts__company_type="hauler").distinct() # Only Haulers
 
     # Получаем параметры фильтра из запроса
     month = request.GET.get('month', str(current_month).zfill(2))  # Текущий месяц по умолчанию
@@ -364,6 +365,7 @@ def deal_list(request):
         'months': months,  # Месяцы для выпадающего списка
         'setting': settings,
         'form': form,
+        'hauler': hauler,
     }
 
     # Рендерим страницу с переданным контекстом
