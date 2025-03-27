@@ -423,3 +423,26 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("🚨 Licence plate dropdown (licence_plate) NOT FOUND!");
     }
 });
+
+// 📦 Автозаполнение цены поставщика по supplier + grade
+document.getElementById('supplier').addEventListener('change', fetchSupplierPrice);
+document.getElementById('grade').addEventListener('change', fetchSupplierPrice);
+
+function fetchSupplierPrice() {
+    const supplierId = document.getElementById('supplier').value;
+    const grade = document.getElementById('grade').value;
+
+    if (supplierId && grade) {
+        fetch(`/api/get_price/?supplier_id=${supplierId}&grade=${grade}`)
+            .then(response => response.json())
+            .then(data => {
+                const priceField = document.getElementById('supplier_price');
+                if (data.price) {
+                    priceField.value = data.price;
+                } else {
+                    priceField.value = '';
+                }
+            })
+            .catch(error => console.error('Ошибка при получении цены:', error));
+    }
+}

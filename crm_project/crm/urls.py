@@ -60,6 +60,8 @@ urlpatterns = [
     path('companies/<int:contact_id>/edit/', views.edit_contact, name='edit_contact'),
     path('contacts/add/<int:company_id>/', add_contact, name='add_contact'),
     path('api/licence-plates/', get_licence_plates, name='get_licence_plates'),
+    path('api/get_price/', views.get_price_by_supplier_and_grade, name='get_price_by_supplier_and_grade'),
+
 
 
 

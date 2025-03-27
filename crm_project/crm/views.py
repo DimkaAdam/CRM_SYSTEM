@@ -371,6 +371,20 @@ def deal_list(request):
     # Рендерим страницу с переданным контекстом
     return render(request, 'crm/deal_list.html', context)
 
+
+from .models import ContactMaterial
+
+def get_price_by_supplier_and_grade(request):
+    supplier_id = request.GET.get('supplier_id')
+    grade = request.GET.get('grade')
+
+    try:
+        contact_material = ContactMaterial.objects.get(contact__company__id=supplier_id, material=grade)
+        return JsonResponse({'price': str(contact_material.price)})
+    except ContactMaterial.DoesNotExist:
+        return JsonResponse({'price': None})
+
+
 def export_deals_to_excel(request):
     from openpyxl.utils import get_column_letter
     from openpyxl.styles import Border, Side
