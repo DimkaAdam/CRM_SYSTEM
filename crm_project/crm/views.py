@@ -519,18 +519,26 @@ def get_deal_details(request, deal_id):
     return JsonResponse({
         'id': deal.id,
         'date': deal.date.strftime('%Y-%m-%d'),
-        'supplier': deal.supplier.name if deal.supplier else "",  # ✅ Защита от None
-        'buyer': deal.buyer.name if deal.buyer else "",  # ✅ Защита от None
+
+        'supplier_id': deal.supplier.id if deal.supplier else None,
+        'supplier_name': deal.supplier.name if deal.supplier else "",
+
+        'buyer_id': deal.buyer.id if deal.buyer else None,
+        'buyer_name': deal.buyer.name if deal.buyer else "",
+
         'grade': deal.grade,
         'shipped_quantity': deal.shipped_quantity,
-        'shipped_pallets': deal.shipped_pallets,  # ✅ Добавлено
+        'shipped_pallets': deal.shipped_pallets,
         'received_quantity': deal.received_quantity,
-        'received_pallets': deal.received_pallets,  # ✅ Добавлено
+        'received_pallets': deal.received_pallets,
         'supplier_price': deal.supplier_price,
         'buyer_price': deal.buyer_price,
         'total_amount': deal.total_amount,
+
         'transport_cost': deal.transport_cost,
-        'transport_company': deal.transport_company,
+        'transport_company_id': deal.transport_company.id if deal.transport_company else None,
+        'transport_company_name': deal.transport_company.name if deal.transport_company else "",
+
         'scale_ticket': deal.scale_ticket,
     })
 
@@ -563,7 +571,9 @@ def edit_deal(request, deal_id):
         deal.shipped_pallets = data.get('shipped_pallets', deal.shipped_pallets)
         deal.received_pallets = data.get('received_pallets', deal.received_pallets)
         deal.transport_cost = Decimal(data.get('transport_cost', deal.transport_cost))
-        deal.transport_company = data.get('transport_company', deal.transport_company)
+        transport_company_id = data.get('transport_company')
+        if transport_company_id:
+            deal.transport_company = get_object_or_404(Company, id=transport_company_id)
         deal.scale_ticket = data.get('scale_ticket', deal.scale_ticket)  # ✅ Теперь scale_ticket обновляется
 
         # Выполняем расчеты для итоговых сумм

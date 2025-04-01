@@ -1,3 +1,21 @@
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+
 // Открыть боковую панель для создания новой сделки
 document.getElementById('addNewDealBtn').addEventListener('click', function () {
     document.getElementById('dealFormSidebar').style.width = '400px';
@@ -52,9 +70,9 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
     fetch('http://127.0.0.1:8000/api/deals/', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
-        },
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken,
+    },
         body: JSON.stringify(data),
     })
     .then(response => response.json())
@@ -76,7 +94,7 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
             <td>${data.buyer_price}</td>
             <td>${data.total_amount}</td>
             <td>${data.transport_cost}</td>
-            <td>${data.transport_company}</td>
+            <td>${data.transport_company.name}</td>
             <td>${data.total_income_loss}</td>
             <td>${data.scale_ticket}</td>
 
@@ -133,8 +151,8 @@ document.getElementById('editDealBtn').addEventListener('click', () => {
         .then(data => {
             // Заполняем поля формы редактирования данными текущей сделки
             document.getElementById('editDate').value = data.date; // Дата
-            document.getElementById('editSupplier').value = data.supplier.id; // Поставщик
-            document.getElementById('editBuyer').value = data.buyer.id; // Покупатель
+            document.getElementById('editSupplier').value = data.supplier_id;
+            document.getElementById('editBuyer').value = data.buyer_id; // Покупатель
             document.getElementById('editGrade').value = data.grade; // Группа
             document.getElementById('editShippedQuantity').value = data.shipped_quantity; // Отправленное количество
             document.getElementById('editShippedPallets').value = data.shipped_pallets; // Отправленные паллеты
@@ -143,7 +161,7 @@ document.getElementById('editDealBtn').addEventListener('click', () => {
             document.getElementById('editSupplierPrice').value = data.supplier_price; // Цена поставщика
             document.getElementById('editBuyerPrice').value = data.buyer_price; // Цена покупателя
             document.getElementById('editTransportCost').value = data.transport_cost; // Стоимость доставки
-            document.getElementById('editTransportCompany').value = data.transport_company; // Транспортная компания
+            document.getElementById('editTransportCompany').value = data.transport_company_id; // Транспортная компания
             document.getElementById('editScaleTicket').value = data.scale_ticket;
         })
         .catch(error => console.error('Error fetching data for editing:', error));

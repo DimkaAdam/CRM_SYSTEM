@@ -82,7 +82,7 @@ class Deals(models.Model):
     invoice_number = models.CharField(max_length=50, blank=True, null=True)  # Номер счета (может быть пустым)
     paid_date = models.DateField(blank=True, null=True)  # Дата оплаты (может быть пустым)
     transport_cost = models.DecimalField(max_digits=10, decimal_places=2,default=0)  # Стоимость транспорта
-    transport_company = models.CharField(max_length=255, blank=True, null=True)  # Название транспортной компании (может быть пустым)
+    transport_company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='deals_as_hauler')  # Название транспортной компании (может быть пустым)
     total_income_loss = models.DecimalField(max_digits=10, decimal_places=2,default=0)  # Общий доход/убыток
 
 
