@@ -159,7 +159,8 @@ def view_contact(request, id):
         form = ContactForm(instance=contact)
 
     employees = contact.employees.all()
-    pipeline = PipeLine.objects.filter(contact=contact).first()
+    pipeline, _ = PipeLine.objects.get_or_create(contact=contact)
+
 
     return render(request, 'crm/view_contact.html', {
         'contact': contact,
