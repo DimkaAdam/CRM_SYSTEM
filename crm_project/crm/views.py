@@ -391,9 +391,18 @@ def export_deals_to_excel(request):
     from openpyxl.styles import Border, Side
 
     # Получаем текущий месяц и год
-    current_date = datetime.now()
-    current_month = current_date.month
-    current_year = current_date.year
+    from django.utils.timezone import now
+
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+
+    if not month or not year:
+        current_date = now()
+        month = current_date.month
+        year = current_date.year
+    else:
+        month = int(month)
+        year = int(year)
 
     # Создаем книгу Excel
     wb = Workbook()
@@ -410,7 +419,7 @@ def export_deals_to_excel(request):
     headers = [
         'Date', 'Supplier', 'Buyer', 'Grade', 'Shipped Qty', 'Pallets',
         'Received Qty', 'Pallets', 'Supplier Price', 'Supplier Paid Amount', 'Buyer Price',
-        'Total Amount', 'Transport Cost', 'Houler', 'Income/Loss','Scale Ticket'
+        'Total Amount', 'Transport Cost', 'Hauler', 'Income/Loss','Scale Ticket'
     ]
     ws.append(headers)
 
@@ -424,8 +433,8 @@ def export_deals_to_excel(request):
 
     # Получаем сделки только за текущий месяц
     deals = Deals.objects.select_related('supplier', 'buyer').filter(
-        date__year=current_year,
-        date__month=current_month
+        date__year=year,
+        date__month=month
     )
 
     # Применяем стили к данным
@@ -433,8 +442,10 @@ def export_deals_to_excel(request):
     data_fill_dark = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")  # Темный фон для нечетных строк
     data_font = Font(name="Arial", size=11)  # Стандартный шрифт для данных
 
+    last_row = len(deals) + 1  # Последняя строка данных
+
     for row_num, deal in enumerate(deals, start=2):
-        formatted_date = deal.date.strftime('%Y-%m') if deal.date else ''
+        formatted_date = deal.date.strftime('%d-%b') if deal.date else ''
         row = [
             formatted_date,
             deal.supplier.name if deal.supplier else '',
@@ -449,14 +460,14 @@ def export_deals_to_excel(request):
             deal.buyer_price,
             deal.total_amount,
             deal.transport_cost,
-            deal.transport_company,
+            deal.transport_company.name if deal.transport_company else '',
             deal.total_income_loss,
             deal.scale_ticket,
         ]
 
         ws.append(row)
 
-        last_row = len(deals) + 1  # Последняя строка данных
+
 
         # Применяем стили к строке данных
         for col_num, value in enumerate(row, 1):
@@ -509,7 +520,7 @@ def export_deals_to_excel(request):
 
     # Сохраняем файл
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response['Content-Disposition'] = f'attachment; filename=deals_{current_year}_{current_month}.xlsx'
+    response['Content-Disposition'] = f'attachment; filename=deals_{year}_{month}.xlsx'
     wb.save(response)
     return response
 

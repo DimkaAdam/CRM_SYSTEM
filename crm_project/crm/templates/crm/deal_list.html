@@ -11,7 +11,7 @@
             <button id="addNewDealBtn" class="add-new-deal-btn">
                 <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add Icon" class="icon">
             </button>
-            <a href="{% url 'export_deals_to_excel' %}" class="export-btn">
+            <a href="{% url 'export_deals_to_excel' %}?month={{ month }}&year={{ year }}" class="export-btn">
                 <img src="{% static 'crm/images/icons/excel.png' %}" alt="Export Icon" class="icon">
             </a>
             <button onclick="openScaleTicketSidebar()">+ Add Scale Ticket</button>
