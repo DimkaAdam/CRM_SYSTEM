@@ -99,7 +99,8 @@ function openContactModal(contactId) {
     document.getElementById('overlay').style.display = 'block';
     document.getElementById('modal').style.display = 'block';
 
-    fetch(`/contact/view/${contactId}/`)
+    fetch(`/contact/${contactId}/view/`)
+
       .then(response => response.text())
       .then(html => {
         document.getElementById('modal-content').innerHTML = html;
