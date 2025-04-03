@@ -1,6 +1,4 @@
-{% extends 'crm/index.html' %}
 {% load static %}
-{% block title %}View Contact{% endblock %}
 
 {% block content %}
 <div id="view-info" style="max-width: 900px; margin: 0 auto; padding: 30px; background: #fff; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
@@ -78,12 +76,21 @@
     <p style="font-size: 14px; color: #888;">No materials linked to this contact.</p>
   {% endif %}
 
-  <form method="POST" action="{% url 'add_contact_material' contact.id %}" style="margin-top: 30px;">
-    {% csrf_token %}
-    {{ form.material.as_p }}
-    {{ form.price.as_p }}
-    <button type="submit" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold;">+ Add Material</button>
-  </form>
+  <button type="button" onclick="toggleMaterialForm()" style="margin-top: 20px; background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold;">
+    + Add Material
+  </button>
+
+  <div id="material-form" style="display: none; margin-top: 20px;">
+    <form method="POST" action="{% url 'add_contact_material' contact.id %}" style="max-width: 400px;">
+      {% csrf_token %}
+      {{ form.material.as_p }}
+      {{ form.price.as_p }}
+      <div style="display: flex; gap: 10px;">
+        <button type="submit" style="background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 8px;">Submit</button>
+        <button type="button" onclick="toggleMaterialForm()" style="background: #6c757d; color: white; padding: 8px 20px; border: none; border-radius: 8px;">Cancel</button>
+      </div>
+    </form>
+  </div>
 
   <div style="margin-top: 30px; display: flex; gap: 15px;">
     <button onclick="toggleEditForm()" style="background: #007BFF; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold;">Edit Contact</button>
@@ -115,6 +122,11 @@
 
   function toggleStageForm() {
     const form = document.getElementById('stage-form');
+    form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+  }
+
+  function toggleMaterialForm() {
+    const form = document.getElementById('material-form');
     form.style.display = (form.style.display === 'none') ? 'block' : 'none';
   }
 </script>

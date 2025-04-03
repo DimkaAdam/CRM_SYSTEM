@@ -27,7 +27,8 @@ urlpatterns = [
     path("tasks/", views.task_list, name="task_list"),
     path('companies/', views.company_list, name='company_list'),
     path('companies/', views.company_list, name='company_main'),
-    path('contact/view/<int:id>/', views.view_contact, name='view_contact'),
+    path('contact/<int:id>/view/', views.view_contact, name='view_contact'),
+
 
     # 📌 React Kanban-доска
     path("api/update_stage/", views.update_stage, name="update_stage"),
@@ -53,7 +54,6 @@ urlpatterns = [
     path("companies/<int:company_id>/", views.company_detail, name="company_detail"),
     path("company/<int:company_id>/edit/", views.edit_company, name="edit_company"),
     path("company/<int:company_id>/delete/", views.delete_company, name="delete_company"),
-    path("contact/view/<int:id>/", views.view_contact, name="view_contact"),
     path("companies/<int:company_id>/employees/<int:employee_id>/delete/", views.delete_employee, name="delete_employee_from_company"),
     path("contacts/<int:contact_id>/add-material/", views.add_contact_material, name="add_contact_material"),
     path("contact-material/<int:pk>/edit/", views.edit_contact_material, name="edit_contact_material"),

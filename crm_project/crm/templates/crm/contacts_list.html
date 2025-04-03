@@ -44,9 +44,9 @@
                     </td>
                     <td>
                         {% if company.contacts.first %}
-                            <a href="{% url 'view_contact' company.contacts.first.id %}">
-                                <button class="btn btn-primary">View Contact</button>
-                            </a>
+                            <button class="btn btn-primary" onclick="openContactModal({{ company.contacts.first.id }})">
+                              View Contact
+                            </button>
                         {% else %}
                             <span class="no-contact">No contact available</span>
                         {% endif %}
@@ -83,4 +83,66 @@
         }
     </script>
     <link rel="stylesheet" href="{% static 'crm/contacts_list.css' %}">
+
+<div id="overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+     background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+
+<div id="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+     width: 90%; max-width: 960px; height: 90vh; background: white; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.3);
+     z-index: 1000; overflow: auto; padding: 20px;">
+  <button onclick="closeModal()" style="position: absolute; top: 10px; right: 20px; font-size: 20px; background: none; border: none; cursor: pointer;">✖</button>
+  <div id="modal-content">Loading...</div>
+</div>
+
+<script>
+function openContactModal(contactId) {
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('modal').style.display = 'block';
+
+    fetch(`/contact/view/${contactId}/`)
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('modal-content').innerHTML = html;
+        initModalFunctions(); // Активируем JS-функции внутри модалки
+      });
+}
+
+function closeModal() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('modal').style.display = 'none';
+    document.getElementById('modal-content').innerHTML = 'Loading...';
+}
+
+function initModalFunctions() {
+  // Повторно привязываем кнопки
+  window.toggleEditForm = function() {
+    const viewInfo = document.getElementById('view-info');
+    const editForm = document.getElementById('edit-form-container');
+    if (viewInfo && editForm) {
+      editForm.style.display = (editForm.style.display === 'none') ? 'block' : 'none';
+      viewInfo.style.display = (viewInfo.style.display === 'none') ? 'block' : 'none';
+    }
+  };
+
+  window.toggleEmployeeForm = function() {
+    const form = document.getElementById('employee-form');
+    if (form) form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+  };
+
+  window.toggleStageForm = function() {
+    const form = document.getElementById('stage-form');
+    if (form) form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+  };
+
+  window.toggleMaterialForm = function() {
+    const form = document.getElementById('material-form');
+    if (form) form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+  };
+}
+</script>
+
+
+
+
 {% endblock %}
+
