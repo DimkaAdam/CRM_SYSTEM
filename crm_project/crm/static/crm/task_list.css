@@ -75,6 +75,11 @@
 
 /* 📅 FullCalendar (растянутый) */
 #calendar {
+    height: 720px !important;  /* или 700-750 — по вкусу */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     flex-grow: 1;
     width: 100%;
     max-width: none;  /* 🔄 Снял ограничение ширины */
@@ -83,6 +88,7 @@
     padding: 20px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
 }
 
 /* 📅 Верхняя панель FullCalendar */

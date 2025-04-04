@@ -154,6 +154,8 @@ MATERIALS_LIST = {
     'Printers Offcuts': None,
     'Brown Printers Offcuts': None,
     'Stock Rolls': None,
+    'Baled Cardboard': None,
+
 
 
 }
