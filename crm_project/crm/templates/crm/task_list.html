@@ -3,6 +3,15 @@
 {% load static %}
 {% block content %}
 <link rel="icon" href="{% static 'favicon.ico' %}">
+<!-- Подключаем FullCalendar -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+<!-- Подключаем jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script src="{% static 'crm/js/task_list.js' %}"></script>
+<link rel="stylesheet" href="{% static 'crm/task_list.css' %}">
 
 <div class="calendar-container">
   <!-- 🍏 Mini Calendar + Form -->
@@ -21,6 +30,10 @@
 
     <!-- 🔢 Days -->
     <div class="days" id="calendar-days"></div>
+
+
+
+
 
     <!-- 📦 Shipment Form -->
     <section id="shipment-form">
@@ -130,16 +143,5 @@
         </form>
     </div>
 </div>
-
-
-<!-- Подключаем FullCalendar -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-
-<!-- Подключаем jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<script src="{% static 'crm/js/task_list.js' %}"></script>
-<link rel="stylesheet" href="{% static 'crm/task_list.css' %}">
 
 {% endblock %}

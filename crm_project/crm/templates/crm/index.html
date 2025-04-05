@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CRM System{% endblock %}</title>
-    {% load static %}
 
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'crm/index.css' %}">
     <!-- Основные стили -->
     <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
     <link rel="stylesheet" href="{% static 'crm/deal_list.css' %}">
@@ -29,24 +30,28 @@
     </header> -->
 
     <!-- Main body -->
-    <div class="layout">
-        <!-- navigation menu -->
-        <nav class="sidebar">
-            <ul>
-                <div class="logo">
-                    <a href="{% url 'sales_analytics' %}">
-                        <img src="{% static 'crm/images/logo2.png' %}" alt="Logo" class="logo-img">
-                    </a>
+    <nav class="sidebar">
+      <div class="logo">
+        <a href="{% url 'sales_analytics' %}">
+          <img src="{% static 'crm/images/logo2.png' %}" alt="Logo" class="logo-img">
+        </a>
+      </div>
 
-                </div>
-                <li><a href="{% url 'contacts_list' %}">Contacts</a></li>
-                <li><a href="{% url 'deal_list' %}">Transactions</a></li>
-                <li><a href="{% url 'task_list' %}">Tasks</a></li>
-                <li><a href="{% url 'kanban_board' %}">Kanban Board</a></li>
-                <li><a href="{% url 'report_list' %}">Reports</a></li>
-                <li><a href="{% url 'sales_analytics' %}">Dashboard</a></li>
-            </ul>
-        </nav>
+      <div class="radio-container">
+        <ul>
+          <li><a href="{% url 'contacts_list' %}">Contacts</a></li>
+          <li><a href="{% url 'deal_list' %}">Transactions</a></li>
+          <li><a href="{% url 'task_list' %}">Tasks</a></li>
+          <li><a href="{% url 'kanban_board' %}">Kanban Board</a></li>
+          <li><a href="{% url 'report_list' %}">Reports</a></li>
+          <li><a href="{% url 'sales_analytics' %}">Dashboard</a></li>
+        </ul>
+
+        <div class="glider-container">
+          <div class="glider"></div>
+        </div>
+      </div>
+    </nav>
 
 
         <!-- Основное содержимое -->
@@ -54,7 +59,33 @@
             {% block content %}
             {% endblock %}
         </div>
-        <link rel="stylesheet" href="{% static 'crm/index.css' %}">
+
     </div>
 </body>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const links = document.querySelectorAll(".radio-container li a");
+  const glider = document.querySelector(".radio-container .glider");
+
+  let activeIndex = 0;
+  const currentPath = window.location.pathname;
+
+  links.forEach((link, index) => {
+    const linkPath = new URL(link.href).pathname;
+    if (currentPath === linkPath) {
+      activeIndex = index;
+    }
+  });
+
+  const step = 650 / links.length;
+  glider.style.transform = `translateY(${activeIndex * step}%)`;
+
+  links.forEach(link => link.classList.remove("active"));
+  if (links[activeIndex]) {
+    links[activeIndex].classList.add("active");
+  }
+});
+</script>
+
 </html>
