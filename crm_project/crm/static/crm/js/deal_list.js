@@ -114,8 +114,8 @@ document.querySelectorAll('.deal-row').forEach(row => {
             .then(data => {
                 // Заполняем данные в сайдбар
                 document.getElementById('dealDate').innerText = data.date;
-                document.getElementById('dealSupplier').innerText = data.supplier;
-                document.getElementById('dealBuyer').innerText = data.buyer;
+                document.getElementById('dealSupplier').innerText = data.supplier_name;
+                document.getElementById('dealBuyer').innerText = data.buyer_name;
                 document.getElementById('dealGrade').innerText = data.grade;
                 document.getElementById('dealTotalAmount').innerText = data.total_amount;
                 document.getElementById('dealScaleTicket').innerText = data.scale_ticket;
@@ -241,6 +241,34 @@ document.getElementById('deleteDealBtn').addEventListener('click', () => {
             .catch(error => console.error('Error deleting deal:', error));
     }
 });
+
+//scale ticket in side bar
+
+window.openScaleTicketSidebarFromDeal = function () {
+    const dealId = document.getElementById("viewDealSidebar").dataset.dealId;
+    const scaleTicket = document.getElementById("dealScaleTicket").innerText;
+
+    if (!scaleTicket || scaleTicket === "N/A") {
+        alert("⛔ У этой сделки нет номера Scale Ticket.");
+        return;
+    }
+
+    // Открываем сайдбар
+    openScaleTicketSidebar();
+
+    // Ждём чуть-чуть, пока сайдбар откроется, и заполняем поле
+    setTimeout(() => {
+        const input = document.getElementById("ticket_number");
+        if (input) {
+            input.value = scaleTicket;
+            fetchDealData(); // Автозагрузка данных
+        } else {
+            console.error("⚠️ Не найден ticket_number!");
+        }
+    }, 300); // можно увеличить, если форма не успевает отрендериться
+};
+
+
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -393,8 +421,6 @@ document.addEventListener("DOMContentLoaded", function () {
         let licencePlate = getValueOrWarn("licence_plate", "N/A");
         let tareWeight = parseFloat(getValueOrWarn("tare_weight", "0"));
         let netWeight = parseFloat(getValueOrWarn("net_weight", "0"));
-
-        // 🔄 Пересчитываем Gross перед отправкой
         let grossWeight = tareWeight + netWeight;
 
         console.log(`📂 Exporting Scale Ticket: ${ticketNumber}, Time: ${dealTime}, Licence: ${licencePlate}, Gross: ${grossWeight}, Tare: ${tareWeight}, Net: ${netWeight}`);
@@ -406,7 +432,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 + `&tare_weight=${encodeURIComponent(tareWeight)}`
                 + `&net_weight=${encodeURIComponent(netWeight)}`;
 
-        window.open(url, '_blank');
+        // ⬇️ скачивание через временную ссылку
+        const tempLink = document.createElement("a");
+        tempLink.href = url;
+        tempLink.download = `Ticket #${ticketNumber}.pdf`;
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
     };
 
     const exportBtn = document.getElementById("exportScaleTicketBtn");
