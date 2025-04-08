@@ -14,7 +14,9 @@
             <a href="{% url 'export_deals_to_excel' %}?month={{ month }}&year={{ year }}" class="export-btn">
                 <img src="{% static 'crm/images/icons/excel.png' %}" alt="Export Icon" class="icon">
             </a>
-            <button onclick="openScaleTicketSidebar()">+ Add Scale Ticket</button>
+            <button onclick="openScaleTicketSidebar()" class="scale-btn">
+                <img src="{% static 'crm/images/icons/scale_ticket.png' %}" alt="Add Icon" class="icon">
+            </button>
         </div>
 
         <!-- Фильтры для месяца и года -->
@@ -93,9 +95,8 @@
                 <label for="grade">Material:</label>
                 <input type="text" id="scaleticket_grade" name="grade" readonly>
                 <!-- Кнопка для экспорта в PDF -->
-                <a id="exportScaleTicketBtn" href="#" onclick="exportScaleTicket(event)">
-                    <button>Export Scale Ticket to PDF</button>
-                </a>
+                <button id="exportScaleTicketBtn" type="button">Export to PDF</button>
+
 
             </form>
 
@@ -242,6 +243,9 @@
                 </button>
                 <button id="deleteDealBtn" class="delete-btn">
                     <img src="{% static 'crm/images/icons/trash.png' %}" alt="Delete">
+                </button>
+                <button onclick="openScaleTicketSidebarFromDeal()" class="scale-btn">
+                    <img src="{% static 'crm/images/icons/scale_ticket.png' %}" alt="Add Icon" class="icon">
                 </button>
             </div>
         </div>

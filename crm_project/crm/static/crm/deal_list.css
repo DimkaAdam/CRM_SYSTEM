@@ -74,6 +74,39 @@
     object-fit: cover; /* Подгоняем иконку под размеры */
 }
 
+.scale-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #08666e; /* Цвет Scale Ticket */
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    overflow: hidden;
+}
+
+.scale-btn:hover {
+    background-color: #04454a;
+    transform: scale(1.1);
+}
+
+.scale-btn:active {
+    background-color: #03373b;
+    transform: scale(1);
+}
+
+.scale-btn img {
+    width: 40px;
+    height: 40px;
+    pointer-events: none;
+    object-fit: cover;
+}
+
 /* Контейнер для формы фильтрации */
 .filter-container {
     display: flex; /* Располагаем элементы в ряд */
@@ -120,7 +153,7 @@
     width: 20px; /* Размер иконки */
     height: 20px;
     pointer-events: none; /* Иконка не будет реагировать на клики */
-    object-fit: cover; /* Подгонка иконки */
+    object-fit: contain; /* Подгонка иконки */
 }
 
 /* Стили для input и select */
@@ -308,3 +341,15 @@ font-face {
 
 
 
+/* Добавь в конец deal_list.css или styles.css */
+.buttons-container button img,
+.filter-btn img,
+.edit-btn img,
+.delete-btn img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  object-fit: contain; /* раньше было cover — могло сместить */
+  vertical-align: middle;
+  pointer-events: none;
+}
