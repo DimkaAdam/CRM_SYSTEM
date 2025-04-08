@@ -100,6 +100,7 @@ document.querySelectorAll('.deal-row').forEach(row => {
                 document.getElementById('dealBuyer').innerText = data.buyer;
                 document.getElementById('dealGrade').innerText = data.grade;
                 document.getElementById('dealTotalAmount').innerText = data.total_amount;
+                document.getElementById('dealScaleTicket').innerText = data.scale_ticket;
 
                 // Сохраняем текущий ID сделки для последующих операций
                 document.getElementById('viewDealSidebar').dataset.dealId = dealId;
