@@ -391,36 +391,3 @@ document.addEventListener("DOMContentLoaded", function () {
         window.open(url, '_blank');
     };
 
-    const exportBtn = document.getElementById("exportScaleTicketBtn");
-    if (exportBtn) {
-        exportBtn.addEventListener("click", exportScaleTicket);
-        console.log("✅ Export button connected.");
-    } else {
-        console.error("🚨 Export button NOT FOUND! Проверь ID: exportScaleTicketBtn");
-    }
-
-    const licencePlates = ['SY1341', 'WB3291', '153'];
-    const licenceSelect = document.getElementById("licence_plate");
-
-    if (licenceSelect) {
-        console.log("🔹 Заполняем список номеров...");
-
-        const placeholderOption = document.createElement("option");
-        placeholderOption.value = "";
-        placeholderOption.textContent = "Select Licence Plate";
-        placeholderOption.disabled = true;
-        placeholderOption.selected = true;
-        licenceSelect.appendChild(placeholderOption);
-
-        licencePlates.forEach(plate => {
-            const option = document.createElement("option");
-            option.value = plate;
-            option.textContent = plate;
-            licenceSelect.appendChild(option);
-        });
-
-        console.log("✅ Licence plate dropdown filled.");
-    } else {
-        console.error("🚨 Licence plate dropdown (licence_plate) NOT FOUND!");
-    }
-});

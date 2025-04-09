@@ -407,6 +407,30 @@
     transform: scale(1.03);
 }
 
+
+/* Кнопка отправки в форме боковой панели */
+.sidebar-form button[type="button"] {
+    background-color: #033870;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 80%;
+    margin: 0 auto 15px;
+    display: block;
+    box-shadow: 0 0 8px rgba(63, 94, 251, 0.6);
+    transition: 0.3s;
+}
+
+.sidebar-form button[type="button"]:hover {
+    background: linear-gradient(#C33764, #1D2671);
+    box-shadow: 0 4px 15px rgba(63, 94, 251, 0.7);
+    transform: scale(1.03);
+}
+
+
 /* ==========================================================================
    Стили для панели контактов (Contact Panel)
    ========================================================================== */
