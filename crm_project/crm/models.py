@@ -24,6 +24,8 @@ class Company(models.Model):
     name = models.CharField(max_length=200, unique=True)
     unique_number = models.CharField(max_length=255, unique=True, blank=True, null=True)
 
+    pickup_requested = models.BooleanField(default=False)
+
     def save(self, *args, **kwargs):
         if not self.pk:  # Проверяем, создается ли объект впервые
             super().save(*args, **kwargs)  # Сохраняем объект, чтобы получить pk
@@ -129,6 +131,9 @@ class Deals(models.Model):
 
     def __str__(self):
         return f"Deal: {self.date} - {self.supplier} to {self.buyer}"
+
+
+
 
 
 class Task(models.Model):

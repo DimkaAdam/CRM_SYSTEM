@@ -102,6 +102,8 @@ urlpatterns = [
     path("api/scheduled-shipments/delete/<int:shipment_id>/", delete_scheduled_shipment,
        name="delete_scheduled_shipment"),
     path('generate-bol-pdf/', generate_bol_pdf, name='generate_bol_pdf'),
+    path("company/<int:id>/toggle-pickup/", views.toggle_pickup, name="toggle_pickup"),
+
 
 
 
