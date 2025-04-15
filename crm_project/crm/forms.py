@@ -10,7 +10,7 @@ class ContactForm(forms.ModelForm):
 class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
-        fields = ['name', 'unique_number']
+        fields = ['name', 'unique_number','pickup_requested']
 
 
 # Edit price form

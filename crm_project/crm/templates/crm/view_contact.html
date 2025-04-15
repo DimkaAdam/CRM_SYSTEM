@@ -1,8 +1,26 @@
 {% load static %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
 
 {% block content %}
 <div id="view-info" style="max-width: 900px; margin: 0 auto; padding: 30px; background: #fff; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-  <h1 style="font-size: 32px; font-weight: bold; color: #003366; margin-bottom: 10px;">{{ contact.company.name }}</h1>
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+    <h1 style="font-size: 32px; font-weight: bold; color: #003366;">{{ contact.company.name }}</h1>
+
+    <label style="display: flex; align-items: center; gap: 5px; font-size: 14px; color: #333;">
+      <input type="checkbox" id="pickup-checkbox" {% if company.pickup_requested %}checked{% endif %}>
+      Pickup Requested
+    </label>
+
+  </div>
+
+  {% if company.pickup_requested %}
+    <div style="background-color: #fff3cd; border-left: 5px solid #e57c23; padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+      <i class="fas fa-truck"></i>
+      <strong style="color: #000;">Pickup Requested</strong>
+    </div>
+  {% endif %}
+
   <p style="color: #666; margin-bottom: 20px;">{{ contact.address }}</p>
 
   {% if pipeline %}
@@ -108,7 +126,10 @@
   </form>
 </div>
 
+
+
 <script>
+  // 🧩 Переключение видимости блоков
   function toggleEditForm() {
     const viewInfo = document.getElementById('view-info');
     const editForm = document.getElementById('edit-form-container');
@@ -130,7 +151,51 @@
     const form = document.getElementById('material-form');
     form.style.display = (form.style.display === 'none') ? 'block' : 'none';
   }
+
+  // 🔐 Получение CSRF-токена из cookies
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // ✅ Установка обработчика на чекбокс "Pickup Requested"
+  document.addEventListener("DOMContentLoaded", function () {
+    const checkbox = document.getElementById("pickup-checkbox");
+    if (checkbox) {
+      checkbox.addEventListener("change", function () {
+        fetch("{% url 'toggle_pickup' company.id %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+          },
+          body: JSON.stringify({
+            pickup_requested: checkbox.checked
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status !== "ok") {
+            alert("Ошибка при сохранении!");
+          } else {
+            location.reload(); // 🔄 Обновляем, чтобы появилась метка
+          }
+        });
+      });
+    }
+  });
 </script>
+
 
 
 

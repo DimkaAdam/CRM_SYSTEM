@@ -140,36 +140,51 @@ def delete_contact(request, contact_id):
 
 def view_contact(request, id):
     contact = get_object_or_404(Contact, id=id)
+    pipeline, _ = PipeLine.objects.get_or_create(contact=contact)
 
-    # 🆕 Обработка смены стадии — ДО формы!
-    if request.method == "POST" and "change_stage" in request.POST:
-        stage = request.POST.get("stage")
-        pipeline, created = PipeLine.objects.get_or_create(contact=contact)
-        pipeline.stage = stage
-        pipeline.save()
-        return redirect("view_contact", id=contact.id)  # 👈 сразу обновим страницу
-
-    # 🔄 Обработка формы редактирования контакта
     if request.method == "POST":
+        # 🎯 Обработка смены стадии
+        if "change_stage" in request.POST:
+            stage = request.POST.get("stage")
+            pipeline.stage = stage
+            pipeline.save()
+
+        # 🎯 Обработка формы редактирования контакта
         form = ContactForm(request.POST, instance=contact)
         if form.is_valid():
             form.save()
-            return redirect("view_contact", id=contact.id)
+
+            # 🟡 Сохраняем чекбокс
+            pickup_requested = request.POST.get("pickup_requested") == "on"
+            contact.company.pickup_requested = pickup_requested
+            contact.company.save()
+
+        return redirect("view_contact", id=contact.id)
+
     else:
         form = ContactForm(instance=contact)
 
     employees = contact.employees.all()
-    pipeline, _ = PipeLine.objects.get_or_create(contact=contact)
-
 
     return render(request, 'crm/view_contact.html', {
         'contact': contact,
         'form': form,
         'employees': employees,
         'pipeline': pipeline,
+        'company': contact.company,
     })
 
 
+@csrf_exempt
+def toggle_pickup(request, id):
+    if request.method == "POST":
+        import json
+        company = get_object_or_404(Company, id=id)
+        data = json.loads(request.body)
+        company.pickup_requested = data.get("pickup_requested", False)
+        company.save()
+        return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "error"}, status=400)
 
 def manage_employees(request, company_id):
     company = get_object_or_404(Company, id=company_id)
