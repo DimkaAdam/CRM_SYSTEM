@@ -3,6 +3,27 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('bol-modal').style.display = 'block';
         loadDealDetails();
     });
+document.addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'add-commodity') {
+        const tbody = document.getElementById('commodity-body');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" name="qty[]" required></td>
+            <td><input type="text" name="pkg[]" required></td>
+            <td><input type="number" name="weight[]" required></td>
+            <td><input type="text" name="description[]" required></td>
+            <td><input type="text" name="dims[]"></td>
+            <td><input type="text" name="class[]"></td>
+            <td><input type="text" name="nmfc[]"></td>
+            <td><button type="button" class="remove-commodity">🗑</button></td>
+        `;
+        tbody.appendChild(row);
+    }
+
+    if (e.target && e.target.classList.contains('remove-commodity')) {
+        e.target.closest('tr').remove();
+    }
+});
 
     // 🔹 Инициализация основного календаря
     var calendarEl = document.getElementById('calendar');
@@ -53,28 +74,37 @@ document.addEventListener('DOMContentLoaded', function () {
     // 📌 Загрузка списка поставщиков, покупателей и грейдов
     function loadData() {
         Promise.all([
-            fetch("/api/clients/").then(res => res.json()),
+            fetch("/api/companies-by-type/").then(res => res.json()),  // ✅ заменили clients на companies-by-type
             fetch("/api/grades/").then(res => res.json())
         ])
-        .then(([clientsData, gradesData]) => {
+        .then(([companiesData, gradesData]) => {
             let supplierSelect = document.getElementById("supplier");
             let buyerSelect = document.getElementById("buyer");
+            let carrierSelect = document.getElementById("carrier");  // ✅ добавлено
             let gradeSelect = document.getElementById("shipment-grade");
 
-            clientsData.suppliers.forEach(client => {
+            companiesData.suppliers.forEach(client => {
                 supplierSelect.appendChild(new Option(client.name, client.id));
             });
 
-            clientsData.buyers.forEach(client => {
+            companiesData.buyers.forEach(client => {
                 buyerSelect.appendChild(new Option(client.name, client.id));
             });
+
+            // ✅ теперь также заполняем carrier, если такой элемент есть
+            if (carrierSelect) {
+                companiesData.hauler.forEach(client => {
+                    carrierSelect.appendChild(new Option(client.name, client.id));
+                });
+            }
 
             gradesData.forEach(grade => {
                 gradeSelect.appendChild(new Option(grade, grade));
             });
         })
-        .catch(error => console.error("🚨 Error loading clients/grades:", error));
+        .catch(error => console.error("🚨 Error loading companies/grades:", error));
     }
+
 
     loadData();
 
@@ -325,8 +355,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('remove-commodity')) {
+        e.target.closest('tr').remove();
+    }
+});
 
-// Загружаем данные из сделок, как в deal_list.js
+// 📌 Выбор Supplier → подставляем адрес отправителя
+function setSupplierAddress(selectElement) {
+    const selected = selectElement.options[selectElement.selectedIndex];
+    const address = selected.getAttribute('data-address');
+    document.getElementById('from-address').value = address || '';
+}
+
+// 📌 Выбор Buyer → подставляем адрес получателя
+function setBuyerAddress(selectElement) {
+    const selected = selectElement.options[selectElement.selectedIndex];
+    const address = selected.getAttribute('data-address');
+    document.getElementById('to-address').value = address || '';
+}
+
+// ✅ Загрузка данных сделки (используется при открытии модалки)
 function loadDealDetails() {
     let selectedDealId = getSelectedDealId();
     if (!selectedDealId) {
@@ -334,45 +383,85 @@ function loadDealDetails() {
         return;
     }
 
-    fetch(`/deals/${selectedDealId}/`)  // ✅ Используем API сделок
+    fetch(`/deals/${selectedDealId}/`)
         .then(res => res.json())
         .then(data => {
-            let selectCompany = document.getElementById('bolSupplier');
-            selectCompany.innerHTML = `<option value="${data.buyer_id}" selected>${data.buyer}</option>`;
-            document.getElementById('ship-to-address').value = data.buyer_address || "";
-            document.getElementById('carrier').innerHTML = `<option value="${data.transport_company}" selected>${data.transport_company}</option>`;
-            document.getElementById('bol-number').value = `BOL-${selectedDealId}`;
-            document.getElementById('load-number').value = `LOAD-${selectedDealId}`;
+            // SHIP FROM
+            let supplierSelect = document.getElementById('bolSupplier');
+            supplierSelect.value = data.supplier_id;
+
+            // SHIP TO
+            let buyerSelect = document.getElementById('bolBuyer');
+            buyerSelect.innerHTML = `<option value="${data.buyer_id}" selected>${data.buyer}</option>`;
+            document.getElementById('to-address').value = data.buyer_address || "";
+
+            // Carrier
+            let carrierSelect = document.getElementById('carrier');
+            carrierSelect.value = data.transport_company_id;
+
+
+            // Номера
+            // Получаем autoинкремент BOL/LOAD номеров
+            fetch('/api/bol-counters/')
+                .then(res => res.json())
+                .then(counter => {
+                    document.getElementById('bol-number').value = `BOL-${String(counter.bol).padStart(5, '0')}`;
+                    document.getElementById('load-number').value = `LOAD-${String(counter.load).padStart(5, '0')}`;
+                });
+
+            // Остальное
             document.getElementById('ship-date').value = data.date;
             document.getElementById('po-number').value = data.scale_ticket || "";
         })
         .catch(error => console.error('❌ Ошибка загрузки сделки:', error));
 }
 
-// Получаем ID выбранной сделки
+// Получаем выбранную сделку из таблицы
 function getSelectedDealId() {
     let selectedDeal = document.querySelector('.deal-selected');
     return selectedDeal ? selectedDeal.dataset.dealId : null;
 }
 
-
-
+// Генерация PDF
 function generateBOLPDF() {
     let bolData = {
-        shipTo: document.getElementById('bolSupplier').value,
-        shipToAddress: document.getElementById('ship-to-address').value,
+        shipFrom: document.getElementById('bolSupplier').value,
+        shipFromAddress: document.getElementById('from-address').value,
+        shipTo: document.getElementById('bolBuyer').value,
+        shipToAddress: document.getElementById('to-address').value,
         bolNumber: document.getElementById('bol-number').value,
         loadNumber: document.getElementById('load-number').value,
         shipDate: document.getElementById('ship-date').value,
         dueDate: document.getElementById('due-date').value,
         carrier: document.getElementById('carrier').value,
         poNumber: document.getElementById('po-number').value,
-        freightTerms: document.querySelector('input[name="freight"]:checked').value
+        freightTerms: document.querySelector('input[name="freight"]:checked').value,
+        commodities:[]
     };
+
+    // 🔁 Собираем данные из всех строк commodities
+    const rows = document.querySelectorAll('#commodity-body tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('input');
+        bolData.commodities.push({
+            qty: cells[0]?.value || '',
+            handling: cells[1]?.value || '',
+            pkg: cells[2]?.value || '',
+            weight: cells[3]?.value || '',
+            hm: cells[4]?.value || '',
+            description: cells[5]?.value || '',
+            dims: cells[6]?.value || '',
+            class: cells[7]?.value || '',
+            nmfc: cells[8]?.value || ''
+        });
+    });
 
     fetch('/generate-bol-pdf/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
         body: JSON.stringify(bolData)
     })
     .then(response => response.blob())
@@ -384,6 +473,16 @@ function generateBOLPDF() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+
+        // 🔁 Инкремент
+        return fetch('/api/bol-counters/increment/', {
+            method: 'POST'
+        });
+    })
+    .then(() => {
+        console.log('✅ BOL и LOAD номера увеличены');
+    })
+    .catch(err => {
+        console.error("❌ Ошибка при генерации PDF или инкременте номеров:", err);
     });
 }
-

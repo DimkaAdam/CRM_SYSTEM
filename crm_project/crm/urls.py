@@ -10,6 +10,8 @@ from .views import (
     ClientViewSet, DealViewSet, export_company_report_pdf,
     get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event,
     get_licence_plates,get_grades,get_scheduled_shipments,add_scheduled_shipment,delete_scheduled_shipment,generate_bol_pdf,update_stage,
+    get_bol_counters, increment_bol_counters,get_clients_grouped,
+
 )
 
 
@@ -103,6 +105,14 @@ urlpatterns = [
        name="delete_scheduled_shipment"),
     path('generate-bol-pdf/', generate_bol_pdf, name='generate_bol_pdf'),
     path("company/<int:id>/toggle-pickup/", views.toggle_pickup, name="toggle_pickup"),
+
+    path('api/bol-counters/', get_bol_counters, name='get_bol_counters'),
+    path('api/bol-counters/increment/', increment_bol_counters, name='increment_bol_counters'),
+    path("api/clients/", get_clients_grouped, name="get_clients_grouped"),
+    path("api/companies-by-type/", views.get_companies_by_type),
+
+
+
 
 
 
