@@ -57,11 +57,12 @@ def client_list(request):
 
     supplier = clients.filter(client_type='suppliers')
     buyer = clients.filter(client_type='buyers')
-
+    hauler = clients.filter(client_type='hauler')
     return render(request, 'crm/client_list.html', {
         'clients': clients,
         'suppliers': supplier,
         'buyers': buyer,
+        'hauler': hauler,
     })
 
 
@@ -1393,30 +1394,219 @@ def delete_scheduled_shipment(request, shipment_id):
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
+from reportlab.platypus import Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+
+@csrf_exempt
 def generate_bol_pdf(request):
     if request.method == 'POST':
         data = json.loads(request.body)
 
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename=BOL_{data["bolNumber"]}.pdf'
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        spacing = 15
+        y = height - 50
 
-        p = canvas.Canvas(response)
-        p.drawString(100, 800, "Bill of Lading")
-        p.drawString(100, 780, f"Ship To: {data['shipTo']}")
-        p.drawString(100, 760, f"Address: {data['shipToAddress']}")
-        p.drawString(100, 740, f"BOL #: {data['bolNumber']}")
-        p.drawString(100, 720, f"Load #: {data['loadNumber']}")
-        p.drawString(100, 700, f"Ship Date: {data['shipDate']}")
-        p.drawString(100, 680, f"Due Date: {data['dueDate']}")
-        p.drawString(100, 660, f"Carrier: {data['carrier']}")
-        p.drawString(100, 640, f"PO #: {data['poNumber']}")
-        p.drawString(100, 620, f"Freight Terms: {data['freightTerms']}")
+        # 📦 Логотип и название компании
+        logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'company_logo.png')
+        if os.path.exists(logo_path):
+            p.drawImage(ImageReader(logo_path), 40, height - 80, width=70, height=50, mask='auto')
 
+        # 🏢 Название компании и адрес справа
+        p.setFont("Helvetica-Bold", 10)
+        p.setFillColor(colors.darkblue)
+        p.drawRightString(width - 40, height - 45, "Local to Global Recycling Inc.")
+
+        p.setFont("Helvetica", 8)
+        p.setFillColor(colors.black)
+        p.drawRightString(width - 40, height - 58, "19090 Lougheed Hwy.")
+        p.drawRightString(width - 40, height - 68, "Pitt Meadows, BC V3Y 2M6")
+
+        # 🧾 Заголовок по центру
+        p.setFont("Helvetica-Bold", 12)
+        p.drawCentredString(width / 2, height - 45, "BILL OF LADING")
+
+        # 📋 Основная информация
+        y = height - 280
+        p.setFont("Helvetica", 10)
+
+        def draw_line(label, value):
+            nonlocal y
+            p.drawString(40, y, f"{label}: {value}")
+            y -= spacing
+
+        freight = data.get("freightTerms", "").strip().lower()
+        checkbox_line = (
+            "Freight Charge Terms: (freight charges are prepaid unless marked otherwise)\n\n"
+            f"Prepaid {'✓' if freight == 'prepaid' else ''}________     "
+            f"Collect {'✓' if freight == 'collect' else ''}________     "
+            f"3rd Party {'✓' if freight == '3rd party' else ''}________"
+        )
+
+        shipping_info = (
+            f"Ship Date: {data.get('shipDate', '')}    Due Date: {data.get('dueDate', '')}\n"
+            f"Carrier: {data.get('carrier', '')}\n"
+            f"PO Number: {data.get('poNumber', '')}"
+        )
+
+        supp_info = (
+            f"{data.get('shipFrom', '')}\n"
+            f"{data.get("shipFromAddress", '')}\n"
+
+        )
+
+        buyer_info = (
+            f"{data.get('shipTo', '')}\n"
+            f"{data.get("shipToAddress", '')}\n"
+
+        )
+
+        references_info = (
+            f"BOL # {data.get("bolNumber", "")}\n"
+            f"Load # {data.get('loadNumber', '')}\n"
+            f"PO Number: {data.get('poNumber', '')}"
+        )
+
+        styles = getSampleStyleSheet()
+
+        info_data = [
+            ["SHIP FROM", ""],
+            [supp_info, shipping_info],
+            ["SHIP TO","REFERENCES"],
+            [buyer_info,references_info],
+            ["THIRD PARTY FREIGHT CHARGES BILL TO: ", "FREIGHT CHARGE  TERMS: "],
+            ["", checkbox_line],
+
+        ]
+
+
+        info_table = Table(info_data, colWidths=[285, 285])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),  # SHIP FROM
+            ('BACKGROUND', (0, 2), (-1, 2), colors.lightgrey),  # SHIP TO / REFERENCES
+            ('BACKGROUND', (0, 4), (-1, 4), colors.lightgrey),  # THIRD PARTY / TERMS (если хочешь)
+
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('TEXTCOLOR', (0, 2), (-1, 2), colors.black),
+            ('TEXTCOLOR', (0, 4), (-1, 4), colors.black),
+
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black)
+        ]))
+        info_table.wrapOn(p, width, height)
+        info_table.drawOn(p, 40, y)
+        y -= info_table._height + 10
+
+        # 📦 Таблица товаров
+        y =  460
+
+        headers = ["QTY", "Handling", "PKG", "WT", "HM", "COMMODITY DESCRIPTION", "DIMS", "CLASS", "NMFC"]
+        col_widths = [40, 60, 60, 40, 30, 160, 60, 40, 40]
+
+        commodities = data.get("commodities", [])
+        table_data = [headers]
+        total_weight = 0
+
+        for item in commodities:
+            wt = float(item.get("wt", 0) or 0)
+            total_weight += wt
+            row = [
+                item.get("qty", ""),
+                item.get("handling", ""),
+                item.get("pkg", ""),
+                wt,
+                item.get("hm", ""),
+                item.get("description", ""),
+                item.get("dims", ""),
+                item.get("class", ""),
+                item.get("nmfc", "")
+            ]
+            table_data.append(row)
+
+        # ✅ Добавляем строку Total
+        table_data.append(['', '', '', f"{total_weight:.1f}", '', 'TOTAL', '', '', ''])
+
+        num_rows = len(table_data)
+
+        commodity_table = Table(table_data, colWidths=col_widths)
+        commodity_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('GRID', (0, 0), (-1, 0), 0.5, colors.black),  # 🔲 только заголовку
+
+            ('BOX', (0, 1), (-1, -1), 0.5, colors.black),  # 🔲 внешняя рамка данных
+            ('INNERGRID', (0, 1), (-1, -1), 0, colors.white),  # ⛔ нет внутренних
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+
+            # 🟨 Стиль последней строки
+            ('BACKGROUND', (0, num_rows - 1), (-1, num_rows - 1), colors.lightgrey),
+            ('FONTNAME', (0, num_rows - 1), (-1, num_rows - 1), 'Helvetica-Bold'),
+            ('GRID', (0, num_rows - 1), (-1, num_rows - 1), 0.5, colors.black),
+        ]))
+        commodity_table.wrapOn(p, width, height)
+        commodity_table.drawOn(p, 40, y)  # 👈 Просто y, без минуса!
+
+
+
+        # ✅ Завершаем PDF
         p.showPage()
         p.save()
-        return response
+        buffer.seek(0)
 
-    return HttpResponse(status=400)
+        return HttpResponse(buffer, content_type="application/pdf", headers={
+            'Content-Disposition': f'attachment; filename="BOL_{data.get("bolNumber", "00000")}.pdf"'
+        })
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+BOL_COUNTER_FILE = os.path.join(settings.BASE_DIR, 'bol_counter.json')
+
+
+@csrf_exempt
+def get_bol_counters(request):
+    if request.method == 'GET':
+        if not os.path.exists(BOL_COUNTER_FILE):
+            with open(BOL_COUNTER_FILE, 'w') as f:
+                json.dump({"bol": 1000, "load": 2000}, f)
+
+        with open(BOL_COUNTER_FILE, 'r') as f:
+            data = json.load(f)
+        return JsonResponse(data)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+@csrf_exempt
+def increment_bol_counters(request):
+    if request.method == 'POST':
+        # ✅ Если файл не существует, создаём его с начальными значениями
+        if not os.path.exists(BOL_COUNTER_FILE):
+            with open(BOL_COUNTER_FILE, 'w') as f:
+                json.dump({"bol": 1000, "load": 2000}, f)
+
+        # ✅ Читаем и обновляем
+        with open(BOL_COUNTER_FILE, 'r+') as f:
+            data = json.load(f)
+            data["bol"] += 1
+            data["load"] += 1
+            f.seek(0)
+            json.dump(data, f, indent=2)
+            f.truncate()
+
+        return JsonResponse({"status": "updated", "bol": data["bol"], "load": data["load"]})
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -1458,3 +1648,26 @@ def kanban_board(request):
         "stages": stages,
         "grouped_pipeline": grouped
     })
+
+
+@csrf_exempt
+def get_clients_grouped(request):
+    if request.method == "GET":
+        suppliers = Client.objects.filter(client_type='suppliers').values("id", "name")
+        buyers = Client.objects.filter(client_type='buyers').values("id", "name")
+        return JsonResponse({
+            "suppliers": list(suppliers),
+            "buyers": list(buyers)
+        })
+
+def get_companies_by_type(request):
+    suppliers = Company.objects.filter(contacts__company_type="suppliers").distinct()
+    buyers = Company.objects.filter(contacts__company_type="buyers").distinct()
+    hauler = Company.objects.filter(contacts__company_type="hauler").distinct()
+
+    data = {
+        "suppliers": [{"id": c.id, "name": c.name} for c in suppliers],
+        "buyers": [{"id": c.id, "name": c.name} for c in buyers],
+        "hauler": [{"id": c.id, "name": c.name} for c in hauler],
+    }
+    return JsonResponse(data)
