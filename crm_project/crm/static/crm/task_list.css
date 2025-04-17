@@ -360,16 +360,17 @@
 }
 
 /* Modal window BOL */
-
 .modal {
   display: none;
   position: fixed;
   z-index: 999;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%); /* Центрирование */
-  width: 80%;
-  max-width: 900px;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 1200px;
+  max-height: 90vh;           /* 🔥 Ограничиваем по высоте */
+  overflow-y: auto;           /* 🔥 Если не влезает — скроллим */
   background-color: rgba(255,255,255, 0.95);
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   border-radius: 15px;
@@ -379,13 +380,12 @@
 
 .modal-content {
   background-color: #fefefe;
-  margin: auto;
   padding: 30px;
   border-radius: 15px;
-  width: 80%;
-  max-width: 900px;
+  width: 100%;
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   animation: fadeIn 0.3s;
+  box-sizing: border-box;     /* 🔥 Чтобы padding не ломал ширину */
 }
 
 @keyframes fadeIn {
