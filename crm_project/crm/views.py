@@ -1428,7 +1428,7 @@ def generate_bol_pdf(request):
         p.drawCentredString(width / 2, height - 45, "BILL OF LADING")
 
         # 📋 Основная информация
-        y = height - 280
+        info_y = height - 280
         p.setFont("Helvetica", 10)
 
         def draw_line(label, value):
@@ -1480,8 +1480,11 @@ def generate_bol_pdf(request):
 
         ]
 
+        info_col_widths = [285, 285]
+        info_table_width = sum(info_col_widths)
+        x_info = (width - info_table_width) / 2  # Центрируем по ширине страницы
 
-        info_table = Table(info_data, colWidths=[285, 285])
+        info_table = Table(info_data, colWidths=info_col_widths)
         info_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),  # SHIP FROM
             ('BACKGROUND', (0, 2), (-1, 2), colors.lightgrey),  # SHIP TO / REFERENCES
@@ -1498,15 +1501,16 @@ def generate_bol_pdf(request):
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black)
         ]))
         info_table.wrapOn(p, width, height)
-        info_table.drawOn(p, 40, y)
-        y -= info_table._height + 10
+        info_table.drawOn(p, x_info, info_y)
+
 
         # 📦 Таблица товаров
-        y =  460
+        y = info_y - info_table._height + 120
+
+        col_widths = [50, 60, 60, 50, 35, 170, 60, 40, 40]
+        table_width = sum(col_widths)
 
         headers = ["QTY", "Handling", "PKG", "WT", "HM", "COMMODITY DESCRIPTION", "DIMS", "CLASS", "NMFC"]
-        col_widths = [40, 60, 60, 40, 30, 160, 60, 40, 40]
-
         commodities = data.get("commodities", [])
         table_data = [headers]
         total_weight = 0
@@ -1527,34 +1531,36 @@ def generate_bol_pdf(request):
             ]
             table_data.append(row)
 
-        # ✅ Добавляем строку Total
+        # 👉 добавляем строку TOTAL
         table_data.append(['', '', '', f"{total_weight:.1f}", '', 'TOTAL', '', '', ''])
-
         num_rows = len(table_data)
 
+        # 👉 создаём таблицу
         commodity_table = Table(table_data, colWidths=col_widths)
         commodity_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),  # заголовки
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 9),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-            ('GRID', (0, 0), (-1, 0), 0.5, colors.black),  # 🔲 только заголовку
+            ('GRID', (0, 0), (-1, 0), 0.5, colors.black),
 
-            ('BOX', (0, 1), (-1, -1), 0.5, colors.black),  # 🔲 внешняя рамка данных
-            ('INNERGRID', (0, 1), (-1, -1), 0, colors.white),  # ⛔ нет внутренних
+            ('BOX', (0, 1), (-1, -1), 0.5, colors.black),  # внешняя рамка
+            ('INNERGRID', (0, 1), (-1, -1), 0, colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 9),
 
-            # 🟨 Стиль последней строки
+            # 👉 строка TOTAL — жирная и серая
             ('BACKGROUND', (0, num_rows - 1), (-1, num_rows - 1), colors.lightgrey),
             ('FONTNAME', (0, num_rows - 1), (-1, num_rows - 1), 'Helvetica-Bold'),
             ('GRID', (0, num_rows - 1), (-1, num_rows - 1), 0.5, colors.black),
         ]))
-        commodity_table.wrapOn(p, width, height)
-        commodity_table.drawOn(p, 40, y)  # 👈 Просто y, без минуса!
 
+        # 👉 позиционирование по центру страницы
+        x = (width - table_width) / 2  # это ключ!
+        commodity_table.wrapOn(p, width, height)
+        commodity_table.drawOn(p, x, y)
 
 
         # ✅ Завершаем PDF
