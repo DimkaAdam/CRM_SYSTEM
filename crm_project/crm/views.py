@@ -1438,7 +1438,9 @@ def generate_bol_pdf(request):
 
         freight = data.get("freightTerms", "").strip().lower()
         checkbox_line = (
-            "Freight Charge Terms: (freight charges are prepaid unless marked otherwise)\n\n"
+            "Freight Charge Terms:\n"
+            "(freight charges are prepaid unless marked otherwise)\n\n"
+        
             f"Prepaid {'✓' if freight == 'prepaid' else ''}________     "
             f"Collect {'✓' if freight == 'collect' else ''}________     "
             f"3rd Party {'✓' if freight == '3rd party' else ''}________"
@@ -1562,15 +1564,64 @@ def generate_bol_pdf(request):
         commodity_table.wrapOn(p, width, height)
         commodity_table.drawOn(p, x, y)
 
+    # 📦 Таблица состояния загрузки
+    coll_widths = [370, 100, 100]
+    table3_width = sum(coll_widths)
 
-        # ✅ Завершаем PDF
-        p.showPage()
-        p.save()
-        buffer.seek(0)
+    # ✅ Данные чекбоксов
+    trailer_loaded = data.get("trailer_loaded", "").strip().lower()
+    freight_counted = data.get("freight_counted", "").strip().lower()
 
-        return HttpResponse(buffer, content_type="application/pdf", headers={
-            'Content-Disposition': f'attachment; filename="BOL_{data.get("bolNumber", "00000")}.pdf"'
-        })
+    # ✅ Текст с галочками
+    check_trailer_load = (
+        f"Trailer Loaded:\n\n"
+        f"By Shipper {'✓' if trailer_loaded == 'shipper' else ''} ____\n"
+        f"By Driver  {'✓' if trailer_loaded == 'driver' else ''} ____"
+    )
+
+    check_freight_counted = (
+        f"Freight Counted:\n\n"
+        f"By Shipper {'✓' if freight_counted == 'shipper' else ''} ____\n"
+        f"By Driver  {'✓' if freight_counted == 'driver' else ''} ____"
+    )
+
+    # ✅ Заголовки и данные
+    table3_data = [
+        ["", "TRAILER LOADED", "FREIGHT COUNTED"],
+        ["", check_trailer_load, check_freight_counted]
+    ]
+
+    # 👉 создаём таблицу
+    load_table = Table(table3_data, colWidths=coll_widths)
+    load_table.setStyle(TableStyle([
+        ('BACKGROUND', (1, 0), (-1, 0), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+    ]))
+
+    # 📌 Позиция для новой таблицы (ниже)
+    y2 = y - commodity_table._height - 30  # отступ вниз
+    x2 = (width - table3_width) / 2
+
+    load_table.wrapOn(p, width, height)
+    load_table.drawOn(p, x2, y2)
+
+
+# ✅ Завершаем PDF
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+
+    return HttpResponse(buffer, content_type="application/pdf", headers={
+        'Content-Disposition': f'attachment; filename="BOL_{data.get("bolNumber", "00000")}.pdf"'
+    })
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
