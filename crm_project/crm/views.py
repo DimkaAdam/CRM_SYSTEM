@@ -1730,10 +1730,13 @@ BOL_COUNTER_FILE = os.path.join(settings.BASE_DIR, 'bol_counter.json')
 
 @csrf_exempt
 def get_bol_counters(request):
+    print("📍 BOL_COUNTER_FILE path:", BOL_COUNTER_FILE)
+
     if request.method == 'GET':
         if not os.path.exists(BOL_COUNTER_FILE):
             with open(BOL_COUNTER_FILE, 'w') as f:
                 json.dump({"bol": 1000, "load": 2000}, f)
+
 
         with open(BOL_COUNTER_FILE, 'r') as f:
             data = json.load(f)
