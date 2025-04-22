@@ -1,8 +1,20 @@
 document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('generate-bol-btn').addEventListener('click', function() {
-        document.getElementById('bol-modal').style.display = 'block';
-        loadDealDetails();
-    });
+    const modal = document.getElementById('bol-modal');
+    modal.style.display = 'block';
+
+    // ⏳ Проверяем, что поля появились
+    const checkFieldsReady = setInterval(() => {
+        const bolInput = document.getElementById('bol-number');
+        const loadInput = document.getElementById('load-number');
+
+        if (bolInput && loadInput) {
+            clearInterval(checkFieldsReady);
+            console.log("✅ Поля BOL и LOAD готовы в DOM");
+            loadDealDetails();
+        }
+    }, 50); // Проверяем каждые 50 мс
+});
 document.addEventListener('click', function (e) {
     if (e.target && e.target.id === 'add-commodity') {
         const tbody = document.getElementById('commodity-body');
@@ -343,7 +355,8 @@ document.addEventListener('click', function (e) {
 
     // Автоматическое подтягивание адреса при выборе компании
     document.getElementById('bolSupplier').addEventListener('change', function() {
-        document.getElementById('ship-to-address').value = this.options[this.selectedIndex].dataset.address;
+        document.getElementById('from-address').value = this.options[this.selectedIndex].dataset.address;
+
     });
 
     // Генерация PDF BOL
@@ -376,12 +389,16 @@ function setBuyerAddress(selectElement) {
 }
 
 // ✅ Загрузка данных сделки (используется при открытии модалки)
+
 function loadDealDetails() {
+    console.log("✅ loadDealDetails вызвана");
     let selectedDealId = getSelectedDealId();
     if (!selectedDealId) {
         alert("❌ Выберите сделку перед генерацией BOL!");
         return;
     }
+
+
 
     fetch(`/deals/${selectedDealId}/`)
         .then(res => res.json())
@@ -405,9 +422,38 @@ function loadDealDetails() {
             fetch('/api/bol-counters/')
                 .then(res => res.json())
                 .then(counter => {
-                    document.getElementById('bol-number').value = `BOL-${String(counter.bol).padStart(5, '0')}`;
-                    document.getElementById('load-number').value = `LOAD-${String(counter.load).padStart(5, '0')}`;
+                    const bolInput = document.getElementById('bol-number');
+                    const loadInput = document.getElementById('load-number');
+
+                    if (bolInput) {
+                        bolInput.value = `BOL-${String(counter.bol).padStart(5, '0')}`;
+                    } else {
+                        console.warn("⚠️ bol-number input not found in DOM!");
+                    }
+
+                    if (loadInput) {
+                        loadInput.value = `LOAD-${String(counter.load).padStart(5, '0')}`;
+                    } else {
+                        console.warn("⚠️ load-number input not found in DOM!");
+                    }
                 });
+
+                fetch('/api/bol-counters/')
+                    .then(res => res.json())
+                    .then(counter => {
+                        const bolInput = document.getElementById('bol-number');
+                        const loadInput = document.getElementById('load-number');
+
+                        if (bolInput) {
+                            bolInput.value = `BOL-${String(counter.bol).padStart(5, '0')}`;
+                            console.log("🧪 Установлен BOL:", bolInput.value);
+                        }
+
+                        if (loadInput) {
+                            loadInput.value = `LOAD-${String(counter.load).padStart(5, '0')}`;
+                            console.log("🧪 Установлен LOAD:", loadInput.value);
+                        }
+                    });
 
             // Остальное
             document.getElementById('ship-date').value = data.date;

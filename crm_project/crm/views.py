@@ -1613,17 +1613,116 @@ def generate_bol_pdf(request):
     load_table.wrapOn(p, width, height)
     load_table.drawOn(p, x2, y2)
 
+    # Подписи слева
+    shipper1 = (
+        "Shipper Signature/Date\n\n"
+        "Shipper: ____________________     Date: _______________"
+    )
 
-# ✅ Завершаем PDF
+    carrier1 = (
+        "Carrier Signature/Pickup Date\n\n"
+        "Carrier: ____________________     Date: _______________"
+    )
+
+    signarure2 = (
+
+        "Receiver Signature: ________________________________\n\n"
+        "Print Name: ________________________________________\n\n"
+        "Exceptions: _________________________________________\n\n"
+        "_____________________________________________________\n"
+    )
+
+    # 🔹 Содержимое под Pickup
+    pickup_table = (
+        "                Time             Shipper\n"
+        "                                     Initials\n"
+        "       Appt: _____           _______\n"
+        "   Time In: _____           _______\n"
+        "Time Out: _____           _______\n"
+    )
+
+    delivery_table = (
+        "                Time             Receiver\n"
+        "                                     Initials\n"
+        "       Appt: _____           _______\n"
+        "   Time In: _____           _______\n"
+        "Time Out: _____           _______\n"
+    )
+    # Табличные данные
+    signature_data = [
+        [shipper1, carrier1],  # 1 строка: 2 графы + пустая
+
+    ]
+
+    # Ширины колонок — при необходимости подправь
+    col_widths = [285, 285]
+
+    # Создание таблицы
+    signature_table = Table(signature_data, colWidths=col_widths)
+
+    # Применяем объединения и стиль
+    signature_table.setStyle(TableStyle([
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+    ]))
+
+    y_sign = y2 - load_table._height + 20  # Или где тебе нужно
+    x_sign = (width - sum(col_widths)) / 2
+
+    signature_table.wrapOn(p, width, height)
+    signature_table.drawOn(p, x_sign, y_sign)
+
+    # Табличные данные
+    time_data = [
+        ["PICKUP", "DELIVERY", signarure2],
+        ["Shipper Initials", "Receiver Initials", ''],
+        [pickup_table, delivery_table, '']
+    ]
+
+    col1_widths = [142.5,142.5,285]
+
+    time_table = Table(time_data, colWidths=col1_widths)
+
+    time_table.setStyle(TableStyle([
+        ('SPAN', (2, 0), (2, 2)),
+        ('BACKGROUND', (0, 0), (1, 0), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+
+
+
+    ]))
+
+    y_sign = y2 - signature_table._height - 150  # Или где тебе нужно
+    x_sign = (width - sum(col1_widths)) / 2
+
+    time_table.wrapOn(p, width, height)
+    time_table.drawOn(p, x_sign, y_sign)
+
+    # ✅ Завершаем PDF
     p.showPage()
     p.save()
     buffer.seek(0)
+
 
     return HttpResponse(buffer, content_type="application/pdf", headers={
         'Content-Disposition': f'attachment; filename="BOL_{data.get("bolNumber", "00000")}.pdf"'
     })
 
-    return JsonResponse({"error": "Invalid request"}, status=400)
+
 
 
 BOL_COUNTER_FILE = os.path.join(settings.BASE_DIR, 'bol_counter.json')
@@ -1661,8 +1760,8 @@ def increment_bol_counters(request):
             f.truncate()
 
         return JsonResponse({"status": "updated", "bol": data["bol"], "load": data["load"]})
-
-    return JsonResponse({"error": "Invalid request"}, status=400)
+    else:
+        return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 
