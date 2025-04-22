@@ -392,75 +392,36 @@ function setBuyerAddress(selectElement) {
 
 function loadDealDetails() {
     console.log("✅ loadDealDetails вызвана");
-    let selectedDealId = getSelectedDealId();
-    if (!selectedDealId) {
-        alert("❌ Выберите сделку перед генерацией BOL!");
-        return;
-    }
 
+    // 🧹 Очистим форму, если нужно
+    document.getElementById('bol-form').reset();
 
-
-    fetch(`/deals/${selectedDealId}/`)
+    // 🧾 Загружаем auto-инкремент BOL и LOAD
+    fetch('/api/bol-counters/')
         .then(res => res.json())
-        .then(data => {
-            // SHIP FROM
-            let supplierSelect = document.getElementById('bolSupplier');
-            supplierSelect.value = data.supplier_id;
+        .then(counter => {
+            const bolInput = document.getElementById('bol-number');
+            const loadInput = document.getElementById('load-number');
 
-            // SHIP TO
-            let buyerSelect = document.getElementById('bolBuyer');
-            buyerSelect.innerHTML = `<option value="${data.buyer_id}" selected>${data.buyer}</option>`;
-            document.getElementById('to-address').value = data.buyer_address || "";
+            if (bolInput) {
+                bolInput.value = `${String(counter.bol).padStart(5, '0')}`;
+                console.log("🧪 Установлен BOL:", bolInput.value);
+            } else {
+                console.warn("⚠️ bol-number input not found in DOM!");
+            }
 
-            // Carrier
-            let carrierSelect = document.getElementById('carrier');
-            carrierSelect.value = data.transport_company_id;
-
-
-            // Номера
-            // Получаем autoинкремент BOL/LOAD номеров
-            fetch('/api/bol-counters/')
-                .then(res => res.json())
-                .then(counter => {
-                    const bolInput = document.getElementById('bol-number');
-                    const loadInput = document.getElementById('load-number');
-
-                    if (bolInput) {
-                        bolInput.value = `BOL-${String(counter.bol).padStart(5, '0')}`;
-                    } else {
-                        console.warn("⚠️ bol-number input not found in DOM!");
-                    }
-
-                    if (loadInput) {
-                        loadInput.value = `LOAD-${String(counter.load).padStart(5, '0')}`;
-                    } else {
-                        console.warn("⚠️ load-number input not found in DOM!");
-                    }
-                });
-
-                fetch('/api/bol-counters/')
-                    .then(res => res.json())
-                    .then(counter => {
-                        const bolInput = document.getElementById('bol-number');
-                        const loadInput = document.getElementById('load-number');
-
-                        if (bolInput) {
-                            bolInput.value = `BOL-${String(counter.bol).padStart(5, '0')}`;
-                            console.log("🧪 Установлен BOL:", bolInput.value);
-                        }
-
-                        if (loadInput) {
-                            loadInput.value = `LOAD-${String(counter.load).padStart(5, '0')}`;
-                            console.log("🧪 Установлен LOAD:", loadInput.value);
-                        }
-                    });
-
-            // Остальное
-            document.getElementById('ship-date').value = data.date;
-            document.getElementById('po-number').value = data.scale_ticket || "";
+            if (loadInput) {
+                loadInput.value = `${String(counter.load).padStart(5, '0')}`;
+                console.log("🧪 Установлен LOAD:", loadInput.value);
+            } else {
+                console.warn("⚠️ load-number input not found in DOM!");
+            }
         })
-        .catch(error => console.error('❌ Ошибка загрузки сделки:', error));
+        .catch(error => {
+            console.error("❌ Ошибка получения номеров BOL/LOAD:", error);
+        });
 }
+
 
 // Получаем выбранную сделку из таблицы
 function getSelectedDealId() {
