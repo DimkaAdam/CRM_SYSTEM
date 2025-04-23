@@ -1427,6 +1427,11 @@ def generate_bol_pdf(request):
         p.setFont("Helvetica-Bold", 12)
         p.drawCentredString(width / 2, height - 45, "BILL OF LADING")
 
+        # 🔹 BOL Number под заголовком (с отступом вниз)
+        bol_number = data.get("bolNumber", "BOL-00000")
+        p.setFont("Helvetica-Bold", 12)
+        p.drawCentredString(width / 2, height - 65, f"{bol_number}")
+
         # 📋 Основная информация
         info_y = height - 280
         p.setFont("Helvetica", 10)

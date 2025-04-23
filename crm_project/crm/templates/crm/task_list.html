@@ -168,20 +168,27 @@
       <label for="po-number">PO Number:</label>
       <input type="text" id="po-number" name="po_number">
 
-      <!-- Freight Terms -->
-      <label>Freight Charge Terms:</label>
-      <label><input type="radio" name="freight" value="Prepaid" required> Prepaid</label>
-      <label><input type="radio" name="freight" value="Collect"> Collect</label>
-      <label><input type="radio" name="freight" value="3rd Party"> 3rd Party</label>
+      <!-- Freight Charge Terms -->
+      <div style="margin-bottom: 10px;">
+        <strong>Freight Charge Terms:</strong><br>
+        <label><input type="radio" name="freight" value="Prepaid"> Prepaid</label><br>
+        <label><input type="radio" name="freight" value="Collect"> Collect</label><br>
+        <label><input type="radio" name="freight" value="3rd Party"> 3rd Party</label>
+      </div>
 
-      <!-- Trailer / Freight checkboxes -->
-      <label>Trailer Loaded:</label>
-      <label><input type="radio" name="trailer_loaded" value="Shipper"> Trailer Loaded by Shipper</label>
-      <label><input type="radio" name="trailer_loaded" value="Driver"> Trailer Loaded by Driver</label>
+      <!-- Trailer Loaded -->
+      <div style="margin-bottom: 10px;">
+        <strong>Trailer Loaded:</strong><br>
+        <label><input type="radio" name="trailer_loaded" value="Shipper"> Trailer Loaded by Shipper</label><br>
+        <label><input type="radio" name="trailer_loaded" value="Driver"> Trailer Loaded by Driver</label>
+      </div>
 
-      <label>Freight Counted:</label>
-      <label><input type="radio" name="freight_counted" value="Shipper"> Freight Counted by Shipper</label>
-      <label><input type="radio" name="freight_counted" value="Driver"> Freight Counted by Driver</label>
+      <!-- Freight Counted -->
+      <div style="margin-bottom: 10px;">
+        <strong>Freight Counted:</strong><br>
+        <label><input type="radio" name="freight_counted" value="Shipper"> Freight Counted by Shipper</label><br>
+        <label><input type="radio" name="freight_counted" value="Driver"> Freight Counted by Driver</label>
+      </div>
 
       <hr>
 
