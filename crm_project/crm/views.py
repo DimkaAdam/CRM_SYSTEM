@@ -1411,7 +1411,7 @@ def generate_bol_pdf(request):
         # 📦 Логотип и название компании
         logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'company_logo.png')
         if os.path.exists(logo_path):
-            p.drawImage(ImageReader(logo_path), 40, height - 80, width=70, height=50, mask='auto')
+            p.drawImage(ImageReader(logo_path), 40, height - 75, width=70, height=50, mask='auto')
 
         # 🏢 Название компании и адрес справа
         p.setFont("Helvetica-Bold", 10)
@@ -1523,7 +1523,7 @@ def generate_bol_pdf(request):
         total_weight = 0
 
         for item in commodities:
-            wt = float(item.get("wt", 0) or 0)
+            wt = float(item.get("weight", 0) or 0)
             total_weight += wt
             row = [
                 item.get("qty", ""),
