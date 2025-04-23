@@ -432,15 +432,15 @@ function getSelectedDealId() {
 // Генерация PDF
 function generateBOLPDF() {
     let bolData = {
-        shipFrom: document.getElementById('bolSupplier').value,
+        shipFrom: document.querySelector('#bolSupplier option:checked')?.text || '',
         shipFromAddress: document.getElementById('from-address').value,
-        shipTo: document.getElementById('bolBuyer').value,
+        shipTo: document.querySelector('#bolBuyer option:checked')?.text || '',
         shipToAddress: document.getElementById('to-address').value,
         bolNumber: document.getElementById('bol-number').value,
         loadNumber: document.getElementById('load-number').value,
         shipDate: document.getElementById('ship-date').value,
         dueDate: document.getElementById('due-date').value,
-        carrier: document.getElementById('carrier').value,
+        carrier: document.querySelector('#carrier option:checked')?.text || '',
         poNumber: document.getElementById('po-number').value,
         freightTerms: document.querySelector('input[name="freight"]:checked').value,
         commodities:[]
