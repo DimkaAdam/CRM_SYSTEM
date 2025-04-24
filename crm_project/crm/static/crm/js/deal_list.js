@@ -475,9 +475,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// 📦 Автозаполнение цены поставщика по supplier + grade
-document.getElementById('supplier').addEventListener('change', fetchSupplierPrice);
-document.getElementById('grade').addEventListener('change', fetchSupplierPrice);
+// 📦 Автозаполнение цены поставщика и покупателя по supplier / buyer + grade
+document.getElementById('supplier').addEventListener('change', () => {
+    fetchSupplierPrice();
+    fetchBuyerPrice();
+});
+document.getElementById('buyer').addEventListener('change', fetchBuyerPrice);
+document.getElementById('grade').addEventListener('change', () => {
+    fetchSupplierPrice();
+    fetchBuyerPrice();
+});
 
 function fetchSupplierPrice() {
     const supplierId = document.getElementById('supplier').value;
@@ -495,5 +502,21 @@ function fetchSupplierPrice() {
                 }
             })
             .catch(error => console.error('Ошибка при получении цены:', error));
+    }
+}
+
+// 🔸 Получение цены от покупателя
+function fetchBuyerPrice() {
+    const buyerId = document.getElementById('buyer').value;
+    const grade = document.getElementById('grade').value;
+
+    if (buyerId && grade) {
+        fetch(`/api/get_buyer_price/?buyer_id=${buyerId}&grade=${grade}`)
+            .then(response => response.json())
+            .then(data => {
+                const priceField = document.getElementById('buyer_price');
+                priceField.value = data.price || '';
+            })
+            .catch(error => console.error('Ошибка при получении цены покупателя:', error));
     }
 }

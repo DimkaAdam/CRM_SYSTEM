@@ -63,6 +63,7 @@ urlpatterns = [
     path('contacts/add/<int:company_id>/', add_contact, name='add_contact'),
     path('api/licence-plates/', get_licence_plates, name='get_licence_plates'),
     path('api/get_price/', views.get_price_by_supplier_and_grade, name='get_price_by_supplier_and_grade'),
+    path('api/get_buyer_price/', views.get_price_by_buyer_and_grade, name='get_price_by_buyer_and_grade'),
 
 
 
