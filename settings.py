@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # Разрешаем запросы с любого адреса (для тестов)
@@ -124,7 +125,7 @@ USE_TZ = True
 # settings.py
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'crm', 'static')]
 
 
 # ✅ Пути для шаблонов Django
