@@ -316,7 +316,7 @@ def deal_list(request):
     # Получаем текущий месяц и год
     print("DEBUG: datetime is", datetime)
     today_date = datetime.today()  # ✅ Теперь работает
-
+    companies = Company.objects.all()
     current_month = today_date.month
     current_year = today_date.year
 
@@ -331,6 +331,15 @@ def deal_list(request):
     # Получаем параметры фильтра из запроса
     month = request.GET.get('month', str(current_month).zfill(2))  # Текущий месяц по умолчанию
     year = request.GET.get('year', str(current_year))  # Текущий год по умолчанию
+
+    selected_company_id = request.GET.get('company')
+
+    if selected_company_id:
+        deals = deals.filter(
+            Q(supplier__id=selected_company_id) |
+            Q(buyer__id=selected_company_id) |
+            Q(transport_company__id=selected_company_id)
+        )
 
     # Применяем фильтры только если месяц и год указаны
     if month and year:
@@ -383,6 +392,8 @@ def deal_list(request):
         'setting': settings,
         'form': form,
         'hauler': hauler,
+        'selected_company_id': int(selected_company_id) if selected_company_id else None,
+        'companies': companies,
     }
 
     # Рендерим страницу с переданным контекстом

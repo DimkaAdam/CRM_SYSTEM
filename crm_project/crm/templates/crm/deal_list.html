@@ -19,6 +19,8 @@
             </button>
         </div>
 
+
+
         <!-- Фильтры для месяца и года -->
         <form method="get" action="{% url 'deal_list' %}" class="filter-form">
             <div class="filter-container">
@@ -33,6 +35,16 @@
                     </select>
                 </div>
 
+                <div class="filter-item">
+                    <select name="company" id="company">
+                        <option value="">All Companies</option>
+                        {% for company in companies %}
+                            <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}>
+                                {{ company.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="filter-item">
                     <select name="year" id="year">
                         <option value="" {% if not year %}selected{% endif %}>Year</option>
