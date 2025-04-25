@@ -186,7 +186,7 @@ def toggle_pickup(request, id):
         import json
         company = get_object_or_404(Company, id=id)
         data = json.loads(request.body)
-        company.pickup_requested = data.get("pickup_requested", False)
+        company.pickup_requested = data.get('pickup_requested', False)
         company.save()
         return JsonResponse({"status": "ok"})
     return JsonResponse({"status": "error"}, status=400)
@@ -1496,7 +1496,7 @@ def generate_bol_pdf(request):
         )
 
         references_info = (
-            f"BOL # {data.get('bolNumber', "")}\n"
+            f"BOL # {data.get('bolNumber', '')}\n"
             f"Load # {data.get('loadNumber', '')}\n"
             f"PO Number: {data.get('poNumber', '')}"
         )
@@ -1544,7 +1544,7 @@ def generate_bol_pdf(request):
         table_width = sum(col_widths)
 
         headers = ["QTY", "Handling", "PKG", "WT", "HM", "COMMODITY DESCRIPTION", "DIMS", "CLASS", "NMFC"]
-        commodities = data.get("commodities", [])
+        commodities = data.get('commodities', [])
         table_data = [headers]
         total_weight = 0
 
@@ -1600,8 +1600,8 @@ def generate_bol_pdf(request):
     table3_width = sum(coll_widths)
 
     # ✅ Данные чекбоксов
-    trailer_loaded = data.get("trailer_loaded", "").strip().lower()
-    freight_counted = data.get("freight_counted", "").strip().lower()
+    trailer_loaded = data.get('trailer_loaded', '').strip().lower()
+    freight_counted = data.get('freight_counted', '').strip().lower()
 
     # ✅ Текст с галочками
     check_trailer_load = (
@@ -1748,12 +1748,9 @@ def generate_bol_pdf(request):
     p.save()
     buffer.seek(0)
 
-
     return HttpResponse(buffer, content_type="application/pdf", headers={
-        'Content-Disposition': f'attachment; filename="BOL_{data.get("bolNumber", "00000")}.pdf"'
+        "Content-Disposition": f"attachment; filename='BOL_{data.get('bolNumber', '00000')}.pdf'"
     })
-
-
 
 
 BOL_COUNTER_FILE = os.path.join(settings.BASE_DIR, 'bol_counter.json')
@@ -1806,9 +1803,9 @@ def update_stage(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            pipeline_id = data.get("id")
-            new_stage = data.get("stage")
-            new_order = data.get("order", 0)
+            pipeline_id = data.get('id')
+            new_stage = data.get('stage')
+            new_order = data.get('order', 0)
 
             pipeline = PipeLine.objects.get(id=pipeline_id)
             pipeline.stage = new_stage
