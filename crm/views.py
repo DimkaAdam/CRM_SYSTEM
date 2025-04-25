@@ -1485,18 +1485,18 @@ def generate_bol_pdf(request):
 
         supp_info = (
             f"{data.get('shipFrom', '')}\n"
-            f"{data.get("shipFromAddress", '')}\n"
+            f"{data.get('shipFromAddress', '')}\n"
 
         )
 
         buyer_info = (
             f"{data.get('shipTo', '')}\n"
-            f"{data.get("shipToAddress", '')}\n"
+            f"{data.get('shipToAddress', '')}\n"
 
         )
 
         references_info = (
-            f"BOL # {data.get("bolNumber", "")}\n"
+            f"BOL # {data.get('bolNumber', "")}\n"
             f"Load # {data.get('loadNumber', '')}\n"
             f"PO Number: {data.get('poNumber', '')}"
         )
