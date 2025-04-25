@@ -16,7 +16,7 @@ from decouple import config
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -57,15 +57,13 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True  # Разрешаем запросы с любого адреса (для тестов)
 
-ROOT_URLCONF = 'crm_project.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'crm_project', 'crm', 'templates'),  # Общая папка шаблонов
-            os.path.join(BASE_DIR, 'crm_project', 'crm', 'templates', 'crm'),  # Вложенная папка
-            os.path.join(BASE_DIR, 'crm_project', 'crm', 'templates'),
+            os.path.join(BASE_DIR, "crm", "templates"),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -78,7 +76,7 @@ TEMPLATES = [
         },
     },
 ]
-WSGI_APPLICATION = 'crm_project.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 
 # Database

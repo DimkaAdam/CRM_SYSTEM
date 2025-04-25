@@ -48,6 +48,10 @@ from .models import Event
 
 
 
+from django.conf import settings
+print("📦 Current database path:", settings.DATABASES['default']['NAME'])
+
+
 def index(request):
     return render(request, 'crm/index.html')
 

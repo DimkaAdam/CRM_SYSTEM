@@ -1,0 +1,6 @@
+Date,Customer,Grade,Ticket,Truck,Net,Price,Amount,GST,Total
+06-Sep,Pitt Meadows Bottle,OCC,103559,153,2.580,$125.00,$322.50,$16.13,$338.63
+06-Sep,Pitt Meadows Bottle,OCC,103564,153,1.630,$125.00,$203.75,$10.19,$213.94
+13-Sep,Pitt Meadows Bottle,OCC,103766,WB-3921,1.410,$125.00,$176.25,$8.81,$185.06
+
+,,,,Totals,5.620,,$702.50,$35.13,$737.63
