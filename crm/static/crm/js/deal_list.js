@@ -18,6 +18,19 @@ const csrftoken = getCookie('csrftoken');
 
 // Открыть боковую панель для создания новой сделки
 document.getElementById('addNewDealBtn').addEventListener('click', function () {
+
+    fetch('/api/scale-ticket-counters/')
+    .then(response => response.json())
+    .then(data => {
+        const input = document.getElementById("scale_ticket");
+        const ticketNumber = data['scale_ticket'];
+        if (input && data["scale_ticket"] !== undefined) {
+            input.value = data["scale_ticket"];
+        }
+    })
+    .catch(error => console.error("Ошибка при получении номера Scale Ticket:", error));
+
+
     document.getElementById('dealFormSidebar').style.width = '400px';
 });
 
@@ -101,6 +114,14 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
         `;
         document.getElementById('dealFormSidebar').style.width = '0';
         document.getElementById('dealForm').reset();
+
+        fetch('/api/increment_scale_ticket_counters/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        });
+
     })
     .catch(error => console.error('Error:', error));
 });

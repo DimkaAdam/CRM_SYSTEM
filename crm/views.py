@@ -704,6 +704,51 @@ def get_licence_plates(request):
     ]
     return JsonResponse({"plates": plates})
 
+
+SCALE_TICKET_COUNTER_FILE = os.path.join(settings.BASE_DIR, 'scale_ticket_counter.json')
+
+
+
+@csrf_exempt
+def get_scale_ticket_counters(request):
+
+
+    if request.method == 'GET':
+        if not os.path.exists(SCALE_TICKET_COUNTER_FILE):
+            with open(SCALE_TICKET_COUNTER_FILE, 'w') as f:
+                json.dump({"scale_ticket": 108346}, f)
+
+
+        with open(SCALE_TICKET_COUNTER_FILE, 'r') as f:
+            data = json.load(f)
+        return JsonResponse(data)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+@csrf_exempt
+def increment_scale_ticket_counters(request):
+    if request.method == 'POST':
+        # ✅ Если файл не существует, создаём его с начальными значениями
+        if not os.path.exists(SCALE_TICKET_COUNTER_FILE):
+            with open(SCALE_TICKET_COUNTER_FILE, 'w') as f:
+                json.dump({"bol": 1000, "load": 2000}, f)
+
+        # ✅ Читаем и обновляем
+        with open(SCALE_TICKET_COUNTER_FILE, 'r+') as f:
+            data = json.load(f)
+            data["scale_ticket"] += 1
+            f.seek(0)
+            json.dump(data, f, indent=2)
+            f.truncate()
+
+        return JsonResponse({"status": "updated", "scale_ticket": data["scale ticket1"]})
+    else:
+        return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+
 def sales_analytics(request):
     from django.db.models import Sum, Q
     from django.db.models.functions import ExtractMonth, ExtractYear
@@ -1226,9 +1271,34 @@ def export_scale_ticket_pdf(request):
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(80, y_position - 25, f"Total: ${total_amount:.2f}")
 
-    # 🛟 Сохранение PDF
+    # 🗂 Структура директорий
+    today = datetime.today()
+    year = today.strftime("%Y")
+    month = today.strftime("%B")  # April, May и т.д.
+    supplier_name = first_deal.supplier.name if first_deal.supplier else "Unknown Supplier"
+
+    # 📂 Путь сохранения
+    directory = os.path.join("Customers", "Supplier", supplier_name, "The Scale Ticket", year, month)
+    os.makedirs(directory, exist_ok=True)  # ✅ Создаёт путь, если его нет
+
+    # 📝 Название файла
+    filename = f"Ticket #{ticket_number}.pdf"
+    filepath = os.path.join(directory, filename)
+
+    # ✅ Завершаем PDF и перематываем буфер
     pdf.save()
     buffer.seek(0)
+
+    # 💾 Сохраняем PDF в файл
+    with open(filepath, "wb") as f:
+        f.write(buffer.getvalue())
+
+    # 📤 Возвращаем как ответ пользователю
+    response = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="Ticket # {ticket_number}.pdf"'
+    return response
+
+
 
     response = HttpResponse(buffer, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename=\"Ticket # {ticket_number}.pdf\"'
