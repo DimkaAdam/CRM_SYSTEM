@@ -742,7 +742,7 @@ def increment_scale_ticket_counters(request):
             json.dump(data, f, indent=2)
             f.truncate()
 
-        return JsonResponse({"status": "updated", "scale_ticket": data["scale ticket1"]})
+        return JsonResponse({"status": "updated", "scale_ticket": data["scale_ticket"]})
     else:
         return JsonResponse({"error": "Invalid request"}, status=400)
 
