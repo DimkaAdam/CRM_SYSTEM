@@ -115,7 +115,7 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
         document.getElementById('dealFormSidebar').style.width = '0';
         document.getElementById('dealForm').reset();
 
-        fetch('/api/increment_scale_ticket_counters/', {
+        fetch('/api/scale-ticket-counters/increment/', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrftoken

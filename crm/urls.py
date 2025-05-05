@@ -112,7 +112,7 @@ urlpatterns = [
     path("api/clients/", get_clients_grouped, name="get_clients_grouped"),
     path("api/companies-by-type/", views.get_companies_by_type),
     path('api/scale-ticket-counters/', get_scale_ticket_counters, name='get_scale_ticket_counters'),
-    path('api/scale-ticket-counters/increment/', increment_scale_ticket_counters, name='increment_scale_ticket_counters'),
+    path('api/scale-ticket-counters/increment/', views.increment_scale_ticket_counters, name='increment_scale_ticket_counters'),
 
 
 
