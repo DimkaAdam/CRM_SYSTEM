@@ -2,42 +2,41 @@
   display: none;
 }
 
-/* 📌 Основной контейнер */
 .calendar-container {
   display: flex;
-  gap: 20px;
+  flex-direction: column; /* ← вместо горизонтального ряда */
   align-items: flex-start;
+  gap: 24px;
 }
 
-/* 🍏 Мини-календарь */
+
 #mini-calendar {
-  width: 320px;
-  padding: 15px;
-  border-radius: 16px;
-  background: linear-gradient(to bottom, #f9f9f9, #e8e8e8);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  width: 300px;
+  padding: 24px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
 }
 
 #mini-calendar .calendar-header {
   display: flex;
   justify-content: space-between;
   font-weight: 600;
-  font-size: 16px;
-  margin-bottom: 10px;
+  font-size: 18px;
+  margin-bottom: 12px;
 }
 
 #mini-calendar .calendar-header button {
   background: transparent;
   border: none;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
-  color: #007aff;
-  transition: transform 0.2s ease-in-out, color 0.2s;
+  color: #08666e;
+  transition: transform 0.2s, color 0.2s;
 }
 
 #mini-calendar .calendar-header button:hover {
-  color: #0051a8;
+  color: #074c54;
   transform: scale(1.2);
 }
 
@@ -48,30 +47,28 @@
   text-align: center;
   font-size: 14px;
   font-weight: 500;
+  gap: 4px;
 }
 
 #mini-calendar .days div {
-  padding: 6px;
-  border-radius: 8px;
+  padding: 8px;
+  border-radius: 10px;
   transition: 0.2s;
   cursor: pointer;
 }
 
 #mini-calendar .days div:hover {
-  background: rgba(0, 122, 255, 0.2);
+  background: rgba(8, 102, 110, 0.1);
 }
 
 #mini-calendar .days .today {
-  background: #007aff;
+  background: #08666e;
   color: white;
   font-weight: bold;
-  box-shadow: 0 0 8px rgba(0, 122, 255, 0.5);
+  box-shadow: 0 0 10px rgba(8, 102, 110, 0.3);
 }
 
-#mini-calendar,
-#shipment-form {
-  border-radius: 16px;
-}
+
 
 /* 📅 FullCalendar */
 #calendar {
@@ -106,7 +103,7 @@
   background: #f5f5f7;
   border: none;
   border-radius: 8px;
-  color: #007aff;
+  color: #08666e;
   font-size: 14px;
   padding: 6px 12px;
   transition: 0.2s;
@@ -147,123 +144,135 @@
   height: 60px;
 }
 
-@media (max-width: 768px) {
-  .calendar-container {
-    flex-direction: column;
-    align-items: center;
-  }
 
-  #mini-calendar {
-    width: 100%;
-  }
-}
 
 #shipment-form {
-  margin-top: 20px;
-  padding: 15px;
-  border-radius: 10px;
-  background: white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  padding: 24px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  margin-top: 0;
 }
 
 #shipment-form h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-  text-align: center;
+  font-size: 20px;
+  margin-bottom: 16px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
 }
 
 #shipment-form label {
   display: block;
-  font-weight: bold;
-  margin-top: 10px;
+  margin: 10px 0 4px;
+  font-weight: 600;
 }
 
 #shipment-form select,
 #shipment-form input {
   width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  padding: 10px;
+  margin-top: 4px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #f8f8f8;
+  font-size: 14px;
 }
 
 #shipment-form button {
   width: 100%;
-  padding: 10px;
-  background: #08666e;
+  padding: 12px;
+  background: linear-gradient(to right, #6a11cb, #2575fc);
   color: white;
   font-size: 16px;
+  font-weight: 600;
   border: none;
-  border-radius: 5px;
-  margin-top: 15px;
+  border-radius: 12px;
+  margin-top: 20px;
   cursor: pointer;
+  transition: 0.3s;
 }
 
 #shipment-form button:hover {
-  background: #314241;
+  opacity: 0.9;
+}
+
+#shipment-list-container {
+  margin-top: 40px;
+}
+
+.shipment-day h4 {
+  background-color: #08666e;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  display: inline-block;
+  font-weight: 600;
+  margin-bottom: 16px;
 }
 
 .shipment-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 10px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-/* Заголовок */
-.shipment-table thead tr {
-  background-color: #fafafa;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+  border-spacing: 0 12px;
+  font-size: 15px;
 }
 
 .shipment-table thead th {
-  padding: 12px 15px;
-  font-size: 14px;
-  color: #666;
   text-align: left;
-  border: none;
+  padding: 12px;
+  color: #888;
+  font-weight: 500;
+  font-size: 14px;
 }
 
-/* Строки */
 .shipment-table tbody tr {
-  background-color: #fafafa;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  transition: background-color 0.3s, box-shadow 0.3s;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.04);
   overflow: hidden;
+  transition: 0.3s ease;
 }
 
 .shipment-table tbody tr:hover {
-  background-color: rgba(8, 102, 110, 0.05);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.1);
 }
 
 .shipment-table td {
-  padding: 12px 15px;
-  font-size: 14px;
+  padding: 14px;
   color: #333;
-  border: none;
-  background: transparent;
 }
 
-/* Округление углов */
-.shipment-table tbody tr td:first-child {
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
-}
-.shipment-table tbody tr td:last-child {
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
+.shipment-table td:last-child {
+  text-align: right;
 }
 
-.shipment-day h4 {
-  background-color: #007aff;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 5px;
-  margin-top: 20px;
+.status-done {
+  background: #e3f8ee;
+  color: #1a8f5b;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
+
+@media (max-width: 768px) {
+  .calendar-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #mini-calendar,
+  #shipment-form {
+    width: 100%;
+  }
+}
+
 
 
 /* 📌 Стили для кнопки копирования */
@@ -353,7 +362,7 @@
 .bol-button {
     background: #08666e;
     color: white;
-    padding: 10px 20px;
+    padding: 10px 30px;
     border: none;
     cursor: pointer;
     border-radius: 5px;
@@ -493,3 +502,92 @@ select {
 .submit-btn:hover {
   background-color: #074d53;
 }
+
+
+.shipment-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 16px 24px;
+  margin-top: 16px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+  transition: 0.3s;
+}
+
+.shipment-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shipment-date {
+  font-size: 16px;
+  font-weight: 600;
+  color: #444;
+}
+
+.shipment-time {
+  font-weight: 400;
+  color: #888;
+  margin-left: 6px;
+}
+
+.shipment-company {
+  font-size: 14px;
+  color: #666;
+}
+
+.shipment-grade {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.status-done {
+  background: #e3f8ee;
+  color: #1a8f5b;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+}
+
+.calendar-container {
+  display: flex;
+  flex-direction: row;           /* 📍 основной layout — в ряд */
+  gap: 40px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-wrap: wrap;               /* 🔄 на мобилках уйдёт в столбик */
+  margin-bottom: 40px;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;        /* 📦 календарь над формой */
+  gap: 24px;
+}
+
+.right-column {
+  flex: 1;
+  min-width: 400px;              /* 📐 или auto — по вкусу */
+}
+
+@media (max-width: 768px) {
+.calendar-container {
+  display: flex;
+  flex-direction: row; /* ✅ теперь календарь и форма будут рядом */
+  gap: 40px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+  .right-column {
+    width: 100%;
+  }
+}
+

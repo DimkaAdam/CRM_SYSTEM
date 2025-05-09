@@ -13,6 +13,8 @@
 <script src="{% static 'crm/js/task_list.js' %}"></script>
 <link rel="stylesheet" href="{% static 'crm/task_list.css' %}">
 
+
+
 <!-- 🔝 Верхняя панель с кнопками -->
 <div class="top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
   <div>
@@ -22,78 +24,77 @@
 </div>
 
 <div class="calendar-container">
-  <!-- 🍏 Mini Calendar + Form -->
-  <aside id="mini-calendar">
-    <!-- 📅 Header -->
-    <div class="calendar-header">
-      <button id="prev-month">&lt;</button>
-      <span id="current-month">March 2025</span>
-      <button id="next-month">&gt;</button>
-    </div>
+  <div class="left-column">
+    <!-- 🍏 Mini Calendar -->
+    <aside id="mini-calendar">
+      <!-- 📅 Header -->
+      <div class="calendar-header">
+        <button id="prev-month">&lt;</button>
+        <span id="current-month">March 2025</span>
+        <button id="next-month">&gt;</button>
+      </div>
 
-    <!-- 🗓 Weekdays -->
-    <div class="weekdays">
-      <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
-    </div>
+      <!-- 🗓 Weekdays -->
+      <div class="weekdays">
+        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+      </div>
 
-    <!-- 🔢 Days -->
-    <div class="days" id="calendar-days"></div>
-
-
-
-
+      <!-- 🔢 Days -->
+      <div class="days" id="calendar-days"></div>
+    </aside>
 
     <!-- 📦 Shipment Form -->
     <section id="shipment-form">
       <h3>📦 New Shipment</h3>
       <form id="add-shipment-form">
         <div class="form-row">
-          <label>From:</label>
+          <label></label>
           <select id="supplier" name="supplier" required>
-            <option value="" disabled selected>supplier</option>
+            <option value="" disabled selected>From:  supplier</option>
             {% for supplier in suppliers %}
               <option value="{{ supplier.id }}">{{ supplier.name }}</option>
             {% endfor %}
           </select>
         </div>
 
-        <div class="form-row">
-          <label>To:</label>
-          <select id="buyer" name="buyer" required>
-            <option value="" disabled selected>buyer</option>
-            {% for buyer in buyers %}
-              <option value="{{ buyer.id }}">{{ buyer.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
 
-        <div class="form-row">
-          <label>Date:</label>
-          <input type="date" id="shipment-date" required>
-        </div>
+      <div class="form-row">
+        <label></label>
+        <select id="buyer" name="buyer" required>
+          <option value="" disabled selected>To: buyer</option>
+          {% for buyer in buyers %}
+            <option value="{{ buyer.id }}">{{ buyer.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-        <div class="form-row">
-          <label>Time:</label>
-          <input type="time" id="shipment-time" required>
-        </div>
+      <div class="form-row">
+        <label></label>
+        <input type="date" id="shipment-date" required>
+      </div>
 
-        <div class="form-row">
-          <label>Material:</label>
-          <select id="shipment-grade" name="grade" required>
-            <option value="" disabled selected>grade</option>
-            {% for key, value in materials_list.items %}
-              <option value="{{ key }}">{{ key }}</option>
-            {% endfor %}
-          </select>
-        </div>
+      <div class="form-row">
+        <label></label>
+        <input type="time" id="shipment-time" required>
+      </div>
 
-        <button type="submit" class="submit-btn">
-          <span style="font-size: 18px;">➕</span> Add Shipment
-        </button>
-      </form>
-    </section>
-  </aside>
+      <div class="form-row">
+        <label></label>
+        <select id="shipment-grade" name="grade" required>
+          <option value="" disabled selected>Material: grade</option>
+          {% for key, value in materials_list.items %}
+            <option value="{{ key }}">{{ key }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
+      <button type="submit" class="submit-btn">
+        <span style="font-size: 18px;">➕</span> Add Shipment
+      </button>
+    </form>
+  </section>
+
+</div>
 
 <!-- 🗓 Full Calendar -->
 
@@ -104,12 +105,14 @@
 
 
 <!-- Блок для списка отгрузок, сгруппированных по дням недели -->
-<div id="shipment-list-container">
-    <h3>Shipments by Day</h3>
-    <div id="shipment-list">
-        <!-- Сюда динамически будут добавляться отгрузки, разделенные по дням недели -->
+<div class="right-column">
+    <div id="shipment-list-container">
+      <h3>Scheduled Deliveries</h3>
+      <div id="shipment-list">
+        <!-- Сюда добавляются карточки отгрузок -->
+      </div>
     </div>
-</div>
+  </div>
 
 <div id="bol-modal" class="modal">
   <div class="modal-content">
