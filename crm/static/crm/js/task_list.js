@@ -229,34 +229,21 @@ document.addEventListener('click', function (e) {
                     titleContainer.appendChild(copyButton);
                     dayContainer.appendChild(titleContainer);
 
-                    let table = document.createElement("table");
-                    table.classList.add("shipment-table");
-                    table.innerHTML = `
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Supplier</th>
-                                <th>Buyer</th>
-                                <th>Grade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${shipmentsByDay[day].map(shipment => `
-                                <tr data-id="${shipment.id}">
-                                    <td>${shipment.date}</td>
-                                    <td>${shipment.time}</td>
-                                    <td>${shipment.supplier}</td>
-                                    <td>${shipment.buyer}</td>
-                                    <td>${shipment.grade}</td>
-                                    <td>
-                                        <button class="mark-done-btn" data-id="${shipment.id}">✅ Done</button>
-                                    </td>
-                                </tr>
-                            `).join("")}
-                        </tbody>
-                    `;
-                    dayContainer.appendChild(table);
+                    shipmentsByDay[day].forEach(shipment => {
+                      const card = document.createElement("div");
+                      card.className = "shipment-card";
+                      card.innerHTML = `
+                        <div class="shipment-card-left">
+                          <div class="shipment-date">${shipment.date} <span class="shipment-time">${shipment.time}</span></div>
+                          <div class="shipment-company">${shipment.supplier} → ${shipment.buyer}</div>
+                          <div class="shipment-grade">${shipment.grade}</div>
+                        </div>
+                        <div class="shipment-status">
+                          <button class="mark-done-btn status-done" data-id="${shipment.id}">✅ Complete</button>
+                        </div>
+                      `;
+                      dayContainer.appendChild(card);
+                    });
                     shipmentListContainer.appendChild(dayContainer);
                 });
             })
