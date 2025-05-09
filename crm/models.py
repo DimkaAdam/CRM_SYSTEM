@@ -207,6 +207,7 @@ class ScheduledShipment(models.Model):
     date = models.DateField()
     time = models.TimeField()
     grade = models.CharField(max_length=100)
+    is_done = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.supplier} → {self.buyer} ({self.grade}) on {self.date} at {self.time}"
