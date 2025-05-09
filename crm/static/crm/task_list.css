@@ -1,3 +1,7 @@
+#calendar-wrapper {
+  display: none;
+}
+
 /* 📌 Основной контейнер */
 .calendar-container {
   display: flex;

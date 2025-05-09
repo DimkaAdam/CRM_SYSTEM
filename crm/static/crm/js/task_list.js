@@ -14,7 +14,25 @@ document.addEventListener('DOMContentLoaded', function () {
             loadDealDetails();
         }
     }, 50); // Проверяем каждые 50 мс
+
+
 });
+
+// 🔹 Toggle Calendar
+    const toggleBtn = document.getElementById("toggle-calendar-btn");
+    const calendarWrapper = document.getElementById("calendar-wrapper");
+
+    toggleBtn.addEventListener("click", function () {
+        if (calendarWrapper.style.display === "none" || calendarWrapper.style.display === "") {
+            calendarWrapper.style.display = "block";
+            toggleBtn.textContent = "Hide Calendar";
+        } else {
+            calendarWrapper.style.display = "none";
+            toggleBtn.textContent = "Open Calendar";
+        }
+    });
+
+
 document.addEventListener('click', function (e) {
     if (e.target && e.target.id === 'add-commodity') {
         const tbody = document.getElementById('commodity-body');
@@ -76,6 +94,7 @@ document.addEventListener('click', function (e) {
     });
 
     calendar.render();  // ✅ Запускаем FullCalendar
+
 
     // 📌 Удаление отгрузки из списка
     function removeShipmentFromList(shipmentId) {
