@@ -1461,7 +1461,7 @@ def get_scheduled_shipments(request):
     """
     Возвращает список всех запланированных отгрузок.
     """
-    shipments = ScheduledShipment.objects.all().order_by("date")
+    shipments = ScheduledShipment.objects.filter(is_done=False).order_by("date")
     shipment_list = [
         {
             "id": shipment.id,
@@ -1928,3 +1928,16 @@ def get_companies_by_type(request):
         "hauler": [{"id": c.id, "name": c.name} for c in hauler],
     }
     return JsonResponse(data)
+
+
+@csrf_exempt
+def mark_shipment_done(request, shipment_id):
+    if request.method == "POST":
+        try:
+            shipment = ScheduledShipment.objects.get(id=shipment_id)
+            shipment.is_done = True
+            shipment.save()
+            return JsonResponse({"status": "done"})
+        except ScheduledShipment.DoesNotExist:
+            return JsonResponse({"status": "not found"}, status=404)
+    return JsonResponse({"status": "invalid method"}, status=405)

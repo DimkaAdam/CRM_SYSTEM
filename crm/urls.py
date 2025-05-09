@@ -10,7 +10,7 @@ from .views import (
     ClientViewSet, DealViewSet, export_company_report_pdf,
     get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event,
     get_licence_plates,get_grades,get_scheduled_shipments,add_scheduled_shipment,delete_scheduled_shipment,generate_bol_pdf,update_stage,
-    get_bol_counters, increment_bol_counters,get_clients_grouped, get_scale_ticket_counters,increment_scale_ticket_counters,
+    get_bol_counters, increment_bol_counters,get_clients_grouped, get_scale_ticket_counters,increment_scale_ticket_counters,mark_shipment_done,
 
 )
 
@@ -113,6 +113,7 @@ urlpatterns = [
     path("api/companies-by-type/", views.get_companies_by_type),
     path('api/scale-ticket-counters/', get_scale_ticket_counters, name='get_scale_ticket_counters'),
     path('api/scale-ticket-counters/increment/', views.increment_scale_ticket_counters, name='increment_scale_ticket_counters'),
+    path('api/scheduled-shipments/done/<int:shipment_id>/', mark_shipment_done, name='mark_shipment_done'),
 
 
 

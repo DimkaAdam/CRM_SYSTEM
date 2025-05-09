@@ -14,25 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
             loadDealDetails();
         }
     }, 50); // Проверяем каждые 50 мс
-
-
 });
-
-// 🔹 Toggle Calendar
-    const toggleBtn = document.getElementById("toggle-calendar-btn");
-    const calendarWrapper = document.getElementById("calendar-wrapper");
-
-    toggleBtn.addEventListener("click", function () {
-        if (calendarWrapper.style.display === "none" || calendarWrapper.style.display === "") {
-            calendarWrapper.style.display = "block";
-            toggleBtn.textContent = "Hide Calendar";
-        } else {
-            calendarWrapper.style.display = "none";
-            toggleBtn.textContent = "Open Calendar";
-        }
-    });
-
-
 document.addEventListener('click', function (e) {
     if (e.target && e.target.id === 'add-commodity') {
         const tbody = document.getElementById('commodity-body');
@@ -52,6 +34,26 @@ document.addEventListener('click', function (e) {
 
     if (e.target && e.target.classList.contains('remove-commodity')) {
         e.target.closest('tr').remove();
+    }
+    if (e.target && e.target.classList.contains("mark-done-btn")) {
+        const shipmentId = e.target.dataset.id;
+
+        fetch(`/api/scheduled-shipments/done/${shipmentId}/`, {
+            method: "POST"
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "done") {
+                alert("✅ Shipment marked as done!");
+                loadShipments();  // Перезагрузим список
+            } else {
+                alert("❌ Failed to mark as done.");
+            }
+        })
+        .catch(err => {
+            console.error("❌ Error:", err);
+            alert("❌ Server error");
+        });
     }
 });
 
@@ -94,7 +96,6 @@ document.addEventListener('click', function (e) {
     });
 
     calendar.render();  // ✅ Запускаем FullCalendar
-
 
     // 📌 Удаление отгрузки из списка
     function removeShipmentFromList(shipmentId) {
@@ -234,6 +235,9 @@ document.addEventListener('click', function (e) {
                                     <td>${shipment.supplier}</td>
                                     <td>${shipment.buyer}</td>
                                     <td>${shipment.grade}</td>
+                                    <td>
+                                        <button class="mark-done-btn" data-id="${shipment.id}">✅ Done</button>
+                                    </td>
                                 </tr>
                             `).join("")}
                         </tbody>
