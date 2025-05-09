@@ -13,6 +13,14 @@
 <script src="{% static 'crm/js/task_list.js' %}"></script>
 <link rel="stylesheet" href="{% static 'crm/task_list.css' %}">
 
+<!-- 🔝 Верхняя панель с кнопками -->
+<div class="top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+  <div>
+    <button id="toggle-calendar-btn" class="bol-button">📅 Open Calendar</button>
+    <button id="generate-bol-btn" class="bol-button">📦 Generate BOL</button>
+  </div>
+</div>
+
 <div class="calendar-container">
   <!-- 🍏 Mini Calendar + Form -->
   <aside id="mini-calendar">
@@ -88,9 +96,6 @@
 
 
 <!-- 🗓 Full Calendar -->
-<button id='toggle-calendar-btn' class="bol-button" style="margin-bottom:10px;">
-  Open Calendar
-</button>
 
 <div id="calendar-wrapper">
   <div id="calendar">
@@ -104,8 +109,6 @@
     <div id="shipment-list">
         <!-- Сюда динамически будут добавляться отгрузки, разделенные по дням недели -->
     </div>
-    <button id="generate-bol-btn" class="bol-button">Generate BOL</button>
-
 </div>
 
 <div id="bol-modal" class="modal">
@@ -236,5 +239,5 @@
     </form>
   </div>
 </div>
-
+</div>
 {% endblock %}
