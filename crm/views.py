@@ -1148,6 +1148,12 @@ def get_deal_by_ticket(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
+import re
+
+def sanitize_filename(name):
+    return re.sub(r'[<>:"/\\|?*]', '_', name)
+
+
 def export_scale_ticket_pdf(request):
     ticket_number = request.GET.get('ticket_number', None)
 
@@ -1275,7 +1281,8 @@ def export_scale_ticket_pdf(request):
     today = datetime.today()
     year = today.strftime("%Y")
     month = today.strftime("%B")  # April, May и т.д.
-    supplier_name = first_deal.supplier.name if first_deal.supplier else "Unknown Supplier"
+    raw_supplier_name = first_deal.supplier.name if first_deal.supplier else "Unknown Supplier"
+    supplier_name = sanitize_filename(raw_supplier_name)
 
     # 📂 Путь сохранения
     directory = os.path.join("Customers", "Supplier", supplier_name, "The Scale Ticket", year, month)
