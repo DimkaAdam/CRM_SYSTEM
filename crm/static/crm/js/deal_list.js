@@ -58,7 +58,7 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
     const transport_cost = parseFloat(transportCostElement.value);
 
     // Вычисление общих сумм
-    const total_amount = received_quantity * buyer_price; // Общая сумма от покупателя
+    const total_amount = shipped_quantity * buyer_price; // Общая сумма от покупателя
     const supplier_total = received_quantity * supplier_price; // Общая сумма для поставщика
     const total_income_loss = total_amount - supplier_total - transport_cost; // Убыток/прибыль
     const supplierId = document.getElementById('supplier').value;

@@ -1050,7 +1050,7 @@ def export_company_report_pdf(request):
         total_value = getattr(deal, total_field, 0)
         data.append([
             deal.date.strftime("%Y-%m-%d"),
-            deal.customer.name,
+            deal.contact.name,
             deal.grade,
             deal.received_quantity,
             deal.price,
@@ -1948,3 +1948,205 @@ def mark_shipment_done(request, shipment_id):
         except ScheduledShipment.DoesNotExist:
             return JsonResponse({"status": "not found"}, status=404)
     return JsonResponse({"status": "invalid method"}, status=405)
+
+
+
+def supply_list(request):
+    # Получаем текущий месяц и год
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
+
+    # Получаем параметры фильтра из запроса
+    selected_company_id = request.GET.get('company', '')
+    month = request.GET.get('month', '') or str(current_month).zfill(2)
+    year = request.GET.get('year', '') or str(current_year)
+
+
+    # Фильтрация сделок
+    deals = Deals.objects.all()
+
+    if selected_company_id:
+        deals = deals.filter(Q(buyer__id=int(selected_company_id)))
+
+    if month and year:
+        deals = deals.filter(date__month=int(month), date__year=int(year))
+    elif month:  # Если указан только месяц
+        deals = deals.filter(date__month=int(month))
+    elif year:  # Если указан только год
+        deals = deals.filter(date__year=int(year))
+
+    # Итоги
+    total_amount_buyer = deals.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_buyer_paid = deals.aggregate(Sum('total_income_loss'))[
+                           'total_income_loss__sum'] or 0  # Итог для покупателя (например, прибыль или убыток)
+
+    # Список компаний для выбора в фильтре
+    companies = Company.objects.all()
+
+
+    # Получаем доступные года из базы данных для фильтрации
+    years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()
+
+    # Список месяцев для фильтрации
+    months = range(1, 13)  # Месяцы с 1 по 12
+
+    # Контекст для шаблона
+    context = {
+        'deals': deals,
+        'total_amount_buyer': total_amount_buyer,
+        'total_buyer_paid': total_buyer_paid,  # Передаем total_buyer_paid в шаблон
+        'companies': companies,
+        'selected_company_id': int(selected_company_id) if selected_company_id.isdigit() else None,
+        'month': month,
+        'year': year,
+        'years': sorted(years),  # Сортируем список лет для удобства
+        'months': months,  # Месяцы для выпадающего списка
+    }
+    return render(request, 'crm/supply_list.html', context)
+
+import re
+def sanitize_filename(name):
+    return re.sub(r'[<>:"/\\|?*]', '_', name)
+
+def export_supply_list_pdf(request):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+    from reportlab.platypus import Table, TableStyle
+    from reportlab.lib import colors
+    from reportlab.lib.utils import ImageReader
+    import os
+    from django.conf import settings
+    from django.utils.text import slugify
+
+    selected_company_id = request.GET.get('company', '')
+    month = request.GET.get('month', '')
+    year = request.GET.get('year', '')
+    now = datetime.now()
+
+    deals = Deals.objects.all()
+    if selected_company_id:
+        deals = deals.filter(buyer__id=int(selected_company_id))
+    if month:
+        deals = deals.filter(date__month=int(month))
+    if year:
+        deals = deals.filter(date__year=int(year))
+
+    first_deal = deals.first()
+    total_field = "total_amount"
+
+    data = [["Date", "Grade", "Net (MT)", "Price ($/MT)", "Amount ($)"]]
+    for deal in deals:
+        data.append([
+            deal.date.strftime("%Y-%m-%d"),
+            deal.grade,
+            f"{deal.shipped_quantity:.4f}",
+            f"${deal.buyer_price:.2f}",
+            f"${deal.total_amount:.2f}",
+        ])
+
+    total_net = sum(deal.shipped_quantity for deal in deals)
+    total_amount = sum(getattr(deal, total_field, 0) for deal in deals)
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    current_y = height - 50
+
+    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'cl2.png')
+    if os.path.exists(logo_path):
+        pdf.drawImage(ImageReader(logo_path), 30, current_y - 40, width=50, height=50, mask='auto')
+
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.setFillColor(colors.darkblue)
+    pdf.drawRightString(width - 30, current_y - 10, "Local to Global Recycling Inc.")
+    pdf.setFont("Helvetica", 8)
+    pdf.setFillColor(colors.black)
+    pdf.drawRightString(width - 30, current_y - 23, "19090 Lougheed Hwy.")
+    pdf.drawRightString(width - 30, current_y - 33, "Pitt Meadows, BC V3Y 2M6")
+
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.drawCentredString(width / 2, current_y - 10, "Supply List")
+
+    # 📍 Customer info
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(30, height - 160, "Customer:")
+
+    customer_details = []
+    if first_deal and first_deal.buyer:
+        customer_details.append(first_deal.buyer.name)
+        contact = first_deal.buyer.contacts.filter(address__isnull=False).first()
+        if contact and contact.address:
+            customer_details.extend(contact.address.strip().split('\n'))
+        else:
+            customer_details.append("Address not available")
+    else:
+        customer_details = ["Unknown"]
+
+    pdf.setFont("Helvetica", 10)
+    y_position = height - 175
+    for line in customer_details:
+        pdf.drawString(85, y_position, line.strip())
+        y_position -= 15
+
+    # 📊 Таблица под адресом клиента + небольшой отступ
+    table_top_y = y_position - 20
+    table = Table(data, colWidths=[80, 140, 60, 80, 80])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+
+    # Определим высоту таблицы для расчёта позиции итогов
+    table_width, table_height = table.wrap(0, 0)
+    table.drawOn(pdf, 30, table_top_y - table_height)
+
+    # 📉 Итоги ниже таблицы
+    summary_y = table_top_y - table_height - 20
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(30, summary_y, f"Total Net: {total_net:.2f} MT")
+    pdf.drawString(30, summary_y - 20, f"Total Amount: ${total_amount:.2f}")
+
+    # 📉 Итоги (ниже таблицы)
+    summary_y = table_top_y - table_height - 20
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(30, summary_y, f"Total Net: {total_net:.2f} MT")
+    pdf.drawString(30, summary_y - 20, f"Total Amount: ${total_amount:.2f}")
+
+    # 📊 Расчёт итогов по каждому грейду
+    pdf.setFont("Helvetica", 10)
+    grade_summary = {}
+
+    for deal in deals:
+        key = (deal.grade, deal.buyer_price)
+        if key not in grade_summary:
+            grade_summary[key] = {"amount": 0, "net": 0}
+        grade_summary[key]["net"] += deal.shipped_quantity
+        grade_summary[key]["amount"] += deal.total_amount
+
+
+    y = summary_y - 50  # ⬇ Начинаем ниже итогов
+
+    for (grade, price), values in grade_summary.items():
+        amount = values["amount"]
+        net = values["net"]
+        pdf.drawString(30, y, f"{grade} (${price:.2f}) – {net:.2f} MT – ${amount:.2f} ")
+        y -= 15  # отступ между строками
+
+    # 📁 Название файла
+    raw_name = first_deal.buyer.name if first_deal and first_deal.buyer else "Unknown"
+    safe_name = slugify(raw_name)
+    month_str = datetime.strptime(month, "%m").strftime("%b") if month else now.strftime("%b")
+    year_str = year if year else now.strftime("%Y")
+    filename = f"L2G_{safe_name}_Supply_List_{month_str}_{year_str}.pdf"
+
+    pdf.save()
+    buffer.seek(0)
+
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
