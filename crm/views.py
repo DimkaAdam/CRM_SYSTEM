@@ -1982,7 +1982,8 @@ def supply_list(request):
                            'total_income_loss__sum'] or 0  # Итог для покупателя (например, прибыль или убыток)
 
     # Список компаний для выбора в фильтре
-    companies = Company.objects.all()
+    companies = Company.objects.filter(contacts__company_type='buyers').distinct()
+
 
 
     # Получаем доступные года из базы данных для фильтрации
