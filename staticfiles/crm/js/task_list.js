@@ -15,6 +15,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }, 50); // Проверяем каждые 50 мс
 });
+
+// ✅ Вот правильное место для toggle календаря:
+    const toggleBtn = document.getElementById("toggle-calendar-btn");
+    const calendarWrapper = document.getElementById("calendar-wrapper");
+
+    toggleBtn.addEventListener("click", function () {
+        if (calendarWrapper.style.display === "none" || calendarWrapper.style.display === "") {
+            calendarWrapper.style.display = "block";
+            toggleBtn.textContent = "Hide Calendar";
+        } else {
+            calendarWrapper.style.display = "none";
+            toggleBtn.textContent = "Open Calendar";
+        }
+    });
 document.addEventListener('click', function (e) {
     if (e.target && e.target.id === 'add-commodity') {
         const tbody = document.getElementById('commodity-body');
@@ -34,6 +48,26 @@ document.addEventListener('click', function (e) {
 
     if (e.target && e.target.classList.contains('remove-commodity')) {
         e.target.closest('tr').remove();
+    }
+    if (e.target && e.target.classList.contains("mark-done-btn")) {
+        const shipmentId = e.target.dataset.id;
+
+        fetch(`/api/scheduled-shipments/done/${shipmentId}/`, {
+            method: "POST"
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "done") {
+                alert("✅ Shipment marked as done!");
+                loadShipments();  // Перезагрузим список
+            } else {
+                alert("❌ Failed to mark as done.");
+            }
+        })
+        .catch(err => {
+            console.error("❌ Error:", err);
+            alert("❌ Server error");
+        });
     }
 });
 
@@ -195,31 +229,21 @@ document.addEventListener('click', function (e) {
                     titleContainer.appendChild(copyButton);
                     dayContainer.appendChild(titleContainer);
 
-                    let table = document.createElement("table");
-                    table.classList.add("shipment-table");
-                    table.innerHTML = `
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Supplier</th>
-                                <th>Buyer</th>
-                                <th>Grade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${shipmentsByDay[day].map(shipment => `
-                                <tr data-id="${shipment.id}">
-                                    <td>${shipment.date}</td>
-                                    <td>${shipment.time}</td>
-                                    <td>${shipment.supplier}</td>
-                                    <td>${shipment.buyer}</td>
-                                    <td>${shipment.grade}</td>
-                                </tr>
-                            `).join("")}
-                        </tbody>
-                    `;
-                    dayContainer.appendChild(table);
+                    shipmentsByDay[day].forEach(shipment => {
+                      const card = document.createElement("div");
+                      card.className = "shipment-card";
+                      card.innerHTML = `
+                        <div class="shipment-card-left">
+                          <div class="shipment-date">${shipment.date} <span class="shipment-time">${shipment.time}</span></div>
+                          <div class="shipment-company">${shipment.supplier} → ${shipment.buyer}</div>
+                          <div class="shipment-grade">${shipment.grade}</div>
+                        </div>
+                        <div class="shipment-status">
+                          <button class="mark-done-btn status-done" data-id="${shipment.id}">✅ Complete</button>
+                        </div>
+                      `;
+                      dayContainer.appendChild(card);
+                    });
                     shipmentListContainer.appendChild(dayContainer);
                 });
             })

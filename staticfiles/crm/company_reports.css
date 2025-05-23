@@ -1,48 +1,186 @@
-.filter-form {
+/* Контейнер для формы фильтрации */
+.filter-container {
+    display: flex; /* Располагаем элементы в ряд */
+    gap: 10px; /* Промежуток между элементами */
+    align-items: center; /* Центрируем по вертикали */
+
+}
+
+/* Стиль для каждого элемента фильтра */
+.filter-item {
     display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
+    flex-direction: column;
+    gap: 5px;
 }
 
-.filter-form select,
-.filter-form button {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+/* Стиль для кнопки фильтра */
+.filter-btn {
+    display: flex; /* Центрируем содержимое */
+    align-items: center; /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    width: 40px; /* Размер кнопки */
+    height: 40px; /* Размер кнопки */
+    background-color: #378BA4;
+    border: none; /* Убираем границу */
+    border-radius: 50%; /* Круглая форма */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Эффекты при переходе */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Тень */
+    padding: 0; /* Убираем отступы */
+    overflow: hidden; /* Обрезаем элементы, которые выходят за границы */
 }
 
-.filter-form button {
-    background-color: #007BFF;
-    color: white;
-    cursor: pointer;
+.filter-btn:hover {
+    background-color: #036280; /* Цвет при наведении */
+    transform: scale(1.1); /* Увеличение кнопки */
 }
 
-.filter-form button:hover {
-    background-color: #0056b3;
+.filter-btn:active {
+    background-color: #003f8a; /* Цвет при нажатии */
+    transform: scale(1); /* Возврат к исходному размеру */
 }
 
-.block {
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
+.filter-btn .icon1 {
+    width: 20px; /* Размер иконки */
+    height: 20px;
+    pointer-events: none; /* Иконка не будет реагировать на клики */
+    object-fit: contain; /* Подгонка иконки */
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
+/* Стили для input и select */
+.filter-item input,
+.filter-item select {
+    padding: 10px 15px; /* Внутренний отступ для удобства */
+    border: 1px solid #aaa; /* Граница */
+    border-radius: 25px; /* Округление углов */
+    background: white;
+    font-size: 14px;
+    outline: none; /* Убираем стандартное выделение */
+    transition: 0.3s; /* Плавное изменение */
 }
 
-table th, table td {
-    padding: 10px;
-    border: 1px solid #ddd;
-    text-align: left;
+/* Эффект при наведении */
+.filter-item input:hover,
+.filter-item select:hover {
+    border-color: #3f5efb; /* Меняем цвет границы */
 }
 
-table th {
-    background-color: #007BFF;
-    color: white;
+/* Эффект при фокусе (когда поле выбрано) */
+.filter-item input:focus,
+.filter-item select:focus {
+    border-color: #3f5efb;
+    box-shadow: 0 0 5px rgba(63, 94, 251, 0.5); /* Легкое свечение */
+}
+
+
+
+
+.button {
+  --width: 100px;
+  --height: 35px;
+  --tooltip-height: 35px;
+  --tooltip-width: 90px;
+  --gap-between-tooltip-to-button: 18px;
+  --button-color: #378BA4;
+  --tooltip-color: #fff;
+  width: var(--width);
+  height: var(--height);
+  background: var(--button-color);
+  position: relative;
+  text-align: center;
+  border-radius: 0.45em;
+  font-family: "Arial";
+  transition: background 0.3s;
+}
+
+.button::before {
+  position: absolute;
+  content: attr(data-tooltip);
+  width: var(--tooltip-width);
+  height: var(--tooltip-height);
+  background-color: var(--tooltip-color);
+  font-size: 0.9rem;
+  color: #111;
+  border-radius: .25em;
+  line-height: var(--tooltip-height);
+  bottom: calc(var(--height) + var(--gap-between-tooltip-to-button) + 10px);
+  left: calc(50% - var(--tooltip-width) / 2);
+}
+
+.button::after {
+  position: absolute;
+  content: '';
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+  border-top-color: var(--tooltip-color);
+  left: calc(50% - 10px);
+  bottom: calc(100% + var(--gap-between-tooltip-to-button) - 10px);
+}
+
+.button::after,.button::before {
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s;
+}
+
+.text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-wrapper,.text,.icon1 {
+  overflow: hidden;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  color: #fff;
+}
+
+.text {
+  top: 0
+}
+
+.text,.icon1 {
+  transition: top 0.5s;
+}
+
+.icon1 {
+  color: #fff;
+  top: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon1 svg {
+  width: 24px;
+  height: 24px;
+}
+
+.button:hover {
+  background: #6c18ff;
+}
+
+.button:hover .text {
+  top: -100%;
+}
+
+.button:hover .icon1 {
+  top: 0;
+}
+
+.button:hover:before,.button:hover:after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.button:hover:after {
+  bottom: calc(var(--height) + var(--gap-between-tooltip-to-button) - 20px);
+}
+
+.button:hover:before {
+  bottom: calc(var(--height) + var(--gap-between-tooltip-to-button));
 }
