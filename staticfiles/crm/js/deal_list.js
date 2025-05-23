@@ -18,6 +18,19 @@ const csrftoken = getCookie('csrftoken');
 
 // Открыть боковую панель для создания новой сделки
 document.getElementById('addNewDealBtn').addEventListener('click', function () {
+
+    fetch('/api/scale-ticket-counters/')
+    .then(response => response.json())
+    .then(data => {
+        const input = document.getElementById("scale_ticket");
+        const ticketNumber = data['scale_ticket'];
+        if (input && data["scale_ticket"] !== undefined) {
+            input.value = data["scale_ticket"];
+        }
+    })
+    .catch(error => console.error("Ошибка при получении номера Scale Ticket:", error));
+
+
     document.getElementById('dealFormSidebar').style.width = '400px';
 });
 
@@ -45,7 +58,7 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
     const transport_cost = parseFloat(transportCostElement.value);
 
     // Вычисление общих сумм
-    const total_amount = received_quantity * buyer_price; // Общая сумма от покупателя
+    const total_amount = shipped_quantity * buyer_price; // Общая сумма от покупателя
     const supplier_total = received_quantity * supplier_price; // Общая сумма для поставщика
     const total_income_loss = total_amount - supplier_total - transport_cost; // Убыток/прибыль
     const supplierId = document.getElementById('supplier').value;
@@ -101,6 +114,14 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
         `;
         document.getElementById('dealFormSidebar').style.width = '0';
         document.getElementById('dealForm').reset();
+
+        fetch('/api/scale-ticket-counters/increment/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        });
+
     })
     .catch(error => console.error('Error:', error));
 });
