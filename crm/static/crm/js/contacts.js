@@ -34,7 +34,7 @@ document.getElementById('clientForm').addEventListener('submit', function (e) {
     const company = document.getElementById('company').value;
     const clientType = document.getElementById('clientType').value;
 
-    fetch('api/clients/', {
+    fetch('/api/clients/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

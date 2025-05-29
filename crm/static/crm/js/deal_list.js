@@ -80,7 +80,7 @@ document.getElementById('dealForm').addEventListener('submit', function (e) {
         scale_ticket: document.getElementById('scale_ticket').value
     };
 
-    fetch('api/deals/', {
+    fetch('/api/deals/', {
         method: 'POST',
         headers: {
         'Content-Type': 'application/json',
