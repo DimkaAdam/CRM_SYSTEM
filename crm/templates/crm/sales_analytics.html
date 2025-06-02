@@ -124,6 +124,7 @@
                         <th>Company Name</th>
                         <th>Current Pallets</th>
                         <th>Cages</th>
+                        <tn>Bags</tn>
                     </tr>
                 </thead>
                 <tbody>
@@ -135,6 +136,10 @@
                             </td>
                             <td> <!-- ✅ Добавляем поле для клеток -->
                                 <input type="number" name="cages_{{ pallet.id }}" value="{{ pallet.cages_count }}" min="0">
+                            </td>
+
+                            <td> <!-- ✅ Добавляем поле для bags -->
+                                <input type="number" name="cages_{{ pallet.id }}" value="{{ pallet.bags_count }}" min="0">
                             </td>
                         </tr>
                     {% endfor %}
