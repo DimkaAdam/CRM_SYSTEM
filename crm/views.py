@@ -835,11 +835,15 @@ def sales_analytics(request):
         for pallet in company_pallets:
             new_pallet_count = request.POST.get(f"pallets_{pallet.id}")
             new_cages_count = request.POST.get(f"cages_{pallet.id}")  # Получаем данные клеток
+            new_bags_count = request.POST.get(f"bags_{pallet.id}")
 
             if new_pallet_count is not None:
                 pallet.pallets_count = int(new_pallet_count)
             if new_cages_count is not None:
                 pallet.cages_count = int(new_cages_count)
+
+            if new_bags_count is not None:
+                pallet.bags_count = int(new_bags_count)
 
             pallet.save()
         return HttpResponseRedirect(request.path)
