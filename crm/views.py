@@ -954,17 +954,12 @@ def company_report(request):
     month = request.GET.get('month', '') or str(current_month).zfill(2)
     year = request.GET.get('year', '') or str(current_year)
 
-    transport_companies = Company.objects.filter(contacts__company_type='hauler')
-
     # Фильтрация сделок
     deals = Deals.objects.all()
 
     if selected_company_id:
         # Фильтруем по поставщикам и покупателям
-        deals = deals.filter(Q(supplier__id=int(selected_company_id)) |
-                             Q(buyer__id=int(selected_company_id)) |
-                             Q(transport_company__in=transport_companies)
-        )
+        deals = deals.filter(Q(supplier__id=int(selected_company_id)))
 
     if month and year:
         deals = deals.filter(date__month=int(month), date__year=int(year))
@@ -974,14 +969,11 @@ def company_report(request):
         deals = deals.filter(date__year=int(year))
 
     # Итоги
-    total_transport_cost = deals.aggregate(Sum('transport_cost'))['transport_cost__sum'] or 0
     total_supplier_paid = deals.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
-    total_amount_buyer = deals.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    total_buyer_paid = deals.aggregate(Sum('total_income_loss'))[
-                           'total_income_loss__sum'] or 0  # Итог для покупателя (например, прибыль или убыток)
+
 
     # Список компаний для выбора в фильтре
-    companies = Company.objects.all()
+    companies = Company.objects.filter(contacts__company_type='suppliers').distinct()
 
     # Получаем доступные года из базы данных для фильтрации
     years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()
@@ -992,10 +984,7 @@ def company_report(request):
     # Контекст для шаблона
     context = {
         'deals': deals,
-        'total_transport_cost': total_transport_cost,
         'total_supplier_paid': total_supplier_paid,
-        'total_amount_buyer': total_amount_buyer,
-        'total_buyer_paid': total_buyer_paid,  # Передаем total_buyer_paid в шаблон
         'companies': companies,
         'selected_company_id': int(selected_company_id) if selected_company_id.isdigit() else None,
         'month': month,

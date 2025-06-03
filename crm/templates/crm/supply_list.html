@@ -10,7 +10,7 @@
             <div class="filter-item">
                 <label for="company">Company:</label>
                 <select name="company" id="company">
-                    <option value="">Suppliers</option>
+                    <option value="">Buyers</option>
                     {% for company in companies %}
                         <option value="{{ company.id }}" {% if selected_company_id == company.id %}selected{% endif %}>
                             {{ company.name }}
