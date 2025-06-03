@@ -61,6 +61,7 @@
                 <th>Shipped Qty</th>
                 <th>Price</th>
                 <th>Amount</th>
+                <th>Scale Ticket</th>
             </tr>
         </thead>
         <tbody>
@@ -72,18 +73,19 @@
                         <td>{{ deal.received_quantity }}</td>
                         <td>${{ deal.supplier_price|floatformat:2 }}</td>
                         <td>${{ deal.supplier_total|floatformat:2 }}</td>
+                        <td>{{ deal.scale_ticket }}</td>
                     </tr>
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="5" style="text-align: center;">No data available for the selected filters.</td>
+                    <td colspan="6" style="text-align: center;">No data available for the selected filters.</td>
                 </tr>
             {% endif %}
         </tbody>
     </table>
 
 
-    <a href="{% url 'export_supply_list_pdf' %}?company={{ selected_company_id }}&month={{ month }}&year={{ year }}">
+    <a href="{% url 'export_company_report_pdf' %}?company={{ selected_company_id }}&month={{ month }}&year={{ year }}">
       <div class="button" data-tooltip="Download">
         <div class="button-wrapper">
           <div class="text">Download</div>
@@ -106,12 +108,7 @@
         <p>Total Amount Supplier: ${{ total_amount_supplier|floatformat:2 }}</p>
     </div>
 
-    <form action="{% url 'export_supply_list_pdf' %}" method="get">
-        <input type="hidden" name="company" value="{{ selected_company_id }}">
-        <input type="hidden" name="month" value="{{ month }}">
-        <input type="hidden" name="year" value="{{ year }}">
-        <button type="submit">Export to PDF</button>
-    </form>
+
 
     <link rel="stylesheet" href="{% static 'crm/company_reports.css' %}">
     <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
