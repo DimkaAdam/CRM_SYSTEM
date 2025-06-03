@@ -969,7 +969,7 @@ def company_report(request):
         deals = deals.filter(date__year=int(year))
 
     # Итоги
-    total_supplier_paid = deals.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
+    total_amount_supplier = deals.aggregate(Sum('supplier_total'))['supplier_total__sum'] or 0
 
 
     # Список компаний для выбора в фильтре
@@ -984,7 +984,7 @@ def company_report(request):
     # Контекст для шаблона
     context = {
         'deals': deals,
-        'total_supplier_paid': total_supplier_paid,
+        'total_amount_supplier': total_amount_supplier,
         'companies': companies,
         'selected_company_id': int(selected_company_id) if selected_company_id.isdigit() else None,
         'month': month,
@@ -994,7 +994,21 @@ def company_report(request):
     }
     return render(request, 'crm/company_report.html', context)
 
+import re
+def sanitize_filename(name):
+    return re.sub(r'[<>:"/\\|?*]', '_', name)
+
 def export_company_report_pdf(request):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+    from reportlab.platypus import Table, TableStyle
+    from reportlab.lib import colors
+    from reportlab.lib.utils import ImageReader
+    import os
+    from django.conf import settings
+    from django.utils.text import slugify
+
+
     # Получение фильтров из запроса
     selected_company_id = request.GET.get('company', '')
     month = request.GET.get('month', '')
@@ -1006,9 +1020,7 @@ def export_company_report_pdf(request):
     # Получение всех сделок
     deals = Deals.objects.all()
     if selected_company_id:
-        deals = deals.filter(supplier__id=selected_company_id) | \
-                deals.filter(buyer__id=selected_company_id) | \
-                deals.filter(transport_company__id=selected_company_id)
+        deals = deals.filter(supplier__id=int(selected_company_id))
 
     # Фильтр по месяцу и году
     if month:
@@ -1016,70 +1028,70 @@ def export_company_report_pdf(request):
     if year:
         deals = deals.filter(date__year=int(year))
 
-    # Логика для определения типа компании
-    company = None
-    company_type = None
-    total_field = None  # Поле для итогов в зависимости от компании
+    first_deal = deals.first()
 
-    if selected_company_id:
-        company = Company.objects.filter(id=selected_company_id).first()
-        if company:
-            if deals.filter(supplier=company).exists():
-                company_type = "supplier"
-                deals = deals.filter(supplier=company)
-                total_field = "supplier_total"
-            elif deals.filter(buyer=company).exists():
-                company_type = "buyer"
-                deals = deals.filter(buyer=company)
-                total_field = "total_amount"
-            elif deals.filter(transport_company=company).exists():
-                company_type = "transport"
-                deals = deals.filter(transport_company=company)
-                total_field = "transport_cost"
 
     # Данные для таблицы
-    data = [["Date", "Customer", "Grade", "Net", "Price", "Amount", "Total"]]
+    data = [["Date", "Grade", "Net", "Price", "Amount", "Scale Ticket"]]
     for deal in deals:
-        total_value = getattr(deal, total_field, 0)
         data.append([
             deal.date.strftime("%Y-%m-%d"),
-            deal.contact.name,
             deal.grade,
-            deal.received_quantity,
-            deal.price,
-            deal.amount,
-            total_value
+            f"{deal.received_quantity:.4f}",
+            f"${deal.supplier_price:.2f}",
+            f"${deal.supplier_total:.2f}",
+            deal.scale_ticket
         ])
 
     # Итоги
     total_net = sum([deal.received_quantity for deal in deals])
-    total_amount = sum([getattr(deal, total_field, 0) for deal in deals])
+    total_amount = sum([deal.supplier_total for deal in deals])
 
     # Создание PDF
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
+    current_y = height - 50
 
-    # Лого компании (если есть)
-    logo_path = "path/to/your/logo.png"  # Укажите путь к вашему логотипу
-    pdf.drawImage(logo_path, x=30, y=height - 80, width=100, height=50)
+    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'cl2.png')
+    if os.path.exists(logo_path):
+        pdf.drawImage(ImageReader(logo_path), 30, current_y - 40, width=50, height=50, mask='auto')
 
-    # Заголовок
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(140, height - 50, "Company Report")
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(30, height - 100, f"Date: {now.strftime('%Y-%m-%d')}")
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.setFillColor(colors.darkblue)
+    pdf.drawRightString(width - 30, current_y - 10, "Local to Global Recycling Inc.")
+    pdf.setFont("Helvetica", 8)
+    pdf.setFillColor(colors.black)
+    pdf.drawRightString(width - 30, current_y - 23, "19090 Lougheed Hwy.")
+    pdf.drawRightString(width - 30, current_y - 33, "Pitt Meadows, BC V3Y 2M6")
 
-    # Подзаголовок
-    if company:
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(30, height - 120, f"Company: {company.name}")
-        pdf.drawString(30, height - 140, f"Type: {company_type.capitalize()}")
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.drawCentredString(width / 2, current_y - 10, "Supply List")
+
+    # 📍 Customer info
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(30, height - 160, "Customer:")
+
+    customer_details = []
+    if first_deal and first_deal.supplier:
+        customer_details.append(first_deal.supplier.name)
+        contact = first_deal.supplier.contacts.filter(address__isnull=False).first()
+        if contact and contact.address:
+            customer_details.extend(contact.address.strip().split('\n'))
+        else:
+            customer_details.append("Address not available")
     else:
-        pdf.drawString(30, height - 120, "All Companies")
+        customer_details = ["Unknown"]
 
-    # Таблица
-    table = Table(data, colWidths=[80, 80, 80, 50, 50, 50, 50])
+    pdf.setFont("Helvetica", 10)
+    y_position = height - 175
+    for line in customer_details:
+        pdf.drawString(85, y_position, line.strip())
+        y_position -= 15
+
+    # 📊 Таблица под адресом клиента + небольшой отступ
+    table_top_y = y_position - 20
+    table = Table(data, colWidths=[80, 140, 60, 80, 80,80])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -1087,26 +1099,53 @@ def export_company_report_pdf(request):
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-        ('ALIGN', (3, 1), (6, -1), 'RIGHT'),  # Для чисел
     ]))
 
-    # Установим положение таблицы на странице
-    table.wrapOn(pdf, width, height)
-    table.drawOn(pdf, 30, height - 300)
+    # Определим высоту таблицы для расчёта позиции итогов
+    table_width, table_height = table.wrap(0, 0)
+    table.drawOn(pdf, 30, table_top_y - table_height)
 
-    # Итоговые данные
+    # 📉 Итоги ниже таблицы
+    summary_y = table_top_y - table_height - 20
     pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(30, height - 320, f"Total Net: {total_net}")
-    pdf.drawString(30, height - 340, f"Total {company_type.capitalize()}: {total_amount}")
+    pdf.drawString(30, summary_y, f"Total Net: {total_net:.2f} MT")
+    pdf.drawString(30, summary_y - 20, f"Total Amount: ${total_amount:.2f}")
 
-    # Завершаем PDF
+
+    # 📊 Расчёт итогов по каждому грейду
+    pdf.setFont("Helvetica", 10)
+    grade_summary = {}
+
+    for deal in deals:
+        key = (deal.grade, deal.supplier_price)
+        if key not in grade_summary:
+            grade_summary[key] = {"amount": 0, "net": 0}
+        grade_summary[key]["net"] += deal.received_quantity
+        grade_summary[key]["amount"] += deal.supplier_total
+
+    y = summary_y - 50  # ⬇ Начинаем ниже итогов
+
+    for (grade, price), values in grade_summary.items():
+        amount = values["amount"]
+        net = values["net"]
+        pdf.drawString(30, y, f"{grade} (${price:.2f}) – {net:.2f} MT – ${amount:.2f} ")
+        y -= 15  # отступ между строками
+
+    # 📁 Название файла
+    raw_name = first_deal.supplier.name if first_deal and first_deal.supplier else "Unknown"
+    safe_name = slugify(raw_name)
+    month_str = datetime.strptime(month, "%m").strftime("%b") if month else now.strftime("%b")
+    year_str = year if year else now.strftime("%Y")
+    filename = f"L2G_{safe_name}_Supply_List_{month_str}_{year_str}.pdf"
+
     pdf.save()
     buffer.seek(0)
 
-    # Возвращаем PDF как ответ
     response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="company_report_{company_type}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
 
 
 def get_deal_by_ticket(request):
