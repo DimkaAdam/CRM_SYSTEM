@@ -81,7 +81,7 @@ urlpatterns = [
 
 
 
-    # 📌 Работа с сделками
+    # 📌 Работа со сделками
     path("deals/", views.deal_list, name="deal_list"),
     path("deals/<int:deal_id>/", views.get_deal_details, name="get_deal_details"),
     path("deals/<int:deal_id>/edit/", views.edit_deal, name="edit_deal"),
@@ -89,18 +89,14 @@ urlpatterns = [
 
     # 📌 Отчёты
     path("reports/", views.report_list, name="report_list"),
-
-
-
-
     path("reports/company/", views.company_report, name="company_report"),
 
     # HTML отчёт по поставщикам
     path("reports/supply/", views.supply_list, name="supply_list"),
 
     # PDF экспорт по поставщикам
-    path("reports/company/pdf/", views.export_supply_list_pdf, name="export_supply_list_pdf"),
-    path("reports/company/pdf/", export_company_report_pdf, name="export_company_report_pdf"),
+    path("reports/buyer/pdf/", views.export_supply_list_pdf, name="export_supply_list_pdf"),
+    path("reports/supply/pdf/", views.export_company_report_pdf, name="export_company_report_pdf"),
     path("get-deal-by-ticket/", get_deal_by_ticket, name="get_deal_by_ticket"),
     path("export-scale-ticket/", export_scale_ticket_pdf, name="export_scale_ticket"),
 

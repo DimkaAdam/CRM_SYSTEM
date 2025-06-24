@@ -1021,8 +1021,6 @@ def export_company_report_pdf(request):
     deals = Deals.objects.all()
     if selected_company_id:
         deals = deals.filter(supplier__id=int(selected_company_id))
-
-    # Фильтр по месяцу и году
     if month:
         deals = deals.filter(date__month=int(month))
     if year:
@@ -1072,20 +1070,20 @@ def export_company_report_pdf(request):
     pdf.setFont("Helvetica-Bold", 10)
     pdf.drawString(30, height - 160, "Customer:")
 
-    customer_details = []
+    customer_details1 = []
     if first_deal and first_deal.supplier:
-        customer_details.append(first_deal.supplier.name)
+        customer_details1.append(first_deal.supplier.name)
         contact = first_deal.supplier.contacts.filter(address__isnull=False).first()
         if contact and contact.address:
-            customer_details.extend(contact.address.strip().split('\n'))
+            customer_details1.extend(contact.address.strip().split('\n'))
         else:
-            customer_details.append("Address not available")
+            customer_details1.append("Address not available")
     else:
-        customer_details = ["Unknown"]
+        customer_details1 = ["Unknown"]
 
     pdf.setFont("Helvetica", 10)
     y_position = height - 175
-    for line in customer_details:
+    for line in customer_details1:
         pdf.drawString(85, y_position, line.strip())
         y_position -= 15
 
