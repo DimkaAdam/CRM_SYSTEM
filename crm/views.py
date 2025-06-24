@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-
+from .forms import TaskForm
 from .serializers import ClientSerializer,DealSerializer,PipeLineSerializer
 
 from .forms import ContactForm, CompanyForm, ContactMaterialForm, DealForm
@@ -1902,6 +1902,31 @@ def increment_bol_counters(request):
         return JsonResponse({"status": "updated", "bol": data["bol"], "load": data["load"]})
     else:
         return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+
+# Показать задачи, привязанные к контакту
+def contact_tasks(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+    tasks = contact.tasks.all()
+    return render(request, 'crm/task_list.html', {'contact': contact, 'tasks': tasks})
+
+# Добавить задачу
+def add_task(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+
+    if request.method == 'POST':
+        form = TaskForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.contact = contact  # или task.company = contact.company если менял логику
+            task.save()
+            return redirect('contact_tasks', contact_id=contact.id)
+    else:
+        form = TaskForm()
+
+    return render(request, 'crm/add_task.html', {'form': form, 'contact': contact})
 
 
 

@@ -127,6 +127,40 @@
 </div>
 
 
+<div style="margin-top: 40px;">
+  <h2 style="font-size: 22px; color: #333;">Tasks</h2>
+  {% if tasks %}
+    <ul style="list-style: none; padding: 0;">
+      {% for task in tasks %}
+        <li style="background: #f5f5f5; padding: 10px 15px; border-radius: 10px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong style="font-size: 16px;">{{ task.title }}</strong>
+              {% if task.due_date %}
+                <small style="color: #999;"> (до {{ task.due_date }})</small>
+              {% endif %}
+              <div style="font-size: 14px; color: #555;">{{ task.description }}</div>
+            </div>
+            <div>
+              {% if task.completed %}
+                <span style="color: green;">✅ Done</span>
+              {% else %}
+                <span style="color: orange;">⏳ Pending</span>
+              {% endif %}
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p style="font-size: 14px; color: #888;">No tasks found for this contact.</p>
+  {% endif %}
+  <a href="{% url 'add_task' contact.id %}" style="display: inline-block; margin-top: 15px; background: #28a745; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">+ Add Task</a>
+</div>
+
+
+
+
 
 <script>
   // 🧩 Переключение видимости блоков

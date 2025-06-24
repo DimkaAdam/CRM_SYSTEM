@@ -1,5 +1,5 @@
 from django import forms
-from .models import Contact, Company, ContactMaterial, Deals
+from .models import Contact, Company, ContactMaterial, Deals, Task
 
 class ContactForm(forms.ModelForm):
     class Meta:
@@ -41,3 +41,11 @@ class DealForm(forms.ModelForm):
             'total_amount': forms.NumberInput(attrs={'step': '0.01'}),
             'total_income_loss': forms.NumberInput(attrs={'step': '0.01'}),
         }
+
+
+class TaskForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = [
+            'title', 'description', 'due_date', 'completed'
+        ]

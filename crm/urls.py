@@ -125,6 +125,11 @@ urlpatterns = [
     path('api/scale-ticket-counters/increment/', views.increment_scale_ticket_counters, name='increment_scale_ticket_counters'),
     path('api/scheduled-shipments/done/<int:shipment_id>/', mark_shipment_done, name='mark_shipment_done'),
 
+    path('contacts/<int:contact_id>/tasks/', views.contact_tasks, name='contact_tasks'),
+
+    path('contacts/<int:contact_id>/tasks/add/', views.add_task, name='add_task'),
+
+
 
 
 
