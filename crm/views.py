@@ -488,11 +488,17 @@ def export_deals_to_excel(request):
 
     for row_num, deal in enumerate(deals, start=2):
         formatted_date = deal.date.strftime('%d-%b') if deal.date else ''
+
+        grade_value = deal.grade
+        if grade_value == 'Baled Cardboard':
+            grade_value = 'OCC 11'
+
+
         row = [
             formatted_date,
             deal.supplier.name if deal.supplier else '',
             deal.buyer.name if deal.buyer else '',
-            deal.grade,
+            grade_value,
             deal.shipped_quantity,
             deal.shipped_pallets,
             deal.received_quantity,
