@@ -125,6 +125,7 @@ urlpatterns = [
 
     path('contacts/<int:contact_id>/tasks/add/', views.add_task, name='add_task'),
 
+    path("reports/scale-browser/", views.scale_ticket_browser, name="scale_ticket_browser"),
 
 
 
@@ -133,4 +134,13 @@ urlpatterns = [
 
 
 
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
+]
+
+# Подключаем статику
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Подключаем медиа, если DEBUG = True
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

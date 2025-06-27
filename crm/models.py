@@ -215,3 +215,12 @@ class ScheduledShipment(models.Model):
 
     def __str__(self):
         return f"{self.supplier} → {self.buyer} ({self.grade}) on {self.date} at {self.time}"
+
+
+class SCaleTicketStatus(models.Model):
+    file_path = models.CharField(max_length=255,unique=True)
+    sent = models.BooleanField(default=False)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.file_path

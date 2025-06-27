@@ -46,6 +46,13 @@ import glob
 
 from .models import Event
 
+import re
+
+def sanitize_filename(name):
+    name = name.strip()
+    name = name.replace(' ', '_')
+    return re.sub(r'[<>:"/\\|?*]', '_', name)
+
 
 
 from django.conf import settings
@@ -1000,9 +1007,7 @@ def company_report(request):
     }
     return render(request, 'crm/company_report.html', context)
 
-import re
-def sanitize_filename(name):
-    return re.sub(r'[<>:"/\\|?*]', '_', name)
+
 
 def export_company_report_pdf(request):
     from reportlab.lib.pagesizes import A4
@@ -1070,7 +1075,7 @@ def export_company_report_pdf(request):
     pdf.drawRightString(width - 30, current_y - 33, "Pitt Meadows, BC V3Y 2M6")
 
     pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawCentredString(width / 2, current_y - 10, "Supply List")
+    pdf.drawCentredString(width / 2, current_y - 10, "Shipment Summary")
 
     # 📍 Customer info
     pdf.setFont("Helvetica-Bold", 10)
@@ -1184,10 +1189,6 @@ def get_deal_by_ticket(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
-import re
-
-def sanitize_filename(name):
-    return re.sub(r'[<>:"/\\|?*]', '_', name)
 
 
 def export_scale_ticket_pdf(request):
@@ -1318,14 +1319,17 @@ def export_scale_ticket_pdf(request):
     year = today.strftime("%Y")
     month = today.strftime("%B")  # April, May и т.д.
     raw_supplier_name = first_deal.supplier.name if first_deal.supplier else "Unknown Supplier"
+
+    print(f"📌 Supplier name в PDF: {raw_supplier_name}")
+
     supplier_name = sanitize_filename(raw_supplier_name)
 
     # 📂 Путь сохранения
-    directory = os.path.join("Customers", "Supplier", supplier_name, "The Scale Ticket", year, month)
-    os.makedirs(directory, exist_ok=True)  # ✅ Создаёт путь, если его нет
+    directory = os.path.join(settings.MEDIA_ROOT, "reports", "scale_tickets", supplier_name, year, month)
+    os.makedirs(directory, exist_ok=True)
 
     # 📝 Название файла
-    filename = f"Ticket #{ticket_number}.pdf"
+    filename = f"Ticket {ticket_number}.pdf"
     filepath = os.path.join(directory, filename)
 
     # ✅ Завершаем PDF и перематываем буфер
@@ -1336,23 +1340,58 @@ def export_scale_ticket_pdf(request):
     with open(filepath, "wb") as f:
         f.write(buffer.getvalue())
 
+    print(f"✅ PDF сохранён в: {filepath}")
+
     # 📤 Возвращаем как ответ пользователю
     response = HttpResponse(buffer, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="Ticket # {ticket_number}.pdf"'
+    response["Content-Disposition"] = f'attachment; filename="Ticket {ticket_number}.pdf"'
     return response
-
-
-
-    response = HttpResponse(buffer, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename=\"Ticket # {ticket_number}.pdf\"'
-    return response
-
 
 # Область доступа
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CREDENTIALS_FILE = os.path.join(BASE_DIR, "c_id.json")
 TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
+
+
+def scale_ticket_browser(request):
+    # Получаем относительный путь из URL (например, 'T-Brothers/2025/June')
+    relative_path = request.GET.get('path', '').strip('/')
+
+    # Абсолютный путь к директории
+    base_dir = os.path.join(settings.MEDIA_ROOT, 'reports', 'scale_tickets')
+    abs_path = os.path.join(base_dir, relative_path)
+
+    if not os.path.exists(abs_path):
+        return HttpResponse("❌ Path not found", status=404)
+
+    folders = []
+    files = []
+
+    # Читаем содержимое директории
+    for entry in sorted(os.listdir(abs_path)):
+        full_entry = os.path.join(abs_path, entry)
+        if os.path.isdir(full_entry):
+            folders.append(entry)
+        elif entry.lower().endswith('.pdf'):
+            files.append(entry)
+
+    # 🧭 Определяем путь "назад"
+    if relative_path:
+        # Если есть путь, обрезаем последний сегмент
+        path_parts = relative_path.split('/')
+        back_path = '/'.join(path_parts[:-1])
+    else:
+        # Мы уже в корне — пути назад нет
+        back_path = None
+
+    context = {
+        'relative_path': relative_path,
+        'folders': folders,
+        'files': files,
+        'back_path': back_path
+    }
+    return render(request, 'crm/scale_ticket_browser.html', context)
 
 # ID календаря
 CALENDAR_ID = "dmitry@wastepaperbrokers.com"
@@ -2067,8 +2106,11 @@ def supply_list(request):
     }
     return render(request, 'crm/supply_list.html', context)
 
-import re
+
+
 def sanitize_filename(name):
+    name = name.strip()
+    name = name.replace(' ', '_')
     return re.sub(r'[<>:"/\\|?*]', '_', name)
 
 def export_supply_list_pdf(request):
@@ -2128,7 +2170,7 @@ def export_supply_list_pdf(request):
     pdf.drawRightString(width - 30, current_y - 33, "Pitt Meadows, BC V3Y 2M6")
 
     pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawCentredString(width / 2, current_y - 10, "Supply List")
+    pdf.drawCentredString(width / 2, current_y - 10, "Shipment Summary")
 
     # 📍 Customer info
     pdf.setFont("Helvetica-Bold", 10)
