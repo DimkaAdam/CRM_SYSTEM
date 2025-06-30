@@ -1,6 +1,6 @@
 from django.core.serializers import serialize
 import os
-from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,ScheduledShipment
+from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,ScheduledShipment,SCaleTicketStatus
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -1354,11 +1354,11 @@ CREDENTIALS_FILE = os.path.join(BASE_DIR, "c_id.json")
 TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
 
 
+from .models import SCaleTicketStatus  # ← используй как названо у тебя
+
 def scale_ticket_browser(request):
-    # Получаем относительный путь из URL (например, 'T-Brothers/2025/June')
     relative_path = request.GET.get('path', '').strip('/')
 
-    # Абсолютный путь к директории
     base_dir = os.path.join(settings.MEDIA_ROOT, 'reports', 'scale_tickets')
     abs_path = os.path.join(base_dir, relative_path)
 
@@ -1368,7 +1368,6 @@ def scale_ticket_browser(request):
     folders = []
     files = []
 
-    # Читаем содержимое директории
     for entry in sorted(os.listdir(abs_path)):
         full_entry = os.path.join(abs_path, entry)
         if os.path.isdir(full_entry):
@@ -1376,22 +1375,63 @@ def scale_ticket_browser(request):
         elif entry.lower().endswith('.pdf'):
             files.append(entry)
 
-    # 🧭 Определяем путь "назад"
     if relative_path:
-        # Если есть путь, обрезаем последний сегмент
         path_parts = relative_path.split('/')
         back_path = '/'.join(path_parts[:-1])
     else:
-        # Мы уже в корне — пути назад нет
         back_path = None
+
+    # ✅ Статусы
+    file_statuses = {
+        s.file_path.strip().replace('\\', '/'): True
+        for s in SCaleTicketStatus.objects.filter(sent=True)
+    }
 
     context = {
         'relative_path': relative_path,
         'folders': folders,
         'files': files,
-        'back_path': back_path
+        'back_path': back_path,
+        'file_statuses': file_statuses,
     }
+
+
     return render(request, 'crm/scale_ticket_browser.html', context)
+
+from django.core.mail import EmailMessage
+
+@csrf_exempt
+def send_scale_ticket_email(request):
+    import json
+    from django.utils.timezone import now
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        relative_path = data.get('path')
+        recipient_email = data.get('email')  # в будущем можно сделать автоопределение
+
+        abs_path = os.path.join(settings.MEDIA_ROOT, 'reports', 'scale_tickets', relative_path)
+        if not os.path.exists(abs_path):
+            return JsonResponse({'error': 'File not found'}, status=404)
+
+        try:
+            email = EmailMessage(
+                subject="📎 Scale Ticket",
+                body="Attached scale ticket file.",
+                from_email=settings.EMAIL_HOST_USER,
+                to=[recipient_email],
+            )
+            email.attach_file(abs_path)
+            email.send()
+
+            status, created = SCaleTicketStatus.objects.get_or_create(file_path=relative_path)
+            status.sent = True
+            status.sent_at = now()
+            status.save()
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 # ID календаря
 CALENDAR_ID = "dmitry@wastepaperbrokers.com"
