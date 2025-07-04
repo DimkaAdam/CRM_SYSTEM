@@ -1612,8 +1612,42 @@ def delete_scheduled_shipment(request, shipment_id):
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
+from datetime import timedelta, date
+
+def generate_recurring_shipments():
+    today = date.today()
+    end_date = today + timedelta(days=7)
+
+    rec_shipments = ScheduledShipment.objects.filter(is_recurring=True)
+
+    for ship in rec_shipments:
+        rule_day = ship.recurrence_day
+        current = today
+
+        while current <= end_date:
+            if current.weekday() == rule_day:
+                already_exists = ScheduledShipment.objects.filter(
+                    is_recurring=False,
+                    date=current,
+                    supplier=ship.supplier,
+                    buyer=ship.buyer,
+                    grade=ship.grade
+                ).exists()
+
+                if not already_exists:
+                    ScheduledShipment.objects.create(
+                        supplier=ship.supplier,
+                        buyer=ship.buyer,
+                        date=current,
+                        time=ship.time,
+                        grade=ship.grade,
+                        is_recurring=False
+                    )
+            current += timedelta(days=1)
+
 from reportlab.platypus import Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+
 
 @csrf_exempt
 def generate_bol_pdf(request):

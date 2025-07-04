@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 50); // Проверяем каждые 50 мс
 });
 
-// ✅ Вот правильное место для toggle календаря:
+// ✅ место для toggle календаря:
     const toggleBtn = document.getElementById("toggle-calendar-btn");
     const calendarWrapper = document.getElementById("calendar-wrapper");
 
@@ -154,40 +154,50 @@ document.addEventListener('click', function (e) {
 
     loadData();
 
-    // 📌 Загрузка отгрузок (только запланированные)
+    // 📌 Загрузка отгрузок
     function loadShipments() {
-        fetch("/api/scheduled-shipments/")
-            .then(response => response.json())
-            .then(data => {
-                let shipmentListContainer = document.getElementById("shipment-list");
-                shipmentListContainer.innerHTML = "";  // ✅ Очищаем перед обновлением
+    fetch("/api/scheduled-shipments/")
+        .then(response => response.json())
+        .then(data => {
+            let shipmentListContainer = document.getElementById("shipment-list");
+            shipmentListContainer.innerHTML = "";  // ✅ Очищаем перед обновлением
 
-                let shipmentsByDay = {};
-                let today = new Date();
-                let nextWeek = new Date();
-                nextWeek.setDate(today.getDate() + 7);
+            let now = new Date();
+            let startDate = new Date();
+            startDate.setDate(now.getDate() - 7);  // ✅ Показать за неделю назад
+            let endDate = new Date();
+            endDate.setDate(now.getDate() + 7);    // ✅ Показать на неделю вперёд
 
-                calendar.getEvents().forEach(event => event.remove());  // ✅ Удаляем старые события
+            let shipmentsByDay = {};  // 🛠️ Добавь, иначе ошибка
 
-                data.forEach(shipment => {
-                    let date = new Date(`${shipment.date}T${shipment.time}`);
-                    let dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long", timeZone: "America/Vancouver" });
+            calendar.getEvents().forEach(event => event.remove());  // ✅ Удаляем старые события
 
-                    if (date >= today && date <= nextWeek) {
-                        if (!shipmentsByDay[dayOfWeek]) {
-                            shipmentsByDay[dayOfWeek] = [];
-                        }
-                        shipmentsByDay[dayOfWeek].push(shipment);
+            data.forEach(shipment => {
+                let date = new Date(`${shipment.date}T${shipment.time}`);
 
-                        // ✅ Добавляем в FullCalendar
-                        calendar.addEvent({
-                            id: shipment.id,
-                            title: `${shipment.supplier} → ${shipment.buyer} (${shipment.grade})`,
-                            start: date.toISOString(),
-                            allDay: false
-                        });
-                    }
+                // ✅ Пропускаем всё вне диапазона [-7; +7]
+                if (date < startDate || date > endDate) {
+                    return;
+                }
+
+                let dayOfWeek = date.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    timeZone: "America/Vancouver"
                 });
+
+                if (!shipmentsByDay[dayOfWeek]) {
+                    shipmentsByDay[dayOfWeek] = [];
+                }
+                shipmentsByDay[dayOfWeek].push(shipment);
+
+                // ✅ Добавляем в FullCalendar
+                calendar.addEvent({
+                    id: shipment.id,
+                    title: `${shipment.supplier} → ${shipment.buyer} (${shipment.grade})`,
+                    start: date.toISOString(),
+                    allDay: false
+                });
+            });
 
                // ✅ Отображаем список по дням недели
                 Object.keys(shipmentsByDay).forEach(day => {
@@ -201,7 +211,23 @@ document.addEventListener('click', function (e) {
 
                     let title = document.createElement("h4");
                     title.textContent = day;
-                    title.style.backgroundColor = "#007aff";
+
+                    // ✅ Проверим: все ли отгрузки прошли
+                    let allPast = shipmentsByDay[day].every(shipment => {
+                        let shipmentTime = new Date(`${shipment.date}T${shipment.time}`);
+                        return shipmentTime < new Date(); // уже прошли
+                    });
+
+                    if (allPast) {
+                        title.style.backgroundColor = "#999";  // серый цвет для прошедших
+                        title.style.color = "#fff";
+                    } else {
+                        title.style.backgroundColor = "#08666e";
+                        title.style.color = "#fff";
+                    }
+
+                    title.style.padding = "5px";
+                    title.style.borderRadius = "5px";
                     title.style.color = "white";
                     title.style.padding = "5px";
                     title.style.borderRadius = "5px";
@@ -339,6 +365,8 @@ document.addEventListener('click', function (e) {
         let date = document.getElementById("shipment-date").value;
         let time = document.getElementById("shipment-time").value;
         let grade = document.getElementById("shipment-grade").value;
+        let isRecurring = document.getElementById("is_recurring").checked;
+        let recurrenceType = document.getElementById("recurrence_type").value;
 
         if (!supplier || !buyer || !date || !time || !grade) {
             alert("❌ Please fill in all fields!");
@@ -349,7 +377,9 @@ document.addEventListener('click', function (e) {
             supplier: supplier,
             buyer: buyer,
             datetime: `${date}T${time}:00`,
-            grade: grade
+            grade: grade,
+            is_recurring: isRecurring,
+            recurrence_type: recurrenceType
         };
 
         fetch("/api/scheduled-shipments/add/", {

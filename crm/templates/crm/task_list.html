@@ -2,6 +2,8 @@
 {% block title %}Tasks{% endblock %}
 {% load static %}
 {% block content %}
+
+
 <link rel="icon" href="{% static 'favicon.ico' %}">
 <!-- Подключаем FullCalendar -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
@@ -87,6 +89,15 @@
           {% endfor %}
         </select>
       </div>
+
+
+      <label><input type="checkbox" id="is_recurring"> Repeat</label>
+      <select id="recurrence_type">
+        <option value="">-- Select --</option>
+        <option value="weekly">Every Week</option>
+        <option value="biweekly">Every 2 Weeks</option>
+        <option value="monthly">Every Month</option>
+      </select>
 
       <button type="submit" class="submit-btn">
         <span style="font-size: 18px;">➕</span> Add Shipment
@@ -243,4 +254,16 @@
   </div>
 </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const repeatCheckbox = document.getElementById("is_recurring");
+    const recurrenceSelect = document.getElementById("recurrence_type");
+
+    repeatCheckbox.addEventListener("change", function () {
+      recurrenceSelect.disabled = !this.checked;
+    });
+  });
+</script>
+
 {% endblock %}

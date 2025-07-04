@@ -213,6 +213,14 @@ class ScheduledShipment(models.Model):
     grade = models.CharField(max_length=100)
     is_done = models.BooleanField(default=False)
 
+    # 🔁 Новые поля для повторяемости
+    is_recurring = models.BooleanField(default=False)
+    recurrence_type = models.CharField(max_length=20, choices=[
+        ('weekly', 'Weekly'),
+        ('biweekly', 'Every 2 Weeks'),
+        ('monthly', 'Monthly'),
+    ], blank=True, null=True)
+    recurrence_day = models.IntegerField(blank=True, null=True)  # 0=Monday, 6=Sunday
     def __str__(self):
         return f"{self.supplier} → {self.buyer} ({self.grade}) on {self.date} at {self.time}"
 
@@ -224,3 +232,4 @@ class SCaleTicketStatus(models.Model):
 
     def __str__(self):
         return self.file_path
+
