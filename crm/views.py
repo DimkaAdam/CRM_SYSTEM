@@ -1472,6 +1472,7 @@ def get_calendar_events():
 def task_list(request):
     suppliers = Company.objects.filter(contacts__company_type="suppliers")
     buyers = Company.objects.filter(contacts__company_type="buyers")
+    generate_recurring_shipments()
 
     context = {
         'suppliers': suppliers,
@@ -1566,18 +1567,32 @@ def add_scheduled_shipment(request):
             supplier = Company.objects.get(id=data["supplier"])
             buyer = Company.objects.get(id=data["buyer"])
 
+            # 🔹 Извлекаем дату и время
+            date_part = data["datetime"].split("T")[0]
+            time_part = data["datetime"].split("T")[1]
+
+            # 🔹 Флаги повтора
+            is_recurring = data.get("is_recurring", False)
+            recurrence_type = data.get("recurrence_type", None)
+            recurrence_day = data.get("recurrence_day", None)
+
             shipment = ScheduledShipment.objects.create(
                 supplier=supplier,
                 buyer=buyer,
                 date=data["datetime"].split("T")[0],
                 time=data["datetime"].split("T")[1],
-                grade=data["grade"]
+                grade=data["grade"],
+                is_recurring=data.get("is_recurring", False),
+                recurrence_type=data.get("recurrence_type", None),
+                recurrence_day=data.get("recurrence_day", None)
             )
+
             return JsonResponse({"status": "success", "shipment_id": shipment.id})
         except Company.DoesNotExist:
             return JsonResponse({"error": "Supplier or Buyer not found"}, status=400)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
+
 
 def get_scheduled_shipments(request):
     """
@@ -1612,38 +1627,7 @@ def delete_scheduled_shipment(request, shipment_id):
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
-from datetime import timedelta, date
 
-def generate_recurring_shipments():
-    today = date.today()
-    end_date = today + timedelta(days=7)
-
-    rec_shipments = ScheduledShipment.objects.filter(is_recurring=True)
-
-    for ship in rec_shipments:
-        rule_day = ship.recurrence_day
-        current = today
-
-        while current <= end_date:
-            if current.weekday() == rule_day:
-                already_exists = ScheduledShipment.objects.filter(
-                    is_recurring=False,
-                    date=current,
-                    supplier=ship.supplier,
-                    buyer=ship.buyer,
-                    grade=ship.grade
-                ).exists()
-
-                if not already_exists:
-                    ScheduledShipment.objects.create(
-                        supplier=ship.supplier,
-                        buyer=ship.buyer,
-                        date=current,
-                        time=ship.time,
-                        grade=ship.grade,
-                        is_recurring=False
-                    )
-            current += timedelta(days=1)
 
 from reportlab.platypus import Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -2328,3 +2312,66 @@ def export_supply_list_pdf(request):
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+from datetime import timedelta, date
+from crm.models import ScheduledShipment
+
+
+def generate_recurring_shipments():
+    print("🚀 Функция генерации повторов ЗАПУЩЕНА")
+
+    today = date.today()
+    end_date = today + timedelta(weeks=52)  # 🔁 Генерируем на год вперёд
+
+    # Получаем шаблоны
+    recurring_shipments = ScheduledShipment.objects.filter(is_recurring=True, is_done=False)
+    print(f"📦 Проверка повторяющихся отгрузок на {today} ({len(recurring_shipments)} шаблонов)")
+
+    for shipment in recurring_shipments:
+        current_date = shipment.date
+
+        while True:
+            # 🗓 Вычисляем следующую дату
+            if shipment.recurrence_type == 'weekly':
+                current_date += timedelta(weeks=1)
+            elif shipment.recurrence_type == 'biweekly':
+                current_date += timedelta(weeks=2)
+            elif shipment.recurrence_type == 'monthly':
+                try:
+                    # Пробуем сдвинуть месяц
+                    next_month = current_date.month + 1
+                    year = current_date.year + (next_month - 1) // 12
+                    month = (next_month - 1) % 12 + 1
+                    current_date = current_date.replace(year=year, month=month)
+                except ValueError:
+                    print(f"⚠️ Пропущено: невозможно установить дату для {shipment}")
+                    break
+
+            if current_date > end_date:
+                break
+
+            # Проверяем, не существует ли уже такая отгрузка
+            exists = ScheduledShipment.objects.filter(
+                supplier=shipment.supplier,
+                buyer=shipment.buyer,
+                date=current_date,
+                time=shipment.time,
+                grade=shipment.grade
+            ).exists()
+
+            if exists:
+                print(f"⏩ Уже есть: {current_date} — пропущено.")
+                continue
+
+            # Создаём новую отгрузку
+            ScheduledShipment.objects.create(
+                supplier=shipment.supplier,
+                buyer=shipment.buyer,
+                date=current_date,
+                time=shipment.time,
+                grade=shipment.grade,
+                is_recurring=False  # 📌 Повтор создан — это не шаблон
+            )
+
+            print(f"✅ Создана отгрузка на {current_date} для {shipment.supplier} → {shipment.buyer} ({shipment.grade})")

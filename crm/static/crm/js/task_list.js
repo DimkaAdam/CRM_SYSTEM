@@ -184,11 +184,12 @@ document.addEventListener('click', function (e) {
                     weekday: "long",
                     timeZone: "America/Vancouver"
                 });
+                let fullLabel = date.toISOString().split("T")[0] + ` (${dayOfWeek})`;
 
-                if (!shipmentsByDay[dayOfWeek]) {
-                    shipmentsByDay[dayOfWeek] = [];
+                if (!shipmentsByDay[fullLabel]) {
+                    shipmentsByDay[fullLabel] = [];
                 }
-                shipmentsByDay[dayOfWeek].push(shipment);
+                shipmentsByDay[fullLabel].push(shipment);
 
                 // ✅ Добавляем в FullCalendar
                 calendar.addEvent({
@@ -213,16 +214,25 @@ document.addEventListener('click', function (e) {
                     title.textContent = day;
 
                     // ✅ Проверим: все ли отгрузки прошли
+                    let today = new Date();
+                    let endOfWeek = new Date();
+                    endOfWeek.setDate(today.getDate() + (7 - today.getDay())); // воскресенье текущей недели
+
                     let allPast = shipmentsByDay[day].every(shipment => {
                         let shipmentTime = new Date(`${shipment.date}T${shipment.time}`);
-                        return shipmentTime < new Date(); // уже прошли
+                        return shipmentTime < today;
                     });
 
-                    if (allPast) {
-                        title.style.backgroundColor = "#999";  // серый цвет для прошедших
+                    let allFutureNextWeek = shipmentsByDay[day].every(shipment => {
+                        let shipmentTime = new Date(`${shipment.date}T${shipment.time}`);
+                        return shipmentTime > endOfWeek;
+                    });
+
+                    if (allPast || allFutureNextWeek) {
+                        title.style.backgroundColor = "#999";  // серый
                         title.style.color = "#fff";
                     } else {
-                        title.style.backgroundColor = "#08666e";
+                        title.style.backgroundColor = "#08666e";  // тёмно-зелёный для текущей недели (включая сегодня)
                         title.style.color = "#fff";
                     }
 
@@ -379,7 +389,8 @@ document.addEventListener('click', function (e) {
             datetime: `${date}T${time}:00`,
             grade: grade,
             is_recurring: isRecurring,
-            recurrence_type: recurrenceType
+            recurrence_type: recurrenceType,
+            recurrence_day: new Date(date).getDay()  // 🆕 день недели от 0 (вс) до 6 (сб)
         };
 
         fetch("/api/scheduled-shipments/add/", {
