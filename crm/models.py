@@ -91,13 +91,14 @@ class Deals(models.Model):
 
     def save(self, *args, **kwargs):
         # Убедимся, что все значения корректны для расчетов
+        self.shipped_quantity = self.shipped_quantity or 0
         self.received_quantity = self.received_quantity or 0
         self.buyer_price = self.buyer_price or 0
         self.transport_cost = self.transport_cost or 0
         self.supplier_total = self.supplier_total or 0
 
         # Рассчитываем итоговую сумму сделки
-        self.total_amount = self.received_quantity * self.buyer_price
+        self.total_amount = self.shipped_quantity * self.buyer_price
 
         # Если есть supplier_price, рассчитываем supplier_total
         if self.supplier_price is not None and self.received_quantity is not None:

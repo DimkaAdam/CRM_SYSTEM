@@ -617,7 +617,6 @@ def edit_deal(request, deal_id):
     if request.method == 'POST':
         data = json.loads(request.body)
 
-        # Получаем объект Company для supplier и buyer по их ID
         supplier_id = data.get('supplier')
         buyer_id = data.get('buyer')
 
@@ -626,29 +625,30 @@ def edit_deal(request, deal_id):
         if buyer_id:
             deal.buyer = get_object_or_404(Company, id=buyer_id)
 
-        # Преобразуем данные в числовые значения
+        # Числовые значения как Decimal
+        deal.shipped_quantity = Decimal(data.get('shipped_quantity', deal.shipped_quantity))
         deal.received_quantity = Decimal(data.get('received_quantity', deal.received_quantity))
         deal.buyer_price = Decimal(data.get('buyer_price', deal.buyer_price))
         deal.supplier_price = Decimal(data.get('supplier_price', deal.supplier_price))
+        deal.shipped_pallets = Decimal(data.get('shipped_pallets', deal.shipped_pallets))
+        deal.received_pallets = Decimal(data.get('received_pallets', deal.received_pallets))
+        deal.transport_cost = Decimal(data.get('transport_cost', deal.transport_cost))
 
-        # Обновляем остальные поля
+        # Остальные поля
         deal.date = data.get('date', deal.date)
         deal.grade = data.get('grade', deal.grade)
-        deal.shipped_quantity = data.get('shipped_quantity', deal.shipped_quantity)
-        deal.shipped_pallets = data.get('shipped_pallets', deal.shipped_pallets)
-        deal.received_pallets = data.get('received_pallets', deal.received_pallets)
-        deal.transport_cost = Decimal(data.get('transport_cost', deal.transport_cost))
+
         transport_company_id = data.get('transport_company')
         if transport_company_id:
             deal.transport_company = get_object_or_404(Company, id=transport_company_id)
-        deal.scale_ticket = data.get('scale_ticket', deal.scale_ticket)  # ✅ Теперь scale_ticket обновляется
 
-        # Выполняем расчеты для итоговых сумм
-        deal.total_amount = deal.received_quantity * deal.buyer_price
+        deal.scale_ticket = data.get('scale_ticket', deal.scale_ticket)
+
+        # Итоговые расчёты
+        deal.total_amount = deal.shipped_quantity * deal.buyer_price
         deal.supplier_total = deal.received_quantity * deal.supplier_price
         deal.total_income_loss = deal.total_amount - (deal.supplier_total + deal.transport_cost)
 
-        # Сохраняем обновленную сделку
         deal.save()
 
         return JsonResponse({
@@ -661,12 +661,11 @@ def edit_deal(request, deal_id):
                 'grade': deal.grade,
                 'total_amount': str(deal.total_amount),
                 'total_income_loss': str(deal.total_income_loss),
-                'scale_ticket': deal.scale_ticket  # ✅ Теперь отправляется обратно в UI
+                'scale_ticket': deal.scale_ticket
             }
         })
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
-
 
 @csrf_exempt
 def delete_deal(request, deal_id):
@@ -784,10 +783,21 @@ def sales_analytics(request):
         total_pallets=Sum('shipped_pallets'),
         transport_cost=Sum('transport_cost'),
         supplier_total=Sum('supplier_total'),
-        total_tonnage=Sum('received_quantity'),
-        occ11_tonnage=Sum('received_quantity', filter=Q(grade="OCC11") | Q(grade="OCC 11") | Q(grade="Loose OCC") | Q(
-            grade="OCC 11 Bale String") | Q(
-            grade="Printers Offcuts") | Q(grade="Stock Rolls")),
+        total_tonnage=Sum('shipped_quantity'),
+        occ11_tonnage=Sum(
+            'shipped_quantity',
+            filter=(
+                    Q(grade="OCC11") |
+                    Q(grade="OCC 11") |
+                    Q(grade="OCC 11 Bale String") |
+                    Q(grade="Loose OCC") |
+                    Q(grade="Printers Offcuts") |
+                    Q(grade="Stock Rolls") |
+                    Q(grade="Cardboard Stock Lots") |
+                    Q(grade="DLK") |
+                    Q(grade='Baled Cardboard')
+            )
+        ),
 
         plastic_tonnage=Sum('received_quantity', filter=Q(grade="Flexible Plastic")),
             mixed_tonnage=Sum('received_quantity', filter=Q(grade="Mixed Container")),
