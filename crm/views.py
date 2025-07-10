@@ -2385,3 +2385,70 @@ def generate_recurring_shipments():
             )
 
             print(f"✅ Создана отгрузка на {current_date} для {shipment.supplier} → {shipment.buyer} ({shipment.grade})")
+
+
+def ai_dashboard(request):
+    # Выбираем убыточные сделки
+    problem_deals = Deals.objects.filter(total_income_loss__lt=0)
+    deal_issues_count = problem_deals.count()
+
+    return render(request, 'crm/ai_dashboard/ai_dashboard.html', {
+        'deal_issues_count': deal_issues_count
+    })
+
+# views.py
+from crm.ai_dashboard.deal_recommendations import analyze_deals
+
+def deal_recommendations(request):
+    recommendations = analyze_deals()
+    return render(request, 'crm/ai_dashboard/deal_recommendations.html', {
+        'recommendations': recommendations
+    })
+
+from crm.ai_dashboard.shipment_predictor import predict_shipments
+
+def shipment_predictions(request):
+    predictions = predict_shipments()
+    return render(request, 'crm/ai_dashboard/shipment_predictor.html', {
+        'predictions': predictions
+    })
+
+from crm.ai_dashboard.client_monitor import find_inactive_clients
+
+def client_monitor_view(request):
+    inactive_clients = find_inactive_clients()
+    return render(request, 'crm/ai_dashboard/client_monitor.html', {
+        'inactive_clients': inactive_clients
+    })
+
+from crm.ai_dashboard.email_generator import generate_reminder_email
+
+def generate_email_view(request, company_id):
+    from crm.models import Company
+    from crm.ai_dashboard.email_generator import generate_reminder_email
+
+    company = Company.objects.get(id=company_id)
+    email_text = generate_reminder_email(company.name)
+
+    return render(request, 'crm/ai_dashboard/generated_email.html', {
+        'company': company,
+        'email_text': email_text
+    })
+
+from crm.ai_dashboard.insight_engine import get_top_clients, get_worst_deals, get_top_suppliers, get_problem_suppliers,get_clients_with_drop
+
+def insight_dashboard(request):
+    top_clients = get_top_clients()
+    worst_deals = get_worst_deals()
+    top_suppliers = get_top_suppliers()
+    problem_suppliers = get_problem_suppliers()
+    dropped_clients = get_clients_with_drop()
+
+
+    return render(request, 'crm/ai_dashboard/insights.html', {
+        'top_clients': top_clients,
+        'worst_deals': worst_deals,
+        'top_suppliers': top_suppliers,
+        'problem_suppliers': problem_suppliers,
+        'dropped_clients' : dropped_clients,
+    })

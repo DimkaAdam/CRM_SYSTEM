@@ -128,6 +128,15 @@ urlpatterns = [
     path("reports/scale-browser/", views.scale_ticket_browser, name="scale_ticket_browser"),
     path('send-scale-ticket-email/', send_scale_ticket_email, name='send_scale_ticket_email'),
 
+    path('ai-dashboard/', views.ai_dashboard, name='ai_dashboard'),
+    path('ai-dashboard/deal-recommendations/', views.deal_recommendations, name='deal_recommendations'),
+    path('ai-dashboard/shipment-predictor/', views.shipment_predictions, name='shipment_predictor'),
+    path('ai-dashboard/client-monitor/', views.client_monitor_view, name='client_monitor'),
+    path('ai-dashboard/email/<int:company_id>/', views.generate_email_view, name='generate_email'),
+    path('ai-dashboard/insights/', views.insight_dashboard, name='insight_dashboard'),
+
+
+
 
 
 
