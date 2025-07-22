@@ -134,18 +134,8 @@ urlpatterns = [
     path('ai-dashboard/client-monitor/', views.client_monitor_view, name='client_monitor'),
     path('ai-dashboard/email/<int:company_id>/', views.generate_email_view, name='generate_email'),
     path('ai-dashboard/insights/', views.insight_dashboard, name='insight_dashboard'),
-
-
-
-
-
-
-
-
-
-
-
-
+    path("contact/<int:contact_id>/add_truck/", views.add_truck, name="add_truck"),
+    path('truck/<int:id>/delete/', views.delete_truck, name='delete_truck'),
 
 ]
 

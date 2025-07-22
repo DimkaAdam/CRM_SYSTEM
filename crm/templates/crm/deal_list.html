@@ -270,8 +270,8 @@
                     <th>Supplier</th>
                     <th>Buyer</th>
                     <th>Grade</th>
-                    <th>Shipped (Qty/Pallets)</th>
-                    <th>Received (Qty/Pallets)</th>
+                    <th>Shipped (MT/Pallets)</th>
+                    <th>Received (MT/Pallets)</th>
                     <th>Supplier Price</th>
                     <th>Supplier Total</th>
                     <th>Buyer Price</th>
@@ -290,8 +290,8 @@
                     <td>{{ deal.supplier.name }}</td>
                     <td>{{ deal.buyer.name }}</td>
                     <td>{{ deal.grade }}</td>
-                    <td>{{ deal.shipped_quantity }} / {{ deal.shipped_pallets }}</td>
-                    <td>{{ deal.received_quantity }} / {{ deal.received_pallets }}</td>
+                    <td>{{ deal.shipped_quantity | floatformat:2}} / {{ deal.shipped_pallets }}</td>
+                    <td>{{ deal.received_quantity | floatformat:2}} / {{ deal.received_pallets }}</td>
                     <td>{{ deal.supplier_price }}</td>
                     <td>{{ deal.supplier_total }}</td>
                     <td>{{ deal.buyer_price }}</td>

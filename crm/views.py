@@ -1,6 +1,6 @@
 from django.core.serializers import serialize
 import os
-from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,ScheduledShipment,SCaleTicketStatus
+from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,ScheduledShipment,SCaleTicketStatus,TruckProfile
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -25,7 +25,7 @@ from django.http import HttpResponseRedirect
 from django.db.models import Q
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
-
+from django.views.decorators.http import require_POST
 import json
 from decimal import Decimal
 
@@ -177,6 +177,7 @@ def view_contact(request, id):
         form = ContactForm(instance=contact)
 
     employees = contact.employees.all()
+    trucks = TruckProfile.objects.filter(company=contact.company)
 
     return render(request, 'crm/view_contact.html', {
         'contact': contact,
@@ -184,6 +185,7 @@ def view_contact(request, id):
         'employees': employees,
         'pipeline': pipeline,
         'company': contact.company,
+        'trucks': trucks,
     })
 
 
@@ -2037,7 +2039,7 @@ def add_task(request, contact_id):
     else:
         form = TaskForm()
 
-    return render(request, 'crm/add_task.html', {'form': form, 'contact': contact})
+    return render(request, 'crm/add_truck.html', {'form': form, 'contact': contact})
 
 
 
@@ -2452,3 +2454,51 @@ def insight_dashboard(request):
         'problem_suppliers': problem_suppliers,
         'dropped_clients' : dropped_clients,
     })
+
+
+
+from django.views.decorators.http import require_http_methods
+import math
+@require_http_methods(["GET", "POST"])
+def add_truck(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+    company = contact.company
+
+    if contact.company_type != "hauler":
+        return HttpResponse("❌ Only hauler contacts can have trucks", status=400)
+
+    if request.method == "POST":
+        max_tons = float(request.POST.get("max_tons", 0))      # максимум тонн
+        base_cost = float(request.POST.get("base_cost", 0))    # базовая цена
+        max_spots = int(request.POST.get('max_spots', 0))
+
+        # 🔁 Изменить расчёт max_bales:
+        if max_tons > 0 and max_spots > 0:
+            max_bales = max_spots  # 💡 теперь не рассчитываем, а вводим напрямую
+        else:
+            max_bales = 0
+
+        # ✅ Сохраняем
+        TruckProfile.objects.create(
+            company=company,
+            max_bales=max_bales,
+            max_tons=max_tons,
+            max_spots=max_spots,
+            base_cost=base_cost
+        )
+
+        return redirect("view_contact", id=contact_id)
+
+    return render(request, "crm/add_truck.html", {"contact": contact})
+
+
+def delete_truck(request, id):
+    truck = get_object_or_404(TruckProfile, id=id)
+
+    # 🧩 Получаем первый контакт этой компании (предполагаем, что он есть)
+    contact = Contact.objects.filter(company=truck.company).first()
+    if not contact:
+        return redirect('contacts_list')  # fallback, если что-то пошло не так
+
+    truck.delete()
+    return redirect('view_contact', id=contact.id)

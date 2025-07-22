@@ -234,3 +234,10 @@ class SCaleTicketStatus(models.Model):
     def __str__(self):
         return self.file_path
 
+
+class TruckProfile(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    max_bales = models.IntegerField()
+    max_tons = models.FloatField()
+    max_spots = models.IntegerField()
+    base_cost = models.FloatField()
