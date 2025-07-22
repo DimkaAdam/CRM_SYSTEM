@@ -1,0 +1,11 @@
+{% extends 'crm/index.html' %}
+{% block title %}Generated Email{% endblock %}
+{% block content %}
+<h2>📧 Автоматическое письмо для {{ company.name }}</h2>
+
+<textarea style="width: 100%; height: 300px; font-family: monospace; padding: 20px;">{{ email_text }}</textarea>
+
+<p>
+  <button onclick="navigator.clipboard.writeText(document.querySelector('textarea').value)">📋 Скопировать</button>
+</p>
+{% endblock %}

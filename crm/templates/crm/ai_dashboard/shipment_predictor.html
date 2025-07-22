@@ -1,0 +1,68 @@
+{% extends 'crm/index.html' %}
+{% block title %}Shipment Predictor{% endblock %}
+{% block content %}
+
+<style>
+  .predictor-wrapper {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #f5f5f5;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  .predictor-wrapper h2 {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 25px;
+    color: #003366;
+  }
+
+  .prediction-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s;
+  }
+
+  .prediction-card:hover {
+    transform: translateY(-3px);
+  }
+
+  .prediction-card strong {
+    color: #08666e;
+  }
+
+  .no-predictions {
+    background: #d1f7d6;
+    color: #205522;
+    padding: 20px;
+    border-radius: 14px;
+    font-weight: 500;
+    text-align: center;
+  }
+</style>
+
+
+  <h2>📦 Upcoming Shipment Predictions</h2>
+
+  {% if predictions %}
+    {% for item in predictions %}
+      <div class="prediction-card">
+        🚛 <strong>{{ item.supplier }}</strong><br>
+        Last shipment: <strong>{{ item.last_date }}</strong><br>
+        Avg interval: <strong>{{ item.avg_interval }} days</strong><br>
+        ➡️ Predicted next shipment: <strong>{{ item.predicted_date }}</strong>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="no-predictions">
+      ✅ No predicted shipments in the next few days.
+    </div>
+  {% endif %}
+
+
+{% endblock %}

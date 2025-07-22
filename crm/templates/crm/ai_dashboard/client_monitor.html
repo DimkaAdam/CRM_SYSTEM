@@ -1,0 +1,29 @@
+{% extends 'crm/index.html' %}
+{% block title %}Client Monitor{% endblock %}
+
+{% block content %}
+<h2>⚠️ Затихшие клиенты</h2>
+<p>Клиенты, у которых не было сделок более 30 дней:</p>
+
+<ul class="recommendations-list">
+  {% for item in inactive_clients %}
+    <li class="ai-card">
+      <strong>{{ item.company.name }}</strong> — не было сделок {{ item.days_since }} дней.
+      {% if item.last_deal %}
+        <br>🗓 Последняя сделка: {{ item.last_deal.date|date:"Y-m-d" }}
+      {% else %}
+        <br>🚫 Сделок не было вообще
+      {% endif %}
+
+      <!-- ✉️ Кнопка генерации письма -->
+      <br>
+      <a href="{% url 'generate_email' item.company.id %}" class="btn" style="margin-top: 10px; display: inline-block;">
+        ✉️ Сгенерировать письмо
+      </a>
+    </li>
+  {% empty %}
+    <li class="ai-card">🎉 Все клиенты активны!</li>
+  {% endfor %}
+</ul>
+{% endblock %}
+

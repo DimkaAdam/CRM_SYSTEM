@@ -1,0 +1,53 @@
+{% extends 'crm/index.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}AI DASHBOARD{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'crm/ai_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<h2 style="margin-bottom: 20px;">🧠 AI Dashboard</h2>
+
+<div class="ai-dashboard-container">
+  <!-- 🔍 Карточка 1: Рекомендации по сделкам -->
+  <a href="{% url 'deal_recommendations' %}" class="ai-card-link">
+    <div class="ai-card">
+      <h3>📉 Deal Recommendations</h3>
+      <p>🚩 {{ deal_issues_count }} проблемных сделок</p>
+      <p class="ai-card-hint">Улучшите прибыльность</p>
+    </div>
+  </a>
+
+  <a href="{% url 'insight_dashboard' %}" class="ai-card-link">
+  <div class="ai-card">
+    <h3>📊 Insight Engine</h3>
+    <p>📈 Анализ клиентов, сделок и трендов</p>
+    <p class="ai-card-hint">Нажмите для просмотра</p>
+  </div>
+</a>
+
+  <!-- 🔮 Карточка 2: Предсказания отгрузок -->
+  <a href="{% url 'shipment_predictor' %}" class="ai-card-link">
+    <div class="ai-card">
+      <h3>📦 Shipment Predictor</h3>
+      <p>📅 Отслеживай следующую отгрузку</p>
+      <p class="ai-card-hint">На основе частоты поставок</p>
+    </div>
+  </a>
+</div>
+
+<a href="{% url 'client_monitor' %}" class="ai-card-link">
+  <div class="ai-card">
+    <h3>⚠️ Client Monitor</h3>
+    <p>Клиенты без сделок более 30 дней</p>
+    <p class="ai-card-hint">Нажмите, чтобы посмотреть</p>
+  </div>
+</a>
+
+
+
+
+{% endblock %}

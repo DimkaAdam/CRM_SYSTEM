@@ -1,0 +1,56 @@
+{% extends 'crm/index.html' %}
+{% block title %}AI: Убыточные сделки{% endblock %}
+{% block content %}
+<h2>🧠 Рекомендации по убыточным сделкам</h2>
+
+{% for rec in recommendations %}
+  <div class="ai-deal-table">
+    <h3>📦 {{ rec.date }} | {{ rec.company }}</h3>
+    <table>
+      <tr><th>Материал</th><td>{{ rec.grade }}</td></tr>
+      <tr><th>Маржа</th><td><strong style="color: red;">{{ rec.income_loss }} $</strong></td></tr>
+      <tr><th>Объём</th><td>{{ rec.shipped_quantity|floatformat:4 }} т / {{ rec.bales }} тюков</td></tr>
+    </table>
+
+    {% if rec.suggestions %}
+      <ul class="ai-suggestions">
+        {% for suggestion in rec.suggestions %}
+          <li>{{ suggestion }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% empty %}
+  <p>🎉 Нет убыточных сделок. Всё отлично!</p>
+{% endfor %}
+
+<style>
+  .ai-deal-table {
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  .ai-deal-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  .ai-deal-table th, .ai-deal-table td {
+    text-align: left;
+    padding: 6px 12px;
+  }
+  .ai-deal-table th {
+    background: #e0f0ff;
+    width: 160px;
+  }
+  .ai-suggestions {
+    margin-top: 12px;
+    padding-left: 20px;
+  }
+  .ai-suggestions li {
+    margin-bottom: 6px;
+  }
+</style>
+{% endblock %}

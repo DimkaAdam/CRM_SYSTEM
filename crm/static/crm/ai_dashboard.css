@@ -1,0 +1,52 @@
+.ai-dashboard-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.ai-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.ai-card {
+  background: #f5f5f5;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 260px;
+  transition: 0.3s;
+}
+
+.ai-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+  cursor: pointer;
+}
+
+.ai-card h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: #08666e;
+}
+
+.ai-card-hint {
+  font-size: 13px;
+  color: #666;
+}
+
+
+.recommendations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.ai-card {
+    background: #f5f5f5;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}

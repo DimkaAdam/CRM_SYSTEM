@@ -1,0 +1,145 @@
+{% extends 'crm/index.html' %}
+{% block title %}AI Insights{% endblock %}
+{% block content %}
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  .chart-container {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    margin-bottom: 30px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h3.section-title {
+    color: #08666e;
+    margin-bottom: 15px;
+  }
+</style>
+
+<div class="chart-container">
+  <h3 class="section-title">🔝 Top Buyers</h3>
+  <canvas id="topBuyersChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h3 class="section-title">🏢 Top Suppliers</h3>
+  <canvas id="topSuppliersChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h3 class="section-title">🚩 Problem Suppliers</h3>
+  <canvas id="problemSuppliersChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h3 class="section-title">📉 Clients with Sharp Drop</h3>
+  <canvas id="clientsDropChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h3 class="section-title">💥 Loss-Making Deals</h3>
+  <canvas id="lossDealsChart"></canvas>
+</div>
+
+<script>
+  // 🟩 Top Buyers
+  new Chart(document.getElementById('topBuyersChart'), {
+    type: 'bar',
+    data: {
+      labels: [{% for c in top_clients %}'{{ c.buyer__name }}',{% endfor %}],
+      datasets: [{
+        label: 'Profit (CAD)',
+        data: [{% for c in top_clients %}{{ c.total_profit }},{% endfor %}],
+        backgroundColor: '#08666e'
+      }]
+    },
+    options: {responsive: true, scales: {y: {beginAtZero: true}}}
+  });
+
+  // 🟩 Top Suppliers
+  new Chart(document.getElementById('topSuppliersChart'), {
+    type: 'bar',
+    data: {
+      labels: [{% for s in top_suppliers %}'{{ s.supplier__name }}',{% endfor %}],
+      datasets: [{
+        label: 'Profit (CAD)',
+        data: [{% for s in top_suppliers %}{{ s.total_profit }},{% endfor %}],
+        backgroundColor: '#2299aa'
+      }]
+    },
+    options: {responsive: true, scales: {y: {beginAtZero: true}}}
+  });
+
+  // 🟥 Problem Suppliers
+  new Chart(document.getElementById('problemSuppliersChart'), {
+    type: 'bar',
+    data: {
+      labels: [{% for s in problem_suppliers %}'{{ s.supplier__name }}',{% endfor %}],
+      datasets: [{
+        label: 'Loss (CAD)',
+        data: [{% for s in problem_suppliers %}{{ s.total_loss }},{% endfor %}],
+        backgroundColor: '#e74c3c'
+      }]
+    },
+    options: {responsive: true, scales: {y: {beginAtZero: true}}}
+  });
+
+  // 📉 Clients with Drop
+  new Chart(document.getElementById('clientsDropChart'), {
+    type: 'bar',
+    data: {
+      labels: [{% for d in dropped_clients %}'{{ d.buyer.name }}',{% endfor %}],
+      datasets: [
+        {
+          label: 'Last Month',
+          data: [{% for d in dropped_clients %}{{ d.last_month }},{% endfor %}],
+          backgroundColor: '#3498db'
+        },
+        {
+          label: 'This Month',
+          data: [{% for d in dropped_clients %}{{ d.this_month }},{% endfor %}],
+          backgroundColor: '#95a5a6'
+        }
+      ]
+    },
+    options: {responsive: true, scales: {y: {beginAtZero: true}}}
+  });
+
+  // 💥 Loss-making deals
+  new Chart(document.getElementById('lossDealsChart'), {
+    type: 'bar',
+    data: {
+      labels: [{% for d in worst_deals %}'#{{ d.id }}',{% endfor %}],
+      datasets: [{
+        label: 'Margin (CAD)',
+        data: [{% for d in worst_deals %}{{ d.total_income_loss }},{% endfor %}],
+        backgroundColor: '#f39c12'
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ' + context.raw + ' CAD';
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+{% endblock %}
