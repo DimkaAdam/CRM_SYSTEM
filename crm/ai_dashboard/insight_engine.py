@@ -26,13 +26,36 @@ def get_top_suppliers():
 
 def get_problem_suppliers():
     current_date = now()
-    return Deals.objects.filter(
-        supplier__isnull=False,
-        date__month=current_date.month,
-        date__year=current_date.year
-    ).values('supplier__name').annotate(
-        total_loss=Sum('total_income_loss')
-    ).filter(total_loss__lt=0).order_by('total_loss')
+
+    # Получаем всех поставщиков с убытками за текущий месяц
+    suppliers = (
+        Deals.objects
+        .filter(
+            supplier__isnull=False,
+            date__month=current_date.month,
+            date__year=current_date.year
+        )
+        .values('supplier__name')
+        .annotate(total_loss=Sum('total_income_loss'))
+        .filter(total_loss__lt=0)
+        .order_by('total_loss')
+    )
+
+    # Определим максимальный убыток для нормализации процентов
+    max_loss = abs(min(s['total_loss'] for s in suppliers)) if suppliers else 1
+
+    # Сформируем список словарей для шаблона
+    result = []
+    for s in suppliers:
+        loss = abs(s['total_loss'])
+        percent = int((loss / max_loss) * 100)
+        result.append({
+            'name': s['supplier__name'],
+            'loss': round(loss, 2),
+            'percent': percent
+        })
+
+    return result
 
 def get_worst_deals(limit=5):
     today = now()
@@ -95,3 +118,50 @@ def get_clients_with_drop(threshold_ratio=0.5):
                 continue
 
     return dropped_clients
+
+def get_pie_chart_data():
+    suppliers = (
+        Deals.objects.filter(supplier__isnull=False)
+        .values('supplier__name')
+        .annotate(value=Sum('total_income_loss'))
+    )
+    buyers = (
+        Deals.objects.filter(buyer__isnull=False)
+        .values('buyer__name')
+        .annotate(value=Sum('total_income_loss'))
+    )
+
+    supplier_data = {item['supplier__name']: float(item['value']) for item in suppliers}
+    buyer_data = {item['buyer__name']: float(item['value']) for item in buyers}
+
+    return {
+        "suppliers": supplier_data,
+        "buyers": buyer_data,
+    }
+
+def get_supplier_monthly_data():
+    from collections import defaultdict
+
+    current_year = now().year
+
+    # Получаем сделки по году, сгруппированные по поставщику и месяцу
+    data = (
+        Deals.objects
+        .filter(
+            supplier__isnull=False,
+            date__year=current_year
+        )
+        .values('supplier__name', 'date__month')
+        .annotate(total=Sum('total_income_loss'))
+        .order_by('supplier__name', 'date__month')
+    )
+
+    result = defaultdict(lambda: [0] * 12)
+
+    for entry in data:
+        name = entry['supplier__name']
+        month = entry['date__month']
+        total = round(entry['total'], 2) if entry['total'] is not None else 0
+        result[name][month - 1] = total
+
+    return dict(result)

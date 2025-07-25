@@ -2415,12 +2415,13 @@ def shipment_predictions(request):
         'predictions': predictions
     })
 
-from crm.ai_dashboard.client_monitor import find_inactive_clients
+from crm.ai_dashboard.client_monitor import find_inactive_clients,INACTIVITY_DAYS_THRESHOLD
 
 def client_monitor_view(request):
     inactive_clients = find_inactive_clients()
     return render(request, 'crm/ai_dashboard/client_monitor.html', {
-        'inactive_clients': inactive_clients
+        'inactive_clients': inactive_clients,
+        'threshold': INACTIVITY_DAYS_THRESHOLD
     })
 
 from crm.ai_dashboard.email_generator import generate_reminder_email
@@ -2436,6 +2437,84 @@ def generate_email_view(request, company_id):
         'company': company,
         'email_text': email_text
     })
+
+from crm.ai_dashboard.insight_engine import get_pie_chart_data
+from django.http import JsonResponse
+
+def ai_pie_stats(request):
+    data = get_pie_chart_data()
+    return JsonResponse(data)
+
+from crm.models import Deals
+from django.db.models import Sum
+
+def get_problem_suppliers():
+    suppliers = (
+        Deals.objects
+        .filter(total_income_loss__lt=0, supplier__isnull=False)
+        .values('supplier__name')
+        .annotate(total_loss=Sum('total_income_loss'))
+        .order_by('total_loss')
+    )
+
+    max_loss = abs(min(s['total_loss'] for s in suppliers)) or 1  # защита от деления на 0
+
+    result = []
+    for s in suppliers:
+        loss = abs(s['total_loss'])
+        percent = int((loss / max_loss) * 100)
+        result.append({
+            'name': s['supplier__name'],
+            'loss': round(loss, 2),
+            'percent': percent
+        })
+
+    return result
+
+
+from django.utils.timezone import now
+
+def get_supplier_monthly_stats(request):
+    current_year = now().year
+
+    # Берём сделки по году, сгруппированные по supplier и месяцу
+    data = (
+        Deals.objects.filter(
+            date__year=current_year,
+            supplier__isnull=False
+        )
+        .values('supplier__name', 'date__month')
+        .annotate(total=Sum('total_income_loss'))
+        .order_by('supplier__name', 'date__month')
+    )
+
+    # Строим структуру: {supplier_name: [month1, ..., month12]}
+    result = {}
+    for entry in data:
+        name = entry['supplier__name']
+        month = entry['date__month']
+        total = round(entry['total'], 2)
+
+        if name not in result:
+            result[name] = [0] * 12
+
+        result[name][month - 1] = total
+
+    return JsonResponse(result)
+
+def get_buyer_supplier_map(request):
+    from crm.models import Deals
+    result = {}
+    qs = Deals.objects.filter(buyer__isnull=False, supplier__isnull=False).values("buyer__name", "supplier__name").distinct()
+
+    for row in qs:
+        buyer = row["buyer__name"]
+        supplier = row["supplier__name"]
+        result.setdefault(buyer, []).append(supplier)
+
+    return JsonResponse(result)
+
+
 
 from crm.ai_dashboard.insight_engine import get_top_clients, get_worst_deals, get_top_suppliers, get_problem_suppliers,get_clients_with_drop
 

@@ -12,84 +12,107 @@
     padding: 20px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     margin-bottom: 30px;
-    max-width: 400px;
+    max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
   }
+
   h3.section-title {
     color: #08666e;
     margin-bottom: 15px;
   }
+
+  canvas.fixed-size {
+    width: 260px !important;
+    height: 260px !important;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .charts-row {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 30px;
+  }
+
+  .charts-row > div {
+    text-align: center;
+  }
 </style>
 
+<!-- 📈 Supplier Trend Chart -->
 <div class="chart-container">
-  <h3 class="section-title">🔝 Top Buyers</h3>
-  <canvas id="topBuyersChart"></canvas>
+  <h3 class="section-title">📈 Supplier Profit/Loss by Month</h3>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0;">
+    <div>
+      <label for="buyerFilter" style="font-weight: bold;">📌 Filter by Buyer:</label>
+      <select id="buyerFilter" style="padding: 6px; margin-left: 8px;">
+        <option value="">— All Buyers —</option>
+      </select>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button id="hideAllBtn" style="background: #222; color: #fff; padding: 8px 14px; border: none; border-radius: 6px;">
+        Hide All Lines
+      </button>
+      <button id="showAllBtn" style="background: #08666e; color: #fff; padding: 8px 14px; border: none; border-radius: 6px;">
+        Show All Lines
+      </button>
+    </div>
+  </div>
+
+
+  <canvas id="supplierTrendChart" height="320"></canvas>
 </div>
 
-<div class="chart-container">
-  <h3 class="section-title">🏢 Top Suppliers</h3>
-  <canvas id="topSuppliersChart"></canvas>
+<!-- 🟢 Pie Charts -->
+<div class="charts-row">
+  <div>
+    <h3 style="color: #000;">By Buyers</h3>
+    <canvas id="buyerChart" class="fixed-size" width="260" height="260"></canvas>
+  </div>
+  <div>
+    <h3 style="color: #000;">By Suppliers</h3>
+    <canvas id="supplierChart" class="fixed-size" width="260" height="260"></canvas>
+  </div>
 </div>
 
-<div class="chart-container">
-  <h3 class="section-title">🚩 Problem Suppliers</h3>
-  <canvas id="problemSuppliersChart"></canvas>
+<!-- 🚩 Gradient Bars for Problem Suppliers -->
+<div class="chart-container" style="background: #1c1f2e;">
+  <h3 class="section-title" style="color: #fff;">🚩 Problem Suppliers</h3>
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    {% for s in problem_suppliers %}
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 100px; color: #ccc; font-size: 14px;">{{ s.name }}</div>
+      <div style="flex: 1; background: #3b3f52; border-radius: 20px; overflow: hidden;">
+        <div style="
+          width: {{ s.percent }}%;
+          height: 14px;
+          border-radius: 20px;
+          background: linear-gradient(to right, #00c3ff, #ffff1c);">
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 
+<!-- 📉 Clients with Drop -->
 <div class="chart-container">
   <h3 class="section-title">📉 Clients with Sharp Drop</h3>
   <canvas id="clientsDropChart"></canvas>
 </div>
 
+<!-- 💥 Loss-Making Deals -->
 <div class="chart-container">
   <h3 class="section-title">💥 Loss-Making Deals</h3>
   <canvas id="lossDealsChart"></canvas>
 </div>
 
 <script>
-  // 🟩 Top Buyers
-  new Chart(document.getElementById('topBuyersChart'), {
-    type: 'bar',
-    data: {
-      labels: [{% for c in top_clients %}'{{ c.buyer__name }}',{% endfor %}],
-      datasets: [{
-        label: 'Profit (CAD)',
-        data: [{% for c in top_clients %}{{ c.total_profit }},{% endfor %}],
-        backgroundColor: '#08666e'
-      }]
-    },
-    options: {responsive: true, scales: {y: {beginAtZero: true}}}
-  });
-
-  // 🟩 Top Suppliers
-  new Chart(document.getElementById('topSuppliersChart'), {
-    type: 'bar',
-    data: {
-      labels: [{% for s in top_suppliers %}'{{ s.supplier__name }}',{% endfor %}],
-      datasets: [{
-        label: 'Profit (CAD)',
-        data: [{% for s in top_suppliers %}{{ s.total_profit }},{% endfor %}],
-        backgroundColor: '#2299aa'
-      }]
-    },
-    options: {responsive: true, scales: {y: {beginAtZero: true}}}
-  });
-
-  // 🟥 Problem Suppliers
-  new Chart(document.getElementById('problemSuppliersChart'), {
-    type: 'bar',
-    data: {
-      labels: [{% for s in problem_suppliers %}'{{ s.supplier__name }}',{% endfor %}],
-      datasets: [{
-        label: 'Loss (CAD)',
-        data: [{% for s in problem_suppliers %}{{ s.total_loss }},{% endfor %}],
-        backgroundColor: '#e74c3c'
-      }]
-    },
-    options: {responsive: true, scales: {y: {beginAtZero: true}}}
-  });
-
   // 📉 Clients with Drop
   new Chart(document.getElementById('clientsDropChart'), {
     type: 'bar',
@@ -111,7 +134,7 @@
     options: {responsive: true, scales: {y: {beginAtZero: true}}}
   });
 
-  // 💥 Loss-making deals
+  // 💥 Loss-making Deals
   new Chart(document.getElementById('lossDealsChart'), {
     type: 'bar',
     data: {
@@ -124,11 +147,7 @@
     },
     options: {
       responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      },
+      scales: { y: { beginAtZero: true } },
       plugins: {
         tooltip: {
           callbacks: {
@@ -140,6 +159,202 @@
       }
     }
   });
+
+  // 🟢 Pie Charts
+  fetch("/api/ai/pie-stats/")
+    .then(response => response.json())
+    .then(data => {
+      createPieChart("supplierChart", data.suppliers);
+      createPieChart("buyerChart", data.buyers);
+    });
+
+  function createPieChart(canvasId, dataMap) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+
+    const labels = Object.keys(dataMap);
+    const dataValues = Object.values(dataMap);
+
+    const gradientColors = [
+      createGradient(ctx, "#2193b0", "#6dd5ed"),
+      createGradient(ctx, "#cc2b5e", "#753a88"),
+      createGradient(ctx, "#ee9ca7", "#ffdde1"),
+      createGradient(ctx, "#42275a", "#734b6d"),
+      createGradient(ctx, "#bdc3c7", "#2c3e50"),
+      createGradient(ctx, "#614385", "#516395"),
+      createGradient(ctx, "#0f2027", "#2c5364"),
+      createGradient(ctx, "#ff6a00", "#ee0979")
+    ];
+
+    const backgroundColors = dataValues.map((_, i) => gradientColors[i % gradientColors.length]);
+
+    new Chart(canvas, {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: dataValues,
+          backgroundColor: backgroundColors,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#191725',
+              boxWidth: 14,
+              font: {
+                size: 12
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function createGradient(ctx, colorStart, colorEnd) {
+    const gradient = ctx.createLinearGradient(0, 0, 300, 0);
+    gradient.addColorStop(0, colorStart);
+    gradient.addColorStop(1, colorEnd);
+    return gradient;
+  }
+
+  // 📈 Supplier Trend Chart Logic
+  let fullSupplierData = {};
+  let buyerMap = {};
+  let supplierChart = null;
+
+  fetch("/api/ai/supplier-monthly/")
+    .then(res => res.json())
+    .then(data => {
+      fullSupplierData = data;
+      return fetch("/api/ai/buyer-suppliers/");
+    })
+    .then(res => res.json())
+    .then(buyerData => {
+      buyerMap = buyerData;
+      const select = document.getElementById("buyerFilter");
+
+      for (let buyer of Object.keys(buyerMap)) {
+        const opt = document.createElement("option");
+        opt.value = buyer;
+        opt.textContent = buyer;
+        select.appendChild(opt);
+      }
+
+      renderChart(fullSupplierData);
+
+      document.getElementById("hideAllBtn").addEventListener("click", () => {
+        if (supplierChart) {
+          supplierChart.data.datasets.forEach((ds) => {
+            const isAllZero = ds.data.every(v => v === 0);
+            if (!isAllZero) ds.hidden = true;
+          });
+          supplierChart.update();
+        }
+      });
+
+      document.getElementById("showAllBtn").addEventListener("click", () => {
+        if (supplierChart) {
+          supplierChart.data.datasets.forEach((ds) => {
+            ds.hidden = false;
+          });
+          supplierChart.update();
+        }
+      });
+
+
+      select.addEventListener("change", () => {
+        const selected = select.value;
+        if (selected === "") {
+          renderChart(fullSupplierData);
+        } else {
+          const filtered = {};
+          const suppliers = buyerMap[selected] || [];
+          for (let sup of suppliers) {
+            if (fullSupplierData[sup]) {
+              filtered[sup] = fullSupplierData[sup];
+            }
+          }
+          renderChart(filtered);
+        }
+      });
+    });
+
+  function renderChart(data) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const gradientPalette = [
+      ['#00f2fe', '#4facfe'],
+      ['#f093fb', '#f5576c'],
+      ['#43e97b', '#38f9d7'],
+      ['#fa709a', '#fee140'],
+      ['#7ee8fa', '#eec0c6'],
+      ['#30cfd0', '#330867'],
+      ['#667eea', '#764ba2'],
+      ['#ff758c', '#ff7eb3']
+    ];
+
+    const ctx = document.getElementById("supplierTrendChart").getContext("2d");
+
+    const datasets = Object.keys(data).map((supplier, idx) => {
+      const grad = ctx.createLinearGradient(0, 0, 800, 0);
+      const [start, end] = gradientPalette[idx % gradientPalette.length];
+      grad.addColorStop(0, start);
+      grad.addColorStop(1, end);
+
+      return {
+        label: supplier,
+        data: data[supplier],
+        borderColor: grad,
+        fill: false,
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: grad
+      };
+    });
+
+    if (supplierChart) {
+      supplierChart.destroy();
+    }
+
+    supplierChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: months,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#000'
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#444' },
+            grid: { color: '#eee' }
+          },
+          x: {
+            ticks: { color: '#444' },
+            grid: { color: '#eee' }
+          }
+        }
+      }
+    });
+  }
 </script>
 
 {% endblock %}

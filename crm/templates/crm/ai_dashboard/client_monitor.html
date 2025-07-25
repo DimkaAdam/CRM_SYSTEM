@@ -2,28 +2,73 @@
 {% block title %}Client Monitor{% endblock %}
 
 {% block content %}
-<h2>⚠️ Затихшие клиенты</h2>
-<p>Клиенты, у которых не было сделок более 30 дней:</p>
+<h2 style="color: #cc8800; margin-bottom: 20px;">⚠️ Затихшие клиенты</h2>
+<p style="margin-bottom: 30px;">Клиенты-поставщики, у которых не было сделок более {{ threshold }} дней:</p>
 
-<ul class="recommendations-list">
+<div class="cards-wrapper">
   {% for item in inactive_clients %}
-    <li class="ai-card">
-      <strong>{{ item.company.name }}</strong> — не было сделок {{ item.days_since }} дней.
+    <div class="ai-card">
+      <h3 style="margin-bottom: 10px;">🏢 {{ item.company.name }}</h3>
+      <p>⏳ Не было сделок <strong>{{ item.days_since }}</strong> дней.</p>
+
       {% if item.last_deal %}
-        <br>🗓 Последняя сделка: {{ item.last_deal.date|date:"Y-m-d" }}
+        <p>🗓 Последняя сделка: <strong>{{ item.last_deal.date|date:"Y-m-d" }}</strong></p>
       {% else %}
-        <br>🚫 Сделок не было вообще
+        <p>🚫 Сделок не было вообще</p>
       {% endif %}
 
-      <!-- ✉️ Кнопка генерации письма -->
-      <br>
-      <a href="{% url 'generate_email' item.company.id %}" class="btn" style="margin-top: 10px; display: inline-block;">
+      <a href="{% url 'generate_email' item.company.id %}" class="btn">
         ✉️ Сгенерировать письмо
       </a>
-    </li>
+    </div>
   {% empty %}
-    <li class="ai-card">🎉 Все клиенты активны!</li>
+    <div class="ai-card">🎉 Все поставщики активны!</div>
   {% endfor %}
-</ul>
-{% endblock %}
+</div>
 
+<style>
+.cards-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: flex-start;
+  padding-bottom: 40px;
+}
+
+.ai-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  max-width: 300px;
+  min-width: 250px;
+  flex: 1 1 250px;
+}
+
+.ai-card h3 {
+  color: #08666e;
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.ai-card p {
+  font-size: 14px;
+  margin: 6px 0;
+}
+
+.ai-card .btn {
+  display: inline-block;
+  margin-top: 12px;
+  background-color: #08666e;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.ai-card .btn:hover {
+  background-color: #064f52;
+}
+</style>
+{% endblock %}
