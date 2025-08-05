@@ -1,7 +1,8 @@
-import openai
+from openai import OpenAI
 from django.conf import settings
 
-openai.api_key = settings.OPENAI_API_KEY  # Храним ключ в .env
+# ✅ Создаём клиент
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 def generate_reminder_email(company_name):
     prompt = f"""
@@ -11,8 +12,8 @@ def generate_reminder_email(company_name):
     Стиль — деловой, краткий, дружелюбный.
     """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",  # ✅ Работает на всех аккаунтах
         messages=[
             {"role": "system", "content": "Ты профессиональный менеджер по продажам"},
             {"role": "user", "content": prompt}
@@ -21,4 +22,4 @@ def generate_reminder_email(company_name):
         max_tokens=300
     )
 
-    return response['choices'][0]['message']['content']
+    return response.choices[0].message.content

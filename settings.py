@@ -158,6 +158,7 @@ MATERIALS_LIST = {
     'Stock Rolls': None,
     'Baled Cardboard': None,
     'Cardboard Stock Lots': None,
+    'DLK': None,
 
 
 
@@ -169,4 +170,5 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+from decouple import config
+OPENAI_API_KEY = config("OPENAI_API_KEY")

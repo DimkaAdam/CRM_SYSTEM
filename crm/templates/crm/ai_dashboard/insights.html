@@ -164,7 +164,13 @@
   fetch("/api/ai/pie-stats/")
     .then(response => response.json())
     .then(data => {
-      createPieChart("supplierChart", data.suppliers);
+      const sortedSuppliers = Object.entries(data.suppliers)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+      const top3Suppliers = Object.fromEntries(sortedSuppliers);
+
+      createPieChart("supplierChart", top3Suppliers);
       createPieChart("buyerChart", data.buyers);
     });
 
