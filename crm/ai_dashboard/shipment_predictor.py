@@ -7,6 +7,7 @@ def predict_shipments():
     supplier_deals = defaultdict(list)
     predictions = []
 
+
     # 🔍 Сбор всех сделок по поставщикам, упорядочим по дате
     for deal in Deals.objects.filter(supplier__isnull=False).exclude(date=None).order_by("date"):
         supplier_deals[deal.supplier].append(deal.date.date())  # date → datetime.date
@@ -30,13 +31,15 @@ def predict_shipments():
         # 🧪 Лог для отладки
         print(f"📦 {supplier.name}: Last = {last_date}, Avg = {avg_interval}d, Next = {predicted_date}")
 
-        # 📅 Только если дата близка (в пределах 2 дней)
-        if predicted_date <= date.today() + timedelta(days=2):
+        # 📅 Только если дата близка (в пределах 14 дней)
+        if predicted_date <= date.today() + timedelta(days=14):
             predictions.append({
                 "supplier": supplier.name,
                 "last_date": last_date,
                 "predicted_date": predicted_date,
                 "avg_interval": avg_interval
             })
+
+    predictions.sort(key=lambda x: x['predicted_date'])
 
     return predictions
