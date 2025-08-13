@@ -16,19 +16,16 @@
     margin-left: auto;
     margin-right: auto;
   }
-
   h3.section-title {
     color: #08666e;
     margin-bottom: 15px;
   }
-
   canvas.fixed-size {
     width: 260px !important;
     height: 260px !important;
     display: block;
     margin: 0 auto;
   }
-
   .charts-row {
     display: flex;
     gap: 40px;
@@ -37,23 +34,32 @@
     flex-wrap: wrap;
     padding: 30px;
   }
-
-  .charts-row > div {
-    text-align: center;
-  }
+  .charts-row > div { text-align: center; }
 </style>
 
 <!-- 📈 Supplier Trend Chart -->
 <div class="chart-container">
   <h3 class="section-title">📈 Supplier Profit/Loss by Month</h3>
 
-  <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0;">
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+    <!-- Переключатель метрики -->
+    <div style="display:flex; gap:6px; background:#f1f1f1; padding:4px; border-radius:8px;">
+      <button id="btnMetricProfit" style="padding:6px 10px; border:none; border-radius:6px; background:#08666e; color:#fff;">
+        Profit/Loss
+      </button>
+      <button id="btnMetricTonnage" style="padding:6px 10px; border:none; border-radius:6px; background:#222; color:#fff;">
+        Tonnage
+      </button>
+    </div>
+
+    <!-- (Опционально) Фильтр по покупателю. Если не нужен — можно удалить блок; JS защищён. -->
     <div>
-      <label for="buyerFilter" style="font-weight: bold;">📌 Filter by Buyer:</label>
-      <select id="buyerFilter" style="padding: 6px; margin-left: 8px;">
-        <option value="">— All Buyers —</option>
+      <label for="buyerFilter" style="font-weight: bold;">Buyer:</label>
+      <select id="buyerFilter" style="padding:6px; margin-left:8px;">
+        <option value="">— All —</option>
       </select>
     </div>
+
     <div style="display: flex; gap: 10px;">
       <button id="hideAllBtn" style="background: #222; color: #fff; padding: 8px 14px; border: none; border-radius: 6px;">
         Hide All Lines
@@ -63,7 +69,6 @@
       </button>
     </div>
   </div>
-
 
   <canvas id="supplierTrendChart" height="320"></canvas>
 </div>
@@ -114,73 +119,104 @@
 
 <script>
   // 📉 Clients with Drop
-  new Chart(document.getElementById('clientsDropChart'), {
-    type: 'bar',
-    data: {
-      labels: [{% for d in dropped_clients %}'{{ d.buyer.name }}',{% endfor %}],
-      datasets: [
-        {
-          label: 'Last Month',
-          data: [{% for d in dropped_clients %}{{ d.last_month }},{% endfor %}],
-          backgroundColor: '#3498db'
-        },
-        {
-          label: 'This Month',
-          data: [{% for d in dropped_clients %}{{ d.this_month }},{% endfor %}],
-          backgroundColor: '#95a5a6'
+   (function () {
+    const canvas = document.getElementById('clientsDropChart');
+    const ctx = canvas.getContext('2d');
+
+    // 👇 имена поставщиков + данные за прошлый / текущий месяц
+    const supplierNames = [{% for d in dropped_clients %}'{{ d.supplier.name|escapejs }}',{% endfor %}];
+    const lastMonth     = [{% for d in dropped_clients %}{{ d.last_month }},{% endfor %}];
+    const thisMonth     = [{% for d in dropped_clients %}{{ d.this_month }},{% endfor %}];
+
+    // 🎨 градиент тёмно-синий → фиолетовый
+    const gradBluePurple = ctx.createLinearGradient(0, 0, 0, 300);
+    gradBluePurple.addColorStop(0, '#0b1e5b');
+    gradBluePurple.addColorStop(1, '#6a00ff');
+
+    // 🏷 плагин — подпись имени поставщика над парой столбцов
+    const supplierLabelPlugin = {
+      id: 'supplierLabelPlugin',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        const meta0 = chart.getDatasetMeta(0); // Last Month
+        const meta1 = chart.getDatasetMeta(1); // This Month
+        if (!meta0?.data?.length) return;
+
+        ctx.save();
+        ctx.font = '12px sans-serif';
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+
+        meta0.data.forEach((bar, i) => {
+          const y0 = bar?.y ?? 0;
+          const y1 = meta1?.data?.[i]?.y ?? y0;
+          const topY = Math.min(y0, y1) - 6; // чуть выше верхушки
+          const x = bar.x;
+          const name = supplierNames[i] || '';
+          ctx.fillText(name, x, topY);
+        });
+
+        ctx.restore();
+      }
+    };
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: supplierNames, // остаются и на оси X
+        datasets: [
+          { label: 'Last Month', data: lastMonth, backgroundColor: gradBluePurple },
+          { label: 'This Month', data: thisMonth, backgroundColor: '#95a5a6' } // серый
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } },
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              title: (items) => supplierNames[items[0].dataIndex] || '',
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}`
+            }
+          }
         }
-      ]
-    },
-    options: {responsive: true, scales: {y: {beginAtZero: true}}}
-  });
+      },
+      plugins: [supplierLabelPlugin]
+    });
+  })();
 
   // 💥 Loss-making Deals
   new Chart(document.getElementById('lossDealsChart'), {
     type: 'bar',
     data: {
       labels: [{% for d in worst_deals %}'#{{ d.id }}',{% endfor %}],
-      datasets: [{
-        label: 'Margin (CAD)',
-        data: [{% for d in worst_deals %}{{ d.total_income_loss }},{% endfor %}],
-        backgroundColor: '#f39c12'
-      }]
+      datasets: [{ label: 'Margin (CAD)', data: [{% for d in worst_deals %}{{ d.total_income_loss }},{% endfor %}], backgroundColor: '#f39c12' }]
     },
     options: {
       responsive: true,
       scales: { y: { beginAtZero: true } },
       plugins: {
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              return context.dataset.label + ': ' + context.raw + ' CAD';
-            }
-          }
-        }
+        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.raw + ' CAD' } }
       }
     }
   });
 
   // 🟢 Pie Charts
   fetch("/api/ai/pie-stats/")
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-      const sortedSuppliers = Object.entries(data.suppliers)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3);
-
-      const top3Suppliers = Object.fromEntries(sortedSuppliers);
-
-      createPieChart("supplierChart", top3Suppliers);
+      const sortedSuppliers = Object.entries(data.suppliers).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      createPieChart("supplierChart", Object.fromEntries(sortedSuppliers));
       createPieChart("buyerChart", data.buyers);
     });
 
   function createPieChart(canvasId, dataMap) {
     const canvas = document.getElementById(canvasId);
     const ctx = canvas.getContext("2d");
-
-    const labels = Object.keys(dataMap);
-    const dataValues = Object.values(dataMap);
-
+    const labels = Object.keys(dataMap || {});
+    const dataValues = Object.values(dataMap || {});
     const gradientColors = [
       createGradient(ctx, "#2193b0", "#6dd5ed"),
       createGradient(ctx, "#cc2b5e", "#753a88"),
@@ -191,110 +227,118 @@
       createGradient(ctx, "#0f2027", "#2c5364"),
       createGradient(ctx, "#ff6a00", "#ee0979")
     ];
-
     const backgroundColors = dataValues.map((_, i) => gradientColors[i % gradientColors.length]);
 
     new Chart(canvas, {
       type: 'pie',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: dataValues,
-          backgroundColor: backgroundColors,
-          borderWidth: 0
-        }]
-      },
+      data: { labels, datasets: [{ data: dataValues, backgroundColor: backgroundColors, borderWidth: 0 }] },
       options: {
         responsive: false,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: '#191725',
-              boxWidth: 14,
-              font: {
-                size: 12
-              }
-            }
-          }
+          legend: { position: 'bottom', labels: { color: '#191725', boxWidth: 14, font: { size: 12 } } }
         }
       }
     });
   }
-
   function createGradient(ctx, colorStart, colorEnd) {
-    const gradient = ctx.createLinearGradient(0, 0, 300, 0);
-    gradient.addColorStop(0, colorStart);
-    gradient.addColorStop(1, colorEnd);
-    return gradient;
+    const g = ctx.createLinearGradient(0, 0, 300, 0);
+    g.addColorStop(0, colorStart); g.addColorStop(1, colorEnd);
+    return g;
   }
 
   // 📈 Supplier Trend Chart Logic
-  let fullSupplierData = {};
-  let buyerMap = {};
-  let supplierChart = null;
+  let fullSupplierData = {};          // { supplier: { profit:[12], tonnage:[12] }, ... }
+  let buyerMap = {};                  // { buyerName: ["Supplier A", ...] }
+  let supplierChart = null;           // Chart.js instance
+  let currentMetric = 'profit';       // 'profit' | 'tonnage'
+  let lastRenderedData = {};          // последняя выборка (после фильтра)
 
+  // Загружаем данные для комбинированного графика
   fetch("/api/ai/supplier-monthly/")
     .then(res => res.json())
     .then(data => {
-      fullSupplierData = data;
+      fullSupplierData = data || {};
+      lastRenderedData = fullSupplierData;
       return fetch("/api/ai/buyer-suppliers/");
     })
     .then(res => res.json())
     .then(buyerData => {
-      buyerMap = buyerData;
-      const select = document.getElementById("buyerFilter");
+      buyerMap = buyerData || {};
 
-      for (let buyer of Object.keys(buyerMap)) {
-        const opt = document.createElement("option");
-        opt.value = buyer;
-        opt.textContent = buyer;
-        select.appendChild(opt);
+      // Если селект есть — наполняем и подключаем
+      const select = document.getElementById("buyerFilter");
+      if (select) {
+        for (let buyer of Object.keys(buyerMap)) {
+          const opt = document.createElement("option");
+          opt.value = buyer; opt.textContent = buyer;
+          select.appendChild(opt);
+        }
+        select.addEventListener("change", () => {
+          const selected = select.value;
+          if (!selected) {
+            lastRenderedData = fullSupplierData;
+          } else {
+            const filtered = {};
+            const suppliers = buyerMap[selected] || [];
+            for (let sup of suppliers) if (fullSupplierData[sup]) filtered[sup] = fullSupplierData[sup];
+            lastRenderedData = filtered;
+          }
+          renderChart(lastRenderedData, currentMetric);
+        });
       }
 
-      renderChart(fullSupplierData);
-
+      // Кнопки скрыть/показать все
       document.getElementById("hideAllBtn").addEventListener("click", () => {
-        if (supplierChart) {
-          supplierChart.data.datasets.forEach((ds) => {
-            const isAllZero = ds.data.every(v => v === 0);
-            if (!isAllZero) ds.hidden = true;
-          });
-          supplierChart.update();
-        }
+        if (!supplierChart) return;
+        supplierChart.data.datasets.forEach((ds) => {
+          const isAllZero = ds.data.every(v => v === 0);
+          if (!isAllZero) ds.hidden = true;
+        });
+        supplierChart.update();
       });
-
       document.getElementById("showAllBtn").addEventListener("click", () => {
-        if (supplierChart) {
-          supplierChart.data.datasets.forEach((ds) => {
-            ds.hidden = false;
-          });
-          supplierChart.update();
-        }
+        if (!supplierChart) return;
+        supplierChart.data.datasets.forEach((ds) => { ds.hidden = false; });
+        supplierChart.update();
       });
 
-
-      select.addEventListener("change", () => {
-        const selected = select.value;
-        if (selected === "") {
-          renderChart(fullSupplierData);
-        } else {
-          const filtered = {};
-          const suppliers = buyerMap[selected] || [];
-          for (let sup of suppliers) {
-            if (fullSupplierData[sup]) {
-              filtered[sup] = fullSupplierData[sup];
-            }
-          }
-          renderChart(filtered);
-        }
+      // Переключатели метрик
+      document.getElementById('btnMetricProfit').addEventListener('click', () => {
+        currentMetric = 'profit';
+        renderChart(lastRenderedData, currentMetric);
+        setMetricButtonsActive('profit');
       });
+      document.getElementById('btnMetricTonnage').addEventListener('click', () => {
+        currentMetric = 'tonnage';
+        renderChart(lastRenderedData, currentMetric);
+        setMetricButtonsActive('tonnage');
+      });
+
+      // Первый рендер
+      renderChart(fullSupplierData, currentMetric);
+      setMetricButtonsActive('profit');
     });
 
-  function renderChart(data) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // Подсветка активной метрики
+  function setMetricButtonsActive(metric) {
+    const profitBtn = document.getElementById('btnMetricProfit');
+    const tonnageBtn = document.getElementById('btnMetricTonnage');
+    if (!profitBtn || !tonnageBtn) return;
+    if (metric === 'profit') {
+      profitBtn.style.background = '#08666e'; profitBtn.style.color = '#fff';
+      tonnageBtn.style.background = '#222';   tonnageBtn.style.color = '#fff';
+    } else {
+      tonnageBtn.style.background = '#08666e'; tonnageBtn.style.color = '#fff';
+      profitBtn.style.background = '#222';     profitBtn.style.color = '#fff';
+    }
+  }
+
+  // Рендер графика по текущей метрике
+  function renderChart(data, metric) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const keys = Object.keys(data || {});
+    const safeData = keys.length ? data : {}; // защита от пустоты
 
     const gradientPalette = [
       ['#00f2fe', '#4facfe'],
@@ -309,15 +353,15 @@
 
     const ctx = document.getElementById("supplierTrendChart").getContext("2d");
 
-    const datasets = Object.keys(data).map((supplier, idx) => {
+    const datasets = Object.keys(safeData).map((supplier, idx) => {
       const grad = ctx.createLinearGradient(0, 0, 800, 0);
       const [start, end] = gradientPalette[idx % gradientPalette.length];
-      grad.addColorStop(0, start);
-      grad.addColorStop(1, end);
+      grad.addColorStop(0, start); grad.addColorStop(1, end);
 
+      const series = (safeData[supplier] && safeData[supplier][metric]) ? safeData[supplier][metric] : Array(12).fill(0);
       return {
         label: supplier,
-        data: data[supplier],
+        data: series,
         borderColor: grad,
         fill: false,
         tension: 0.4,
@@ -327,36 +371,20 @@
       };
     });
 
-    if (supplierChart) {
-      supplierChart.destroy();
-    }
+    if (supplierChart) supplierChart.destroy();
+
+    const axisTitle = (metric === 'profit') ? 'Прибыль (CAD)' : 'Тоннаж (т)';
 
     supplierChart = new Chart(ctx, {
       type: 'line',
-      data: {
-        labels: months,
-        datasets: datasets
-      },
+      data: { labels: months, datasets },
       options: {
         responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: '#000'
-            }
-          }
-        },
+        plugins: { legend: { position: 'bottom', labels: { color: '#000' } } },
+        interaction: { mode: 'index', intersect: false },
         scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { color: '#444' },
-            grid: { color: '#eee' }
-          },
-          x: {
-            ticks: { color: '#444' },
-            grid: { color: '#eee' }
-          }
+          y: { beginAtZero: true, title: { display: true, text: axisTitle }, ticks: { color: '#444' }, grid: { color: '#eee' } },
+          x: { ticks: { color: '#444' }, grid: { color: '#eee' } }
         }
       }
     });

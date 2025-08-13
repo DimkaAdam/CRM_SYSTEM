@@ -2516,23 +2516,68 @@ def get_buyer_supplier_map(request):
 
 
 
-from crm.ai_dashboard.insight_engine import get_top_clients, get_worst_deals, get_top_suppliers, get_problem_suppliers,get_clients_with_drop
+from crm.ai_dashboard.insight_engine import (
+    get_top_clients,
+    get_worst_deals,
+    get_top_suppliers,
+    get_problem_suppliers,
+    get_clients_with_drop,
+    get_supplier_monthly_profit_and_tonnage,
+    get_pie_chart_data
+)
+from django.views.decorators.http import require_GET
+from collections import defaultdict
 
 def insight_dashboard(request):
-    top_clients = get_top_clients()
-    worst_deals = get_worst_deals()
-    top_suppliers = get_top_suppliers()
-    problem_suppliers = get_problem_suppliers()
-    dropped_clients = get_clients_with_drop()
+    # # основные блоки для шаблона
+    top_clients = get_top_clients()                         # топ клиентов по прибыли
+    worst_deals = get_worst_deals()                         # худшие сделки этого месяца
+    top_suppliers = get_top_suppliers()                     # топ поставщиков по прибыли
+    problem_suppliers = get_problem_suppliers()             # проблемные поставщики (месяц)
+    dropped_clients = get_clients_with_drop()               # клиенты с падением оборота
 
-
+    # # рендерим HTML, остальное фронт подтянет через fetch()
     return render(request, 'crm/ai_dashboard/insights.html', {
         'top_clients': top_clients,
         'worst_deals': worst_deals,
         'top_suppliers': top_suppliers,
         'problem_suppliers': problem_suppliers,
-        'dropped_clients' : dropped_clients,
+        'dropped_clients': dropped_clients,
     })
+
+
+@require_GET
+def supplier_monthly_api(request):
+    # # отдаём объединённую структуру: { "Supplier A": {"profit":[..12..], "tonnage":[..12..]}, ... }
+    data = get_supplier_monthly_profit_and_tonnage()        # считаем в engine
+    return JsonResponse(data, safe=True)                    # safe=True т.к. dict
+
+
+@require_GET
+def buyer_suppliers_api(request):
+    # # строим мэппинг: покупатель -> список его поставщиков (по факту сделок)
+    mapping = defaultdict(set)                              # set чтобы убрать дубликаты
+
+    qs = (Deals.objects
+          .filter(buyer__isnull=False, supplier__isnull=False)   # обе стороны заданы
+          .values('buyer__name', 'supplier__name')               # берём имена
+          )
+
+    for row in qs:
+        buyer = row['buyer__name'] or 'Unknown'             # подстраховка от NULL
+        supplier = row['supplier__name'] or 'Unknown'       # подстраховка от NULL
+        mapping[buyer].add(supplier)                        # добавляем связь
+
+    # # превращаем set -> list для JSON
+    data = {buyer: sorted(list(suppliers)) for buyer, suppliers in mapping.items()}
+    return JsonResponse(data, safe=True)
+
+
+@require_GET
+def pie_stats_api(request):
+    # # отдаём данные для пирогов: {"suppliers": {...}, "buyers": {...}}
+    stats = get_pie_chart_data()                            # считает engine
+    return JsonResponse(stats, safe=True)
 
 
 

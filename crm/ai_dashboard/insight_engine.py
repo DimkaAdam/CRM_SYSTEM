@@ -6,6 +6,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.utils.timezone import now
 from decimal import Decimal
+from collections import defaultdict
 
 def get_top_clients(limit=5):
     # Возвращает топ клиентов по прибыли
@@ -85,31 +86,31 @@ def get_clients_with_drop(threshold_ratio=0.5):
 
     prev_data = (
         Deals.objects.filter(date__year=prev_year, date__month=prev_month)
-        .values('buyer')
-        .annotate(total_prev=Sum('total_amount'))
+        .values('supplier')
+        .annotate(total_prev=Sum('shipped_quantity'))
     )
 
     curr_data = (
         Deals.objects.filter(date__year=current_year, date__month=current_month)
-        .values('buyer')
-        .annotate(total_curr=Sum('total_amount'))
+        .values('supplier')
+        .annotate(total_curr=Sum('shipped_quantity'))
     )
 
-    prev_map = {item['buyer']: item['total_prev'] for item in prev_data}
-    curr_map = {item['buyer']: item['total_curr'] for item in curr_data}
+    prev_map = {item['supplier']: item['total_prev'] for item in prev_data}
+    curr_map = {item['supplier']: item['total_curr'] for item in curr_data}
 
     dropped_clients = []
 
     threshold_decimal = Decimal(str(threshold_ratio))  # 🛠 преобразуем
 
-    for buyer_id, prev_total in prev_map.items():
-        curr_total = curr_map.get(buyer_id, Decimal("0"))
+    for supplier_id, prev_total in prev_map.items():
+        curr_total = curr_map.get(supplier_id, Decimal("0"))
 
         if prev_total and curr_total < prev_total * threshold_decimal:
             try:
-                buyer = Company.objects.get(id=buyer_id)
+                supplier = Company.objects.get(id=supplier_id)
                 dropped_clients.append({
-                    "buyer": buyer,
+                    "supplier": supplier,
                     "last_month": round(prev_total, 2),
                     "this_month": round(curr_total, 2),
                     "drop_percent": round(float(Decimal("100") * (1 - curr_total / prev_total)), 1)
@@ -139,12 +140,9 @@ def get_pie_chart_data():
         "buyers": buyer_data,
     }
 
-def get_supplier_monthly_data():
-    from collections import defaultdict
-
+def get_supplier_monthly_profit_and_tonnage():
     current_year = now().year
 
-    # Получаем сделки по году, сгруппированные по поставщику и месяцу
     data = (
         Deals.objects
         .filter(
@@ -152,16 +150,25 @@ def get_supplier_monthly_data():
             date__year=current_year
         )
         .values('supplier__name', 'date__month')
-        .annotate(total=Sum('total_income_loss'))
+        .annotate(
+            total_profit=Sum('total_income_loss'),
+            total_tonnage=Sum('shipped_quantity'),
+        )
         .order_by('supplier__name', 'date__month')
     )
 
-    result = defaultdict(lambda: [0] * 12)
+    result = defaultdict(lambda: {'profit': [0.0] * 12, 'tonnage': [0.0] * 12})
 
     for entry in data:
-        name = entry['supplier__name']
-        month = entry['date__month']
-        total = round(entry['total'], 2) if entry['total'] is not None else 0
-        result[name][month - 1] = total
+        name = entry['supplier__name'] or 'Unknown'
+        month_idx = (entry['date__month'] or 1) - 1
+
+        profit = float(entry['total_profit'] or 0.0)
+        tonnage = float(entry['total_tonnage'] or 0.0)
+
+        result[name]['profit'][month_idx] = round(profit, 2)
+        result[name]['tonnage'][month_idx] = round(tonnage, 2)
 
     return dict(result)
+
+

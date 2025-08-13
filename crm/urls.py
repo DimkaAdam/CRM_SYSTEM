@@ -137,7 +137,7 @@ urlpatterns = [
     path("contact/<int:contact_id>/add_truck/", views.add_truck, name="add_truck"),
     path('truck/<int:id>/delete/', views.delete_truck, name='delete_truck'),
     path("api/ai/pie-stats/", views.ai_pie_stats, name="ai_pie_stats"),
-    path("api/ai/supplier-monthly/", views.get_supplier_monthly_stats, name="supplier_monthly_stats"),
+    path("api/ai/supplier-monthly/", views.supplier_monthly_api, name="supplier_monthly_api"),
     path("api/ai/buyer-suppliers/", views.get_buyer_supplier_map, name="buyer_supplier_map"),
 
 
