@@ -2,6 +2,13 @@ from django.core.serializers import serialize
 import os
 from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,ScheduledShipment,SCaleTicketStatus,TruckProfile
 
+
+from datetime import datetime, date, time, timedelta
+from decimal import Decimal
+from django.utils import timezone
+from django.db.models import Sum, Count, F, DecimalField, ExpressionWrapper
+from django.db.models.functions import Coalesce
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
@@ -43,6 +50,9 @@ from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from .google_calendar import get_calendar_events
 import glob
+
+from django.utils.timezone import make_aware
+from django.db.models import Sum, Count, F
 
 from .models import Event
 
@@ -2523,7 +2533,9 @@ from crm.ai_dashboard.insight_engine import (
     get_problem_suppliers,
     get_clients_with_drop,
     get_supplier_monthly_profit_and_tonnage,
-    get_pie_chart_data
+    get_pie_chart_data,
+    compute_kpi,
+    monthly_trends_data,
 )
 from django.views.decorators.http import require_GET
 from collections import defaultdict
@@ -2535,6 +2547,9 @@ def insight_dashboard(request):
     top_suppliers = get_top_suppliers()                     # топ поставщиков по прибыли
     problem_suppliers = get_problem_suppliers()             # проблемные поставщики (месяц)
     dropped_clients = get_clients_with_drop()               # клиенты с падением оборота
+    kpi = compute_kpi()
+
+
 
     # # рендерим HTML, остальное фронт подтянет через fetch()
     return render(request, 'crm/ai_dashboard/insights.html', {
@@ -2543,6 +2558,8 @@ def insight_dashboard(request):
         'top_suppliers': top_suppliers,
         'problem_suppliers': problem_suppliers,
         'dropped_clients': dropped_clients,
+        'kpi': kpi,
+
     })
 
 
@@ -2578,6 +2595,10 @@ def pie_stats_api(request):
     # # отдаём данные для пирогов: {"suppliers": {...}, "buyers": {...}}
     stats = get_pie_chart_data()                            # считает engine
     return JsonResponse(stats, safe=True)
+
+@require_GET
+def monthly_trends_api(request):
+    return JsonResponse(monthly_trends_data(), safe=True)
 
 
 

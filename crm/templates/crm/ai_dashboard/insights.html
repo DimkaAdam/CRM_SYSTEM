@@ -4,6 +4,9 @@
 
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ kpi|json_script:"kpi_json" }} {# Надёжно передаём данные в JS #}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> {# Иконки #}
 
 <style>
   .chart-container {
@@ -35,11 +38,108 @@
     padding: 30px;
   }
   .charts-row > div { text-align: center; }
+
+
+   /* Контейнер сетки KPI */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:14px;margin:10px auto 24px;
+    max-width:none;
+  }
+
+  /* Карточка */
+  .kpi-card{background:#fff;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:16px;display:flex;align-items:center;gap:12px;transition:transform .15s ease,box-shadow .15s ease}
+  .kpi-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,.08)}
+  /* Иконка слева */
+  .kpi-icon{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#08666e1a;color:#08666e;flex:0 0 42px}
+  /* Тексты */
+  .kpi-label{font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+  .kpi-value{font-size:22px;font-weight:800;color:#141b2d;line-height:1.1;margin-top:4px}
+  .kpi-sub{font-size:12px;color:#9aa3af;margin-top:2px}
+  /* Цвета значений по типу */
+  .kpi--good .kpi-value{color:#0f9d58}     /* положительная метрика */
+  .kpi--bad .kpi-value{color:#d93025}      /* отрицательная метрика */
+
 </style>
+
+<div class="kpi-grid">
+  <!-- Sales -->
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-shopping-cart"></i></div>
+    <div>
+      <div class="kpi-label">Sales</div>
+      <div id="kpi-sales" class="kpi-value">—</div>
+      <div class="kpi-sub">Buyer revenue</div>
+    </div>
+  </div>
+
+   <!-- Net Profit -->
+  <div class="kpi-card kpi--good">
+    <div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div>
+    <div>
+      <div class="kpi-label">Net Profit</div>
+      <div id="kpi-net_profit" class="kpi-value">—</div>
+      <div class="kpi-sub">This month</div>
+    </div>
+  </div>
+
+  <!-- Supplier Cost -->
+  <div class="kpi-card kpi--bad">
+    <div class="kpi-icon"><i class="fas fa-hand-holding-usd"></i></div>
+    <div>
+      <div class="kpi-label">Supplier Cost</div>
+      <div id="kpi-supplier_cost" class="kpi-value">—</div>
+      <div class="kpi-sub">COGS</div>
+    </div>
+  </div>
+
+  <!-- Transport Cost -->
+  <div class="kpi-card kpi--bad">
+    <div class="kpi-icon"><i class="fas fa-truck"></i></div>
+    <div>
+      <div class="kpi-label">Transport Cost</div>
+      <div id="kpi-transport_cost" class="kpi-value">—</div>
+      <div class="kpi-sub">$ / total</div>
+    </div>
+  </div>
+
+  <!-- Margin per ton -->
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-percentage"></i></div>
+    <div>
+      <div class="kpi-label">Margin / t</div>
+      <div id="kpi-margin_per_t" class="kpi-value">—</div>
+      <div class="kpi-sub">Profit per ton</div>
+    </div>
+  </div>
+
+  <!-- Tonnage -->
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-weight-hanging"></i></div>
+    <div>
+      <div class="kpi-label">Tonnage</div>
+      <div id="kpi-tonnage" class="kpi-value">—</div>
+      <div class="kpi-sub">Total shipped</div>
+    </div>
+  </div>
+
+  <!-- Shipments -->
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-boxes"></i></div>
+    <div>
+      <div class="kpi-label">Shipments</div>
+      <div id="kpi-shipments" class="kpi-value">—</div>
+      <div class="kpi-sub">Deals count</div>
+    </div>
+  </div>
+</div>
+
+
 
 <!-- 📈 Supplier Trend Chart -->
 <div class="chart-container">
-  <h3 class="section-title">📈 Supplier Profit/Loss by Month</h3>
+  <h3 class="section-title">📈Supplier Profit/Loss by Month</h3>
 
   <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
     <!-- Переключатель метрики -->
@@ -116,6 +216,21 @@
   <h3 class="section-title">💥 Loss-Making Deals</h3>
   <canvas id="lossDealsChart"></canvas>
 </div>
+
+<div class="chart-container">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <h3 class="section-title" style="margin:0;">📊 Monthly Trends</h3>
+    <div class="toggles">
+      <button id="tog-net" class="tog-btn is-on">Net Profit</button>
+      <button id="tog-sup" class="tog-btn">Supplier Cost</button>
+      <button id="tog-tpt" class="tog-btn">Transport $/t</button>
+    </div>
+  </div>
+  <div class="chart-body">
+    <canvas id="monthlyTrends"></canvas>
+  </div>
+</div>
+
 
 <script>
   // 📉 Clients with Drop
@@ -389,6 +504,177 @@
       }
     });
   }
+
+
+
+  // # Получаем данные KPI из тега <script id="kpi_json">
+  const kpi = JSON.parse(document.getElementById("kpi_json").textContent); // # Парсим JSON с бэкенда
+
+  // # Формат числа как валюты CAD
+  const money = (v)=>Number(v||0).toLocaleString(undefined,{style:"currency",currency:"CAD",maximumFractionDigits:2}); // # $ формат
+  // # Формат обычного числа
+  const num   = (v)=>Number(v||0).toLocaleString(undefined,{maximumFractionDigits:2}); // # 1 234.56
+
+  // # Плавная анимация счётчика (0 → target)
+  function countUp(el, target, fmt=(x)=>x, duration=700){ // # el=элемент; target=конечное число; fmt=форматтер; duration=длительность
+    const start = performance.now();                      // # Стартовое время
+    const from = 0;                                       // # Начинаем с 0 (можно читать текущее)
+    const t = Number(target||0);                          // # Целевое число
+    function frame(now){                                  // # Кадр анимации
+      const p = Math.min((now-start)/duration,1);         // # Прогресс 0..1
+      const ease = 1 - Math.pow(1-p,3);                   // # Плавное ускорение/замедление (easeOutCubic)
+      const val = from + (t-from)*ease;                   // # Промежуточное значение
+      el.textContent = fmt(val);                          // # Выводим в элемент
+      if(p<1) requestAnimationFrame(frame);               // # Если не завершили — следующий кадр
+    }
+    requestAnimationFrame(frame);                         // # Запускаем анимацию
+  }
+
+  // # Безопасно ставим значения (если элемент есть)
+  function setKPI(id, value, formatter){                  // # id = HTML id, value = число, formatter = функция форматирования
+    const el = document.getElementById(id);               // # Берём элемент
+    if(!el) return;                                       // # Если элемента нет — выходим
+    countUp(el, value, formatter);                        // # Анимируем значение
+  }
+
+  // # Заполняем карточки
+  setKPI("kpi-net_profit",     kpi.net_profit,     money); // # Net Profit
+  setKPI("kpi-sales",          kpi.sales,          money); // # Sales
+  setKPI("kpi-supplier_cost",  kpi.supplier_cost,  money); // # Supplier Cost
+  setKPI("kpi-transport_cost", kpi.transport_cost, money); // # Transport Cost
+  setKPI("kpi-margin_per_t",   kpi.margin_per_t,   money); // # Margin per ton (тоже удобно как $/t)
+  setKPI("kpi-tonnage",        kpi.tonnage,        num);   // # Общий тоннаж
+  setKPI("kpi-shipments",      kpi.shipments,      num);   // # Кол-во сделок/отгрузок
+
+
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const res  = await fetch("{% url 'ai_monthly_trends' %}");
+    const data = await res.json();
+    const ctx  = document.getElementById('monthlyTrends').getContext('2d');
+
+    // helpers
+    const money = (v, c='CAD') =>
+      Number(v||0).toLocaleString(undefined,{style:'currency',currency:c,maximumFractionDigits:2});
+    const finiteArr = (a)=> (a||[]).map(Number).filter(Number.isFinite);
+
+    function bounds(arr, padPct=0.10){
+      if (!arr.length) return { min: 0, max: 1 };
+      const min = Math.min(...arr), max = Math.max(...arr);
+      const span = Math.max(max - min, Math.abs(max) || 1);
+      const pad  = Math.max(span * padPct, 1);
+      return { min: min - pad, max: max + pad };
+    }
+
+    // стартовые массивы для границ
+    const leftVals  = finiteArr(data.net_profit).concat(finiteArr(data.supplier_cost));
+    const rightVals = finiteArr(data.transport_per_t);
+
+    const grad = ctx.createLinearGradient(0,0,0,320);
+    grad.addColorStop(0, 'rgba(8,102,110,0.30)');
+    grad.addColorStop(1, 'rgba(8,102,110,0.00)');
+
+    const dsNet = {
+      label:'Net Profit', data:data.net_profit, yAxisID:'yL',
+      borderColor:'#08666e', backgroundColor:grad, fill:false,
+      tension:0.35, pointRadius:0, borderWidth:3, spanGaps:true
+    };
+    const dsSup = {
+      label:'Supplier Cost', data:data.supplier_cost, yAxisID:'yL',
+      borderColor:'#6b7bd8', backgroundColor:'transparent', fill:false,
+      tension:0.35, pointRadius:0, borderWidth:2, spanGaps:true
+    };
+    const dsTpt = {
+      label:'Transport $/t', data:data.transport_per_t, yAxisID:'yR',
+      borderColor:'#ff8a00', backgroundColor:'transparent', fill:false,
+      tension:0.35, pointRadius:0, borderWidth:2, spanGaps:true
+    };
+
+    // начальные границы
+    const { min: initMinL, max: initMaxL } = bounds(leftVals);
+    const { min: initMinR, max: initMaxR } = bounds(rightVals);
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: data.months, datasets: [dsNet, dsSup, dsTpt] },
+      options: {
+        responsive:true, maintainAspectRatio:true,
+        interaction:{ mode:'index', intersect:false },
+        layout:{ padding:{ top:8, right:12, bottom:4, left:8 } },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            callbacks:{
+              label:(cx)=> cx.dataset.yAxisID==='yR'
+                ? `${cx.dataset.label}: ${money(cx.parsed.y, data.currency)}/t`
+                : `${cx.dataset.label}: ${money(cx.parsed.y, data.currency)}`
+            }
+          }
+        },
+        scales:{
+          yL:{
+            position:'left',
+            min: initMinL, max: initMaxL,
+            grid:{ color:'#eef0f4' },
+            ticks:{ maxTicksLimit:6, callback:(v)=>money(v, data.currency) }
+          },
+          yR:{
+            position:'right',
+            display: rightVals.length && rightVals.some(v=>v!==0),
+            min: Math.max(0, initMinR), max: initMaxR,
+            grid:{ drawOnChartArea:false },
+            ticks:{ maxTicksLimit:6, callback:(v)=>`${money(v, data.currency)}/t` }
+          },
+          x:{ grid:{ color:'#f3f4f6' } }
+        }
+      }
+    });
+
+    // пересчёт границ с учётом скрытых/показанных серий
+    function recomputeBounds() {
+      const visLeft = [];
+      if (chart.isDatasetVisible(0)) visLeft.push(...finiteArr(chart.data.datasets[0].data));
+      if (chart.isDatasetVisible(1)) visLeft.push(...finiteArr(chart.data.datasets[1].data));
+      const visRight = chart.isDatasetVisible(2) ? finiteArr(chart.data.datasets[2].data) : [];
+
+      const bL = bounds(visLeft);
+      const bR = bounds(visRight);
+
+      chart.options.scales.yL.min = bL.min;
+      chart.options.scales.yL.max = bL.max;
+
+      chart.options.scales.yR.display = visRight.length && visRight.some(v=>v!==0);
+      if (chart.options.scales.yR.display) {
+        chart.options.scales.yR.min = Math.max(0, bR.min);
+        chart.options.scales.yR.max = bR.max;
+      }
+      chart.update();
+    }
+
+    // кнопки-переключатели
+    const setBtn = (btn, on) => { btn.style.background = on ? '#08666e' : '#e5e7eb'; btn.style.color = on ? '#fff' : '#111'; };
+    const btnNet = document.getElementById('tog-net');
+    const btnSup = document.getElementById('tog-sup');
+    const btnTpt = document.getElementById('tog-tpt');
+
+    setBtn(btnNet, true); setBtn(btnSup, false); setBtn(btnTpt, false);
+
+    btnNet.onclick = () => {
+      chart.setDatasetVisibility(0, !chart.isDatasetVisible(0));
+      setBtn(btnNet, chart.isDatasetVisible(0));
+      recomputeBounds();
+    };
+    btnSup.onclick = () => {
+      chart.setDatasetVisibility(1, !chart.isDatasetVisible(1));
+      setBtn(btnSup, chart.isDatasetVisible(1));
+      recomputeBounds();
+    };
+    btnTpt.onclick = () => {
+      chart.setDatasetVisibility(2, !chart.isDatasetVisible(2));
+      setBtn(btnTpt, chart.isDatasetVisible(2));
+      recomputeBounds();
+    };
+  });
 </script>
 
 {% endblock %}

@@ -10,7 +10,8 @@ from .views import (
     ClientViewSet, DealViewSet, export_company_report_pdf,
     get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event,
     get_licence_plates,get_grades,get_scheduled_shipments,add_scheduled_shipment,delete_scheduled_shipment,generate_bol_pdf,update_stage,
-    get_bol_counters, increment_bol_counters,get_clients_grouped, get_scale_ticket_counters,increment_scale_ticket_counters,mark_shipment_done,send_scale_ticket_email
+    get_bol_counters, increment_bol_counters,get_clients_grouped, get_scale_ticket_counters,increment_scale_ticket_counters,
+    mark_shipment_done,send_scale_ticket_email
 
 )
 
@@ -139,7 +140,7 @@ urlpatterns = [
     path("api/ai/pie-stats/", views.ai_pie_stats, name="ai_pie_stats"),
     path("api/ai/supplier-monthly/", views.supplier_monthly_api, name="supplier_monthly_api"),
     path("api/ai/buyer-suppliers/", views.get_buyer_supplier_map, name="buyer_supplier_map"),
-
+    path('api/ai/monthly-trends/',   views.monthly_trends_api,   name='ai_monthly_trends'),
 
 
 ]

@@ -1,12 +1,16 @@
 # ai_dashboard/insight_engine.py
 
 from crm.models import Deals, Company
-from django.db.models import Sum
-from datetime import timedelta
 from django.utils import timezone
 from django.utils.timezone import now
 from decimal import Decimal
 from collections import defaultdict
+from django.db.models import Sum, Count, F, DecimalField, ExpressionWrapper
+from django.db.models.functions import Coalesce
+from datetime import datetime, time, timedelta
+from dateutil.relativedelta import relativedelta                      # удобные сдвиги дат
+from django.db.models.functions import TruncMonth                     # группировка по месяцам
+from django.http import JsonResponse
 
 def get_top_clients(limit=5):
     # Возвращает топ клиентов по прибыли
@@ -172,3 +176,111 @@ def get_supplier_monthly_profit_and_tonnage():
     return dict(result)
 
 
+DATE_FIELD = "date"
+
+def _month_bounds(d):
+    first = d.replace(day=1)
+    next_first = first.replace(year=first.year+1, month=1) if first.month == 12 else first.replace(month=first.month+1)
+    return first, next_first
+
+def _range_for_field(start_d, end_d, is_dt):
+    if is_dt:
+        from django.utils.timezone import make_aware
+        return make_aware(datetime.combine(start_d, time.min)), make_aware(datetime.combine(end_d, time.min))
+    return start_d, end_d
+
+def compute_kpi():
+    field = Deals._meta.get_field(DATE_FIELD)
+    is_dt = field.get_internal_type() in ("DateTimeField",)
+
+    today = timezone.localdate()
+    s_d, e_d = _month_bounds(today)
+    s, e = _range_for_field(s_d, e_d, is_dt)
+
+    qs = Deals.objects.filter(**{f"{DATE_FIELD}__gte": s, f"{DATE_FIELD}__lt": e})
+
+    # если за текущий месяц пусто — последние 30 дней
+    if not qs.exists():
+        last30 = timezone.localdate() - timedelta(days=30)
+        s, e = _range_for_field(last30, timezone.localdate() + timedelta(days=1), is_dt)
+        qs = Deals.objects.filter(**{f"{DATE_FIELD}__gte": s, f"{DATE_FIELD}__lt": e})
+
+    sales_expr = ExpressionWrapper(F("buyer_price") * F("shipped_quantity"),
+                                   output_field=DecimalField(max_digits=18, decimal_places=2))
+    buy_expr   = ExpressionWrapper(F("supplier_price") * F("received_quantity"),
+                                   output_field=DecimalField(max_digits=18, decimal_places=2))
+
+    agg = qs.aggregate(
+        sales=Coalesce(Sum(sales_expr), Decimal("0")),
+        supplier=Coalesce(Sum(buy_expr), Decimal("0")),
+        transport=Coalesce(Sum("transport_cost"), Decimal("0")),
+        tonnage=Coalesce(Sum("shipped_quantity"), Decimal("0")),
+        shipments=Coalesce(Count("id"), 0),
+    )
+
+    net = agg["sales"] - (agg["supplier"] + agg["transport"])
+    mpt = (net / agg["tonnage"]) if agg["tonnage"] else Decimal("0")
+
+    return {
+        "net_profit":     float(round(net, 2)),
+        "sales":          float(round(agg["sales"], 2)),
+        "supplier_cost":  float(round(agg["supplier"], 2)),
+        "transport_cost": float(round(agg["transport"], 2)),
+        "margin_per_t":   float(round(mpt, 2)),
+        "tonnage":        float(agg["tonnage"]),
+        "shipments":      int(agg["shipments"]),
+    }
+
+def monthly_trends_data(months: int = 12) -> dict:
+    """Агрегирует тренды за rolling-12: Net Profit, Supplier Cost, Transport $/t."""
+    tz_now = timezone.now()
+    start = tz_now.replace(day=1) - relativedelta(months=months - 1)
+
+    # безопасные выражения для умножений (чтобы БД/ORM не ругались на типы)
+    sales_expr = ExpressionWrapper(
+        F('buyer_price') * F('shipped_quantity'),
+        output_field=DecimalField(max_digits=18, decimal_places=2),
+    )
+    supplier_expr = ExpressionWrapper(
+        F('supplier_price') * F('received_quantity'),
+        output_field=DecimalField(max_digits=18, decimal_places=2),
+    )
+
+    qs = Deals.objects.filter(date__gte=start, date__lt=tz_now)
+
+    rows = (qs.annotate(m=TruncMonth('date'))
+              .values('m')
+              .annotate(
+                  sales=Coalesce(Sum(sales_expr), Decimal('0')),
+                  supplier=Coalesce(Sum(supplier_expr), Decimal('0')),
+                  transport=Coalesce(Sum('transport_cost'), Decimal('0')),
+                  tonnage=Coalesce(Sum('shipped_quantity'), Decimal('0')),
+              )
+              .order_by('m'))
+
+    months_lbl, net_profit, supplier_cost, transport_per_t = [], [], [], []
+    for r in rows:
+        m = r['m']
+        months_lbl.append(m.strftime('%b'))
+        sales = r['sales'] or Decimal('0')
+        supplier = r['supplier'] or Decimal('0')
+        transport = r['transport'] or Decimal('0')
+        tons = r['tonnage'] or Decimal('0')
+
+        net = sales - (supplier + transport)
+        net_profit.append(round(float(net), 2))
+        supplier_cost.append(round(float(supplier), 2))
+        tpt = float(transport) / float(tons) if tons else 0.0
+        transport_per_t.append(round(tpt, 2))
+
+    return {
+        "months": months_lbl,
+        "net_profit": net_profit,
+        "supplier_cost": supplier_cost,
+        "transport_per_t": transport_per_t,
+        "currency": "CAD",
+    }
+
+# API-обёртка
+def monthly_trends_api(request):
+    return JsonResponse(monthly_trends_data(), safe=True)
