@@ -61,6 +61,12 @@
   .kpi--good .kpi-value{color:#0f9d58}     /* положительная метрика */
   .kpi--bad .kpi-value{color:#d93025}      /* отрицательная метрика */
 
+
+  #monthlyTrends {
+    height: 400px !important;
+    width: 100% !important;
+  }
+
 </style>
 
 <div class="kpi-grid">
@@ -598,7 +604,7 @@
       type: 'line',
       data: { labels: data.months, datasets: [dsNet, dsSup, dsTpt] },
       options: {
-        responsive:true, maintainAspectRatio:true,
+        responsive:true, maintainAspectRatio:false,
         interaction:{ mode:'index', intersect:false },
         layout:{ padding:{ top:8, right:12, bottom:4, left:8 } },
         plugins:{
