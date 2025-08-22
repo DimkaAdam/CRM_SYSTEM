@@ -2224,7 +2224,7 @@ def export_supply_list_pdf(request):
         data.append([
             deal.date.strftime("%Y-%m-%d"),
             deal.grade,
-            f"{deal.shipped_quantity:.4f}",
+            f"{deal.shipped_quantity:.3f}",
             f"${deal.buyer_price:.2f}",
             f"${deal.total_amount:.2f}",
         ])

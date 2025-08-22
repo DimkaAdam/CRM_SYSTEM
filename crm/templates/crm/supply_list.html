@@ -69,7 +69,7 @@
                     <tr>
                         <td>{{ deal.date|date:"Y-m-d" }}</td>
                         <td>{{ deal.grade }}</td>
-                        <td>{{ deal.shipped_quantity }}</td>
+                        <td>{{ deal.shipped_quantity|floatformat:3 }}</td>
                         <td>${{ deal.buyer_price|floatformat:2 }}</td>
                         <td>${{ deal.total_amount|floatformat:2 }}</td>
                     </tr>

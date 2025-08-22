@@ -70,7 +70,7 @@
                     <tr>
                         <td>{{ deal.date|date:"Y-m-d" }}</td>
                         <td>{{ deal.grade }}</td>
-                        <td>{{ deal.received_quantity }}</td>
+                        <td>{{ deal.received_quantity |floatformat:3 }}</td>
                         <td>${{ deal.supplier_price|floatformat:2 }}</td>
                         <td>${{ deal.supplier_total|floatformat:2 }}</td>
                         <td>{{ deal.scale_ticket }}</td>
