@@ -6,7 +6,7 @@ from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Cont
 from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 from django.utils import timezone
-from django.db.models import Sum, Count, F, DecimalField, ExpressionWrapper
+from django.db.models import Sum, Count, F, DecimalField, ExpressionWrapper,Value
 from django.db.models.functions import Coalesce
 
 from rest_framework.views import APIView
@@ -34,7 +34,6 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from django.views.decorators.http import require_POST
 import json
-from decimal import Decimal
 
 
 from datetime import datetime,timezone,timedelta
@@ -376,7 +375,29 @@ def deal_list(request):
     totals = deals.aggregate(
         total_income_loss=Sum('total_income_loss'),
         total_amount=Sum('total_amount'),
+        total_tonnage =Sum('received_quantity')
     )
+
+    per_grade = (
+        deals.values('grade')
+        .annotate(
+            shipped_weight=Coalesce(
+                Sum('received_quantity', output_field=DecimalField(max_digits=18, decimal_places=2)),
+                Value(0, output_field=DecimalField(max_digits=18, decimal_places=2))
+            ),
+            total_cash=Coalesce(
+                Sum('total_amount', output_field=DecimalField(max_digits=18, decimal_places=2)),
+                Value(0, output_field=DecimalField(max_digits=18, decimal_places=2))
+            ),
+        )
+        .order_by('grade')
+    )
+
+    for row in per_grade:
+        row["display"] = f"{row['grade']} – {row['shipped_weight']:.2f} MT ({row['total_cash']:.2f} $)"
+
+
+
 
     # Получаем доступные года из базы данных
     years = Deals.objects.annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()
@@ -417,6 +438,7 @@ def deal_list(request):
         'hauler': hauler,
         'selected_company_id': int(selected_company_id) if selected_company_id else None,
         'companies': companies,
+        'per_grade': per_grade,
     }
 
     # Рендерим страницу с переданным контекстом

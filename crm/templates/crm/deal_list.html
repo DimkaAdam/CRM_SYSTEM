@@ -309,14 +309,48 @@
         </table>
 
         <!-- Итоги -->
-        <div style="margin-top: 20px;">
-            <p><strong>Amount:</strong> {{ totals.total_amount|default:"0.00"|floatformat:2 }}</p>
-            <p><strong>Income:</strong> {{ totals.total_income_loss|default:"0.00"|floatformat:2 }}</p>
+        <div class="tonnage-card">
+          <div class="tonnage-header">Tonnage by Grade</div>
+          <table class="tonnage-table">
+            <thead>
+              <tr>
+                <th>Grade</th>
+                <th>Weight (MT)</th>
+                <th>Cash ($)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in per_grade %}
+                {% if row.grade %}
+                  <tr>
+                    <td>{{ row.grade }}</td>
+                    <td>{{ row.shipped_weight|default:"0"|floatformat:2 }}</td>
+                    <td>{{ row.total_cash|default:"0"|floatformat:2 }}</td>
+                  </tr>
+                {% endif %}
+              {% empty %}
+                <tr><td colspan="3" style="text-align:center; color:#888;">No data</td></tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="summary-row">
+                <td><strong>Gross Revenue</strong></td>
+                <td colspan="2">${{ totals.total_amount|default:"0"|floatformat:2 }}</td>
+              </tr>
+              <tr class="summary-row">
+                <td><strong>Profit/Loss</strong></td>
+                <td colspan="2">${{ totals.total_income_loss|default:"0"|floatformat:2 }}</td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
 
+</div>
 
-    <script src="{% static 'crm/js/deal_list.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'crm/deal_list.css' %}">
-    <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+
+
+<script src="{% static 'crm/js/deal_list.js' %}"></script>
+<link rel="stylesheet" href="{% static 'crm/deal_list.css' %}">
+<link rel="stylesheet" href="{% static 'crm/styles.css' %}">
 
 {% endblock %}
