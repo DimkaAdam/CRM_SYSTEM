@@ -154,7 +154,6 @@ MATERIALS_LIST = {
     'Kraft Paper Bags': None,
     'Loose OCC': None,
     'Printers Offcuts': None,
-    'Printers Offcuts Picked UP': None,
     'Brown Printers Offcuts': None,
     'Stock Rolls': None,
     'Baled Cardboard': None,

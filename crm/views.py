@@ -337,7 +337,7 @@ def company_main(request):
 def deal_list(request):
     # Получаем текущий месяц и год
     print("DEBUG: datetime is", datetime)
-    today_date = datetime.today()  # ✅ Теперь работает
+    today_date = datetime.today()
     companies = Company.objects.all()
     current_month = today_date.month
     current_year = today_date.year
@@ -1054,149 +1054,223 @@ def company_report(request):
 
 
 def export_company_report_pdf(request):
-    from reportlab.lib.pagesizes import A4
-    from reportlab.pdfgen import canvas
-    from reportlab.platypus import Table, TableStyle
-    from reportlab.lib import colors
-    from reportlab.lib.utils import ImageReader
-    import os
-    from django.conf import settings
-    from django.utils.text import slugify
+    # --- импорты ---
+    from io import BytesIO                                      # буфер для PDF
+    from datetime import datetime                                # даты
+    from django.http import HttpResponse                         # ответ
+    from reportlab.lib.pagesizes import A4                       # размер страницы
+    from reportlab.pdfgen import canvas                          # низкоуровневый canvas
+    from reportlab.platypus import Table, TableStyle             # таблица
+    from reportlab.lib import colors                             # цвета
+    from reportlab.lib.utils import ImageReader                  # изображение
+    import os                                                    # пути
+    from django.conf import settings                             # BASE_DIR
+    from django.utils.text import slugify                        # безопасное имя файла
 
+    # --- входные параметры фильтров ---
+    selected_company_id = request.GET.get('company', '')         # выбранная компания
+    month = request.GET.get('month', '')                         # месяц
+    year = request.GET.get('year', '')                           # год
 
-    # Получение фильтров из запроса
-    selected_company_id = request.GET.get('company', '')
-    month = request.GET.get('month', '')
-    year = request.GET.get('year', '')
-
-    # Текущая дата для отчета
-    now = datetime.now()
-
-    # Получение всех сделок
-    deals = Deals.objects.all()
-    if selected_company_id:
+    # --- данные ---
+    now = datetime.now()                                         # текущая дата
+    deals = Deals.objects.all()                                  # все сделки
+    if selected_company_id:                                      # фильтр по компании
         deals = deals.filter(supplier__id=int(selected_company_id))
-    if month:
+    if month:                                                    # фильтр по месяцу
         deals = deals.filter(date__month=int(month))
-    if year:
+    if year:                                                     # фильтр по году
         deals = deals.filter(date__year=int(year))
 
-    first_deal = deals.first()
+    deals = deals.order_by('date', 'id')                         # стабильный порядок
+    first_deal = deals.first()                                   # для шапки клиента
 
-
-    # Данные для таблицы
-    data = [["Date", "Grade", "Net", "Price", "Amount", "Scale Ticket"]]
-    for deal in deals:
+    # --- подготовка табличных данных ---
+    data = [["Date", "Grade", "Net (MT)", "Price ($/MT)", "Amount ($)", "Scale Ticket"]]  # заголовки
+    for d in deals:                                              # строки
         data.append([
-            deal.date.strftime("%Y-%m-%d"),
-            deal.grade,
-            f"{deal.received_quantity:.4f}",
-            f"${deal.supplier_price:.2f}",
-            f"${deal.supplier_total:.2f}",
-            deal.scale_ticket
+            d.date.strftime("%Y-%m-%d"),
+            str(d.grade),
+            f"{d.received_quantity:.3f}",
+            f"{d.supplier_price:.2f}",
+            f"{d.supplier_total:.2f}",
+            str(d.scale_ticket or "")
         ])
 
-    # Итоги
-    total_net = sum([deal.received_quantity for deal in deals])
-    total_amount = sum([deal.supplier_total for deal in deals])
+    # --- итоги по всему списку ---
+    total_net = sum(d.received_quantity for d in deals)          # суммарный вес
+    total_amount = sum(d.supplier_total for d in deals)          # суммарная сумма
 
-    # Создание PDF
-    buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-    current_y = height - 50
+    # --- подготовка PDF ---
+    buffer = BytesIO()                                           # буфер
+    pdf = canvas.Canvas(buffer, pagesize=A4)                     # canvas
+    PAGE_W, PAGE_H = A4                                          # ширина/высота
+    M_L, M_R, M_T, M_B = 30, 30, 40, 40                          # поля (мм в поинтах ≈ уже поинты)
+    usable_w = PAGE_W - M_L - M_R                                # полезная ширина
 
-    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'cl2.png')
-    if os.path.exists(logo_path):
-        pdf.drawImage(ImageReader(logo_path), 30, current_y - 40, width=50, height=50, mask='auto')
+    # --- ресурсы (логотип) ---
+    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'cl2.png')  # путь к логотипу
 
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.setFillColor(colors.darkblue)
-    pdf.drawRightString(width - 30, current_y - 10, "Local to Global Recycling Inc.")
-    pdf.setFont("Helvetica", 8)
-    pdf.setFillColor(colors.black)
-    pdf.drawRightString(width - 30, current_y - 23, "19090 Lougheed Hwy.")
-    pdf.drawRightString(width - 30, current_y - 33, "Pitt Meadows, BC V3Y 2M6")
+    # --- хелперы рендера ---
+    def draw_header():
+        """Рисует логотип/адрес/заголовок и блок с Customer. Возвращает y-координату НИЗА customer-блока."""
+        y = PAGE_H - M_T                                         # старт сверху
+        # логотип
+        if os.path.exists(logo_path):
+            pdf.drawImage(ImageReader(logo_path), M_L, y - 40, width=50, height=50, mask='auto')
+        # адрес / название справа
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.setFillColor(colors.darkblue)
+        pdf.drawRightString(PAGE_W - M_R, y - 10, "Local to Global Recycling Inc.")
+        pdf.setFont("Helvetica", 8)
+        pdf.setFillColor(colors.black)
+        pdf.drawRightString(PAGE_W - M_R, y - 23, "19090 Lougheed Hwy.")
+        pdf.drawRightString(PAGE_W - M_R, y - 33, "Pitt Meadows, BC V3Y 2M6")
+        # заголовок по центру
+        pdf.setFont("Helvetica-Bold", 13)
+        pdf.drawCentredString(PAGE_W / 2, y - 10, "Shipment Summary")
 
-    pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawCentredString(width / 2, current_y - 10, "Shipment Summary")
-
-    # 📍 Customer info
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(30, height - 160, "Customer:")
-
-    customer_details1 = []
-    if first_deal and first_deal.supplier:
-        customer_details1.append(first_deal.supplier.name)
-        contact = first_deal.supplier.contacts.filter(address__isnull=False).first()
-        if contact and contact.address:
-            customer_details1.extend(contact.address.strip().split('\n'))
+        # customer-блок
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(M_L, PAGE_H - 120, "Customer:")
+        # сбор строк для клиента
+        customer_lines = []
+        if first_deal and first_deal.supplier:
+            customer_lines.append(first_deal.supplier.name)
+            contact = first_deal.supplier.contacts.filter(address__isnull=False).first()
+            if contact and contact.address:
+                customer_lines.extend([ln.strip() for ln in contact.address.strip().split('\n') if ln.strip()])
+            else:
+                customer_lines.append("Address not available")
         else:
-            customer_details1.append("Address not available")
-    else:
-        customer_details1 = ["Unknown"]
+            customer_lines.append("Unknown")
 
-    pdf.setFont("Helvetica", 10)
-    y_position = height - 175
-    for line in customer_details1:
-        pdf.drawString(85, y_position, line.strip())
-        y_position -= 15
+        # вывод строк
+        y_lines = PAGE_H - 135
+        pdf.setFont("Helvetica", 10)
+        for line in customer_lines:
+            pdf.drawString(M_L + 55, y_lines, line)
+            y_lines -= 14
 
-    # 📊 Таблица под адресом клиента + небольшой отступ
-    table_top_y = y_position - 20
-    table = Table(data, colWidths=[80, 140, 60, 80, 80,80])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-    ]))
+        return y_lines - 12                                       # немного отступа под блоком
 
-    # Определим высоту таблицы для расчёта позиции итогов
-    table_width, table_height = table.wrap(0, 0)
-    table.drawOn(pdf, 30, table_top_y - table_height)
+    def table_style():
+        """Единый стиль таблицы (повторяется на каждой порции)."""
+        return TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ])
 
-    # 📉 Итоги ниже таблицы
-    summary_y = table_top_y - table_height - 20
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(30, summary_y, f"Total Net: {total_net:.2f} MT")
-    pdf.drawString(30, summary_y - 20, f"Total Amount: ${total_amount:.2f}")
+    def draw_table_paginated(all_rows, start_y):
+        """
+        Разбивает таблицу на порции, которые помещаются на страницу.
+        Возвращает y-координату, оставшуюся после последней отрисованной порции на текущей странице.
+        """
+        col_widths = [80, 140, 60, 80, 80, 80]                    # ширины колонок
+        i = 0                                                     # индекс текущей строки в all_rows
+        y = start_y                                               # текущий верх таблицы
+        while i < len(all_rows):                                  # пока есть строки
+            # Начинаем с заголовка + 1 строки, затем постепенно увеличиваем, пока помещается
+            low = 2                                               # минимум строк (header + 1)
+            high = len(all_rows) - i + 1                          # максимум потенциально
+            fit_n = 0                                             # сколько реально влезет на этой странице
+            # бинарный поиск количества помещающихся строк
+            while low <= high:
+                mid = (low + high) // 2                           # пробное количество
+                chunk = all_rows[i:i + mid - 1]                   # mid-1 данных (без заголовка)
+                chunk_data = [all_rows[0]] + chunk                # добавляем заголовок
+                t = Table(chunk_data, colWidths=col_widths)       # создаём таблицу
+                t.setStyle(table_style())                         # стиль
+                w, h = t.wrap(usable_w, 0)                        # получаем высоту
+                if y - h >= M_B:                                  # проверяем, помещается ли по высоте
+                    fit_n = mid - 1                               # сохраняем, что поместилось (без заголовка)
+                    low = mid + 1                                 # пробуем больше
+                else:
+                    high = mid - 1                                # пробуем меньше
 
+            if fit_n == 0:
+                # Ничего не влезло — переходим на новую страницу и перерисовываем шапку
+                pdf.showPage()
+                y = draw_header()
+                continue
 
-    # 📊 Расчёт итогов по каждому грейду
-    pdf.setFont("Helvetica", 10)
-    grade_summary = {}
+            # Рисуем реально помещающуюся порцию
+            chunk = all_rows[i:i + fit_n]                         # данные для порции
+            t = Table([all_rows[0]] + chunk, colWidths=col_widths)
+            t.setStyle(table_style())
+            w, h = t.wrap(usable_w, 0)
+            t.drawOn(pdf, M_L, y - h)                             # отрисовка слева в пределах поля
+            y = y - h - 10                                        # отступ под таблицей
+            i += fit_n                                            # двигаем индекс
 
-    for deal in deals:
-        key = (deal.grade, deal.supplier_price)
+            # Если ещё остались строки — начинаем новую страницу, перерисовываем шапку
+            if i < len(all_rows) and y < M_B + 60:
+                pdf.showPage()
+                y = draw_header()
+
+        return y                                                  # вернём, где остановились
+
+    def ensure_space_or_new_page(y, need=40):
+        """Гарантирует место под блок; при нехватке делает новую страницу и рисует шапку."""
+        if y - need < M_B:
+            pdf.showPage()
+            return draw_header()
+        return y
+
+    # --- страница 1: шапка + таблица (с переносами) ---
+    y = draw_header()                                             # рисуем шапку и получаем стартовую y
+    y = draw_table_paginated(data, y)                             # рисуем таблицу с переносами
+
+    # --- суммарные итоги под таблицей (перенос при нехватке места) ---
+    y = ensure_space_or_new_page(y, need=40)                      # проверка места под “Total…”
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(M_L, y, f"Total Net: {total_net:.2f} MT")
+    y -= 16
+    pdf.drawString(M_L, y, f"Total Amount: ${total_amount:.2f}")
+    y -= 24
+
+    # --- итоги по грейдам (с переносами) ---
+    # агрегируем
+    grade_summary = {}                                            # словарь агрегатов
+    for d in deals:
+        key = (str(d.grade), float(d.supplier_price))
         if key not in grade_summary:
-            grade_summary[key] = {"amount": 0, "net": 0}
-        grade_summary[key]["net"] += deal.received_quantity
-        grade_summary[key]["amount"] += deal.supplier_total
+            grade_summary[key] = {"net": 0.0, "amount": 0.0}
+        grade_summary[key]["net"] += float(d.received_quantity)
+        grade_summary[key]["amount"] += float(d.supplier_total)
 
-    y = summary_y - 50  # ⬇ Начинаем ниже итогов
+    # сортируем для стабильности вывода
+    items = sorted(grade_summary.items(), key=lambda kv: (kv[0][0], kv[0][1]))
 
-    for (grade, price), values in grade_summary.items():
-        amount = values["amount"]
-        net = values["net"]
-        pdf.drawString(30, y, f"{grade} (${price:.2f}) – {net:.2f} MT – ${amount:.2f} ")
-        y -= 15  # отступ между строками
+    pdf.setFont("Helvetica", 10)
+    for (grade, price), vals in items:
+        line = f"{grade} (${price:.2f}) – {vals['net']:.2f} MT – ${vals['amount']:.2f}"
+        y = ensure_space_or_new_page(y, need=16)                  # перенос по мере необходимости
+        pdf.drawString(M_L, y, line)
+        y -= 14
 
-    # 📁 Название файла
+    # --- имя файла ---
     raw_name = first_deal.supplier.name if first_deal and first_deal.supplier else "Unknown"
     safe_name = slugify(raw_name)
     month_str = datetime.strptime(month, "%m").strftime("%b") if month else now.strftime("%b")
     year_str = year if year else now.strftime("%Y")
     filename = f"L2G_{safe_name}_Supply_List_{month_str}_{year_str}.pdf"
 
-    pdf.save()
-    buffer.seek(0)
-
-    response = HttpResponse(buffer, content_type='application/pdf')
+    # --- финал ---
+    pdf.save()                                                    # сохраняем ОДИН раз
+    buffer.seek(0)                                                # в начало буфера
+    response = HttpResponse(buffer, content_type='application/pdf')  # отдаём PDF
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+
 
 
 
@@ -2216,145 +2290,211 @@ def sanitize_filename(name):
     return re.sub(r'[<>:"/\\|?*]', '_', name)
 
 def export_supply_list_pdf(request):
-    from reportlab.lib.pagesizes import A4
-    from reportlab.pdfgen import canvas
-    from reportlab.platypus import Table, TableStyle
-    from reportlab.lib import colors
-    from reportlab.lib.utils import ImageReader
-    import os
-    from django.conf import settings
-    from django.utils.text import slugify
+    # ===== Импорты (локально внутри вьюхи, чтобы не ломать глобальный импорт) =====
+    from io import BytesIO                                   # буфер в памяти под PDF
+    from datetime import datetime                            # даты/время
+    from django.http import HttpResponse                     # HTTP-ответ с файлом
+    from reportlab.lib.pagesizes import A4                   # размер страницы A4
+    from reportlab.pdfgen import canvas                      # низкоуровневый PDF canvas
+    from reportlab.platypus import Table, TableStyle         # таблицы Platypus (но без Story)
+    from reportlab.lib import colors                          # цвета
+    from reportlab.lib.utils import ImageReader              # загрузка картинок
+    import os                                                # работа с путями
+    from django.conf import settings                         # BASE_DIR и проч.
+    from django.utils.text import slugify                    # безопасное имя файла
 
-    selected_company_id = request.GET.get('company', '')
-    month = request.GET.get('month', '')
-    year = request.GET.get('year', '')
-    now = datetime.now()
+    # ===== Входные параметры фильтров =====
+    selected_company_id = request.GET.get('company', '')     # id компании-покупателя
+    month = request.GET.get('month', '')                     # месяц (числом, "08")
+    year = request.GET.get('year', '')                       # год ("2025")
+    now = datetime.now()                                     # текущая дата
 
-    deals = Deals.objects.all()
-    if selected_company_id:
+    # ===== Данные из базы =====
+    deals = Deals.objects.all()                              # все сделки
+    if selected_company_id:                                  # фильтр по покупателю
         deals = deals.filter(buyer__id=int(selected_company_id))
-    if month:
+    if month:                                                # фильтр по месяцу
         deals = deals.filter(date__month=int(month))
-    if year:
+    if year:                                                 # фильтр по году
         deals = deals.filter(date__year=int(year))
+    deals = deals.order_by('date', 'id')                     # стабильный порядок строк
+    first_deal = deals.first()                               # первая сделка (для блока Customer)
 
-    first_deal = deals.first()
-    total_field = "total_amount"
-
-    data = [["Date", "Grade", "Net (MT)", "Price ($/MT)", "Amount ($)"]]
-    for deal in deals:
+    # ===== Подготовка табличных данных =====
+    data = [["Date", "Grade", "Net (MT)", "Price ($/MT)", "Amount ($)"]]  # заголовок колонок
+    for d in deals:                                           # формируем строки таблицы
         data.append([
-            deal.date.strftime("%Y-%m-%d"),
-            deal.grade,
-            f"{deal.shipped_quantity:.3f}",
-            f"${deal.buyer_price:.2f}",
-            f"${deal.total_amount:.2f}",
+            d.date.strftime("%Y-%m-%d"),                      # дата
+            str(d.grade),                                     # грейд (строкой)
+            f"{float(d.shipped_quantity):.3f}",               # net вес (MT)
+            f"{float(d.buyer_price):.2f}",                    # цена за MT
+            f"{float(d.total_amount):.2f}",                   # сумма
         ])
 
-    total_net = sum(deal.shipped_quantity for deal in deals)
-    total_amount = sum(getattr(deal, total_field, 0) for deal in deals)
+    # ===== Глобальные итоги =====
+    total_net = sum(float(d.shipped_quantity) for d in deals) # общий вес
+    total_amount = sum(float(d.total_amount) for d in deals)  # общий оборот $
 
-    buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-    current_y = height - 50
+    # ===== Буфер и canvas =====
+    buffer = BytesIO()                                        # создаём буфер в памяти
+    pdf = canvas.Canvas(buffer, pagesize=A4)                  # инициализируем canvas
+    PAGE_W, PAGE_H = A4                                       # ширина/высота страницы
 
-    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'cl2.png')
-    if os.path.exists(logo_path):
-        pdf.drawImage(ImageReader(logo_path), 30, current_y - 40, width=50, height=50, mask='auto')
+    # ===== Поля страницы и полезная ширина =====
+    M_L, M_R, M_T, M_B = 30, 30, 40, 40                       # левое/правое/верх/низ, в поинтах
+    usable_w = PAGE_W - M_L - M_R
+     # доступная ширина контента
 
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.setFillColor(colors.darkblue)
-    pdf.drawRightString(width - 30, current_y - 10, "Local to Global Recycling Inc.")
-    pdf.setFont("Helvetica", 8)
-    pdf.setFillColor(colors.black)
-    pdf.drawRightString(width - 30, current_y - 23, "19090 Lougheed Hwy.")
-    pdf.drawRightString(width - 30, current_y - 33, "Pitt Meadows, BC V3Y 2M6")
+    # ===== Путь к логотипу =====
+    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'log.png')
 
-    pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawCentredString(width / 2, current_y - 10, "Shipment Summary")
+    # ===== Хелпер: рисует шапку + Customer, возвращает нижнюю Y =====
+    def draw_header():
+        y = PAGE_H - 60
 
-    # 📍 Customer info
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(30, height - 160, "Customer:")
+        if os.path.exists(logo_path):
+            pdf.drawImage(ImageReader(logo_path), M_L, y - 50, width=70, height=70, mask='auto')
 
-    customer_details = []
-    if first_deal and first_deal.buyer:
-        customer_details.append(first_deal.buyer.name)
-        contact = first_deal.buyer.contacts.filter(address__isnull=False).first()
-        if contact and contact.address:
-            customer_details.extend(contact.address.strip().split('\n'))
+        # заголовок
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawCentredString(PAGE_W / 2, y, "Shipment Summary")
+
+        # реквизиты справа
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.setFillColor(colors.darkblue)
+        pdf.drawRightString(PAGE_W - M_R, y, "Local to Global Recycling Inc.")
+
+        pdf.setFont("Helvetica", 9)
+        pdf.setFillColor(colors.HexColor("#555555"))
+        pdf.drawRightString(PAGE_W - M_R, y - 14, "19090 Lougheed Hwy.")
+        pdf.drawRightString(PAGE_W - M_R, y - 26, "Pitt Meadows, BC V3Y 2M6")
+        pdf.drawRightString(PAGE_W - M_R, y - 38, "wastepaperbrokers.com")
+
+        # разделительная линия
+        pdf.setStrokeColor(colors.HexColor("#aaaaaa"))
+        pdf.setLineWidth(0.5)
+        pdf.line(M_L, y - 50, PAGE_W - M_R, y - 50)
+        # Собираем строки Customer
+        lines = []                                            # список строк
+        if first_deal and first_deal.buyer:                   # если есть покупатель
+            lines.append(first_deal.buyer.name)               # имя компании
+            contact = first_deal.buyer.contacts.filter(address__isnull=False).first()  # контакт с адресом
+            if contact and contact.address:                   # если адрес есть
+                lines.extend([ln.strip() for ln in contact.address.strip().split('\n') if ln.strip()])  # добавляем строки адреса
+            else:
+                lines.append("Address not available")         # заглушка адреса
         else:
-            customer_details.append("Address not available")
-    else:
-        customer_details = ["Unknown"]
+            lines.append("Unknown")                           # если данных нет
 
-    pdf.setFont("Helvetica", 10)
-    y_position = height - 175
-    for line in customer_details:
-        pdf.drawString(85, y_position, line.strip())
-        y_position -= 15
+        pdf.setFont("Helvetica", 10)                          # обычный шрифт для Customer строк
+        y_lines = PAGE_H - 135                                # стартовая Y для строк адреса
+        for ln in lines:                                      # выводим по строкам
+            pdf.drawString(M_L + 55, y_lines, ln)             # печатаем строку
+            y_lines -= 14                                     # сдвигаем вниз на 14pt
 
-    # 📊 Таблица под адресом клиента + небольшой отступ
-    table_top_y = y_position - 20
-    table = Table(data, colWidths=[80, 140, 60, 80, 80])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-    ]))
+        return y_lines - 12                                   # небольшой отступ и вернуть нижнюю границу
 
-    # Определим высоту таблицы для расчёта позиции итогов
-    table_width, table_height = table.wrap(0, 0)
-    table.drawOn(pdf, 30, table_top_y - table_height)
+    # ===== Хелпер: единый стиль таблицы =====
+    def table_style():
+        return TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),     # серый фон заголовка
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),# белый текст заголовка
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),            # выравнивание по центру
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),  # жирный шрифт заголовка
+            ('FONTSIZE', (0, 0), (-1, 0), 9),                 # размер заголовка
+            ('FONTSIZE', (0, 1), (-1, -1), 9),                # размер ячеек
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),            # внутренний отступ снизу в заголовке
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),    # сетка 0.5pt
+        ])
 
-    # 📉 Итоги ниже таблицы
-    summary_y = table_top_y - table_height - 20
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(30, summary_y, f"Total Net: {total_net:.2f} MT")
-    pdf.drawString(30, summary_y - 20, f"Total Amount: ${total_amount:.2f}")
+    # ===== Хелпер: перенос страницы при нехватке места =====
+    def ensure_space_or_new_page(y_cur, need=40):
+        if y_cur - need < M_B:                                 # если не хватает места вниз
+            pdf.showPage()                                     # создаём новую страницу
+            return draw_header()                               # рисуем шапку и возвращаем новую нижнюю Y
+        return y_cur                                           # иначе возвращаем текущую Y
 
-    # 📉 Итоги (ниже таблицы)
-    summary_y = table_top_y - table_height - 20
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(30, summary_y, f"Total Net: {total_net:.2f} MT")
-    pdf.drawString(30, summary_y - 20, f"Total Amount: ${total_amount:.2f}")
+    # ===== Хелпер: пагинация таблицы (рисует порциями) =====
+    def draw_table_paginated(all_rows, start_y):
+        col_widths = [80, 140, 60, 80, 80]                     # ширины колонок под A4 и поля
+        i, y_cur = 0, start_y                                  # индекс строки и текущая Y
+        while i < len(all_rows):                               # пока есть строки для вывода
+            low, high, fit = 2, len(all_rows) - i + 1, 0       # бинпоиск: минимум header+1
+            while low <= high:                                 # подбираем сколько строк влезет
+                mid = (low + high) // 2                        # пробное число (включая header)
+                chunk = all_rows[i:i + mid - 1]                # mid-1 строк данных
+                chunk_data = [all_rows[0]] + chunk             # + заголовок колонок
+                t = Table(chunk_data, colWidths=col_widths)    # создаём таблицу
+                t.setStyle(table_style())                      # применяем стиль
+                w, h = t.wrap(usable_w, 0)
 
-    # 📊 Расчёт итогов по каждому грейду
-    pdf.setFont("Helvetica", 10)
-    grade_summary = {}
+                if y_cur - h >= M_B:                           # если помещается по высоте
+                    fit = mid - 1                              # запоминаем, сколько строк влезает
+                    low = mid + 1                              # пробуем больше
+                else:
+                    high = mid - 1                             # иначе пробуем меньше
+            if fit == 0:                                       # если не влезла даже 1 строка
+                pdf.showPage()                                 # новая страница
+                y_cur = draw_header()                          # рисуем шапку
+                continue                                       # пытаемся снова
+            chunk = all_rows[i:i + fit]                        # берём порцию данных
+            t = Table([all_rows[0]] + chunk, colWidths=col_widths)  # таблица с заголовком
+            t.setStyle(table_style())                          # стиль
+            w, h = t.wrap(usable_w, 0)                         # снова замеряем высоту
 
-    for deal in deals:
-        key = (deal.grade, deal.buyer_price)
-        if key not in grade_summary:
-            grade_summary[key] = {"amount": 0, "net": 0}
-        grade_summary[key]["net"] += deal.shipped_quantity
-        grade_summary[key]["amount"] += deal.total_amount
+            x = M_L + (usable_w - w) / 2  # центрируем в полезной ширине
 
 
-    y = summary_y - 50  # ⬇ Начинаем ниже итогов
+            t.drawOn(pdf,  x, y_cur - h)                      # рисуем слева, отступая поля
+            y_cur = y_cur - h - 10                             # новая Y (с небольшим отступом)
+            i += fit                                           # продвинули индекс
+            if i < len(all_rows) and y_cur < M_B + 60:         # если осталось мало места
+                pdf.showPage()                                 # делаем новую страницу
+                y_cur = draw_header()                          # перерисовываем шапку
+        return y_cur                                           # возвращаем нижнюю Y после таблицы
 
-    for (grade, price), values in grade_summary.items():
-        amount = values["amount"]
-        net = values["net"]
-        pdf.drawString(30, y, f"{grade} (${price:.2f}) – {net:.2f} MT – ${amount:.2f} ")
-        y -= 15  # отступ между строками
+    # ===== Старт страницы 1: рисуем шапку и таблицу с переносами =====
+    y = draw_header()                                          # рисуем шапку, получаем стартовую Y
+    y = draw_table_paginated(data, y - 10)                     # рисуем таблицу (ниже шапки)
 
-    # 📁 Название файла
-    raw_name = first_deal.buyer.name if first_deal and first_deal.buyer else "Unknown"
-    safe_name = slugify(raw_name)
-    month_str = datetime.strptime(month, "%m").strftime("%b") if month else now.strftime("%b")
-    year_str = year if year else now.strftime("%Y")
-    filename = f"L2G_{safe_name}_Supply_List_{month_str}_{year_str}.pdf"
+    # ===== Итоги под таблицей (с переносом при необходимости) =====
+    y -= 40
+    y = ensure_space_or_new_page(y, need=40)                   # проверка места под блок итогов
+    pdf.setFont("Helvetica-Bold", 12)                          # жирный 12pt
+    pdf.drawString(M_L, y, f"Total Weight: {total_net:.2f} MT")   # общий Net
+    y -= 18                                                    # сдвиг вниз
+    pdf.drawString(M_L, y, f"Revenue: ${total_amount:.2f}")  # общий Amount
+    y -= 24                                                    # отступ перед сводкой по грейдам
 
-    pdf.save()
-    buffer.seek(0)
+    # ===== Итоги по каждому грейду (агрегация + перенос строк при необходимости) =====
+    grade_summary = {}                                         # словарь агрегатов по (grade, price)
+    for d in deals:                                            # проходим сделки
+        key = (str(d.grade), float(d.buyer_price))             # ключ: (грейд, цена)
+        if key not in grade_summary:                           # если ключ новый
+            grade_summary[key] = {"net": 0.0, "amount": 0.0}   # инициализируем
+        grade_summary[key]["net"] += float(d.shipped_quantity) # суммируем вес
+        grade_summary[key]["amount"] += float(d.total_amount)  # суммируем сумму $
 
-    response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    items = sorted(grade_summary.items(), key=lambda kv: (kv[0][0], kv[0][1]))  # сортировка по названию/цене
+    pdf.setFont("Helvetica", 10)                                # обычный 10pt
+    for (grade, price), vals in items:                          # пробегаем агрегаты
+        line = f"{grade} (${price:.2f}) – {vals['net']:.2f} MT – ${vals['amount']:.2f}"  # формируем строку
+        y = ensure_space_or_new_page(y, need=16)                # проверяем место под строку
+        pdf.drawString(M_L, y, line)                            # печатаем строку
+        y -= 14                                                 # шаг вниз под следующую
+
+    # ===== Имя файла =====
+    raw_name = first_deal.buyer.name if first_deal and first_deal.buyer else "Unknown"   # имя компании
+    safe_name = slugify(raw_name)                                 # безопасное имя
+    month_str = datetime.strptime(month, "%m").strftime("%b") if month else now.strftime("%b")  # "Aug"
+    year_str = year if year else now.strftime("%Y")               # "2025"
+    filename = f"L2G_{safe_name}_Supply_List_{month_str}_{year_str}.pdf"  # финальное имя файла
+
+    # ===== Завершение PDF и ответ =====
+    pdf.save()                                                    # сохраняем PDF (ОДИН раз!)
+    buffer.seek(0)                                                # ставим курсор в начало буфера
+    response = HttpResponse(buffer, content_type='application/pdf')  # готовим ответ
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'  # заголовок скачивания
     return response
 
 
