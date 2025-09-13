@@ -1109,50 +1109,53 @@ def export_company_report_pdf(request):
     usable_w = PAGE_W - M_L - M_R                                # полезная ширина
 
     # --- ресурсы (логотип) ---
-    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'cl2.png')  # путь к логотипу
-
+    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'log.png')
     # --- хелперы рендера ---
     def draw_header():
         """Рисует логотип/адрес/заголовок и блок с Customer. Возвращает y-координату НИЗА customer-блока."""
-        y = PAGE_H - M_T                                         # старт сверху
+        y = PAGE_H - 60                                        # старт сверху
         # логотип
         if os.path.exists(logo_path):
-            pdf.drawImage(ImageReader(logo_path), M_L, y - 40, width=50, height=50, mask='auto')
+            pdf.drawImage(ImageReader(logo_path), M_L, y - 50, width=70, height=70, mask='auto')
+
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawCentredString(PAGE_W / 2, y, "Shipment Summary")
+
         # адрес / название справа
-        pdf.setFont("Helvetica-Bold", 10)
+        pdf.setFont("Helvetica-Bold", 11)
         pdf.setFillColor(colors.darkblue)
-        pdf.drawRightString(PAGE_W - M_R, y - 10, "Local to Global Recycling Inc.")
-        pdf.setFont("Helvetica", 8)
-        pdf.setFillColor(colors.black)
-        pdf.drawRightString(PAGE_W - M_R, y - 23, "19090 Lougheed Hwy.")
-        pdf.drawRightString(PAGE_W - M_R, y - 33, "Pitt Meadows, BC V3Y 2M6")
-        # заголовок по центру
-        pdf.setFont("Helvetica-Bold", 13)
-        pdf.drawCentredString(PAGE_W / 2, y - 10, "Shipment Summary")
+        pdf.drawRightString(PAGE_W - M_R, y, "Local to Global Recycling Inc.")
 
-        # customer-блок
-        pdf.setFont("Helvetica-Bold", 10)
-        pdf.drawString(M_L, PAGE_H - 120, "Customer:")
-        # сбор строк для клиента
-        customer_lines = []
+        pdf.setFont("Helvetica", 9)
+        pdf.setFillColor(colors.HexColor("#555555"))
+        pdf.drawRightString(PAGE_W - M_R, y - 14, "19090 Lougheed Hwy.")
+        pdf.drawRightString(PAGE_W - M_R, y - 26, "Pitt Meadows, BC V3Y 2M6")
+        pdf.drawRightString(PAGE_W - M_R, y - 38, "wastepaperbrokers.com")
+
+        # разделительная линия
+        pdf.setStrokeColor(colors.HexColor("#aaaaaa"))
+        pdf.setLineWidth(0.5)
+        pdf.line(M_L, y - 50, PAGE_W - M_R, y - 50)
+        # Собираем строки Customer
+        lines = []  # список строк
         if first_deal and first_deal.supplier:
-            customer_lines.append(first_deal.supplier.name)
-            contact = first_deal.supplier.contacts.filter(address__isnull=False).first()
-            if contact and contact.address:
-                customer_lines.extend([ln.strip() for ln in contact.address.strip().split('\n') if ln.strip()])
+            lines.append(first_deal.supplier.name)
+            contact = first_deal.supplier.contacts.filter(address__isnull=False).first()  # контакт с адресом
+            if contact and contact.address:  # если адрес есть
+                lines.extend(
+                    [ln.strip() for ln in contact.address.strip().split('\n') if ln.strip()])  # добавляем строки адреса
             else:
-                customer_lines.append("Address not available")
+                lines.append("Address not available")  # заглушка адреса
         else:
-            customer_lines.append("Unknown")
+            lines.append("Unknown")  # если данных нет
 
-        # вывод строк
-        y_lines = PAGE_H - 135
-        pdf.setFont("Helvetica", 10)
-        for line in customer_lines:
-            pdf.drawString(M_L + 55, y_lines, line)
-            y_lines -= 14
+        pdf.setFont("Helvetica", 10)  # обычный шрифт для Customer строк
+        y_lines = PAGE_H - 135  # стартовая Y для строк адреса
+        for ln in lines:  # выводим по строкам
+            pdf.drawString(M_L + 55, y_lines, ln)  # печатаем строку
+            y_lines -= 14  # сдвигаем вниз на 14pt
 
-        return y_lines - 12                                       # немного отступа под блоком
+        return y_lines - 12  # немного отступа под блоком
 
     def table_style():
         """Единый стиль таблицы (повторяется на каждой порции)."""
@@ -1167,75 +1170,76 @@ def export_company_report_pdf(request):
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
         ])
 
+    # ===== Хелпер: перенос страницы при нехватке места =====
+    def ensure_space_or_new_page(y_cur, need=40):
+        if y_cur - need < M_B:  # если не хватает места вниз
+            pdf.showPage()  # создаём новую страницу
+            return draw_header()  # рисуем шапку и возвращаем новую нижнюю Y
+        return y_cur  # иначе возвращаем текущую Y
+
+    # ===== Хелпер: пагинация таблицы (рисует порциями) =====
     def draw_table_paginated(all_rows, start_y):
         """
-        Разбивает таблицу на порции, которые помещаются на страницу.
-        Возвращает y-координату, оставшуюся после последней отрисованной порции на текущей странице.
+        all_rows: список включая первую строку-заголовок.
+        Рисуем постранично: на каждой странице один заголовок + часть строк данных.
         """
-        col_widths = [80, 140, 60, 80, 80, 80]                    # ширины колонок
-        i = 0                                                     # индекс текущей строки в all_rows
-        y = start_y                                               # текущий верх таблицы
-        while i < len(all_rows):                                  # пока есть строки
-            # Начинаем с заголовка + 1 строки, затем постепенно увеличиваем, пока помещается
-            low = 2                                               # минимум строк (header + 1)
-            high = len(all_rows) - i + 1                          # максимум потенциально
-            fit_n = 0                                             # сколько реально влезет на этой странице
-            # бинарный поиск количества помещающихся строк
-            while low <= high:
-                mid = (low + high) // 2                           # пробное количество
-                chunk = all_rows[i:i + mid - 1]                   # mid-1 данных (без заголовка)
-                chunk_data = [all_rows[0]] + chunk                # добавляем заголовок
-                t = Table(chunk_data, colWidths=col_widths)       # создаём таблицу
-                t.setStyle(table_style())                         # стиль
-                w, h = t.wrap(usable_w, 0)                        # получаем высоту
-                if y - h >= M_B:                                  # проверяем, помещается ли по высоте
-                    fit_n = mid - 1                               # сохраняем, что поместилось (без заголовка)
-                    low = mid + 1                                 # пробуем больше
-                else:
-                    high = mid - 1                                # пробуем меньше
+        col_widths = [80, 140, 60, 80, 80, 90]  # твои 6 колонок
+        header = all_rows[0]  # строка-заголовок
+        rows = all_rows[1:]  # только данные
 
-            if fit_n == 0:
-                # Ничего не влезло — переходим на новую страницу и перерисовываем шапку
+        i, y_cur = 0, start_y
+
+        while i < len(rows):
+            # 1) подобрать сколько строк данных влезет вместе с заголовком
+            low, high, fit = 1, len(rows) - i, 0  # минимум 1 строка данных
+            while low <= high:
+                mid = (low + high) // 2
+                trial = [header] + rows[i:i + mid]
+                t_try = Table(trial, colWidths=col_widths);
+                t_try.setStyle(table_style())
+                w_try, h_try = t_try.wrap(usable_w, 0)
+                if y_cur - h_try >= M_B:
+                    fit = mid
+                    low = mid + 1
+                else:
+                    high = mid - 1
+
+            # 2) если даже 1 строка не влезла — новая страница и шапка
+            if fit == 0:
                 pdf.showPage()
-                y = draw_header()
+                y_cur = draw_header()
                 continue
 
-            # Рисуем реально помещающуюся порцию
-            chunk = all_rows[i:i + fit_n]                         # данные для порции
-            t = Table([all_rows[0]] + chunk, colWidths=col_widths)
+            # 3) рисуем порцию: один заголовок + fit строк данных
+            chunk = [header] + rows[i:i + fit]
+            t = Table(chunk, colWidths=col_widths);
             t.setStyle(table_style())
             w, h = t.wrap(usable_w, 0)
-            t.drawOn(pdf, M_L, y - h)                             # отрисовка слева в пределах поля
-            y = y - h - 10                                        # отступ под таблицей
-            i += fit_n                                            # двигаем индекс
+            x = M_L + (usable_w - w) / 2  # центрируем в полезной ширине
+            t.drawOn(pdf, x, y_cur - h)
+            y_cur -= h + 10
+            i += fit
 
-            # Если ещё остались строки — начинаем новую страницу, перерисовываем шапку
-            if i < len(all_rows) and y < M_B + 60:
+            # 4) мало места — сразу новая страница с шапкой
+            if i < len(rows) and y_cur < M_B + 60:
                 pdf.showPage()
-                y = draw_header()
+                y_cur = draw_header()
 
-        return y                                                  # вернём, где остановились
+        return y_cur
 
-    def ensure_space_or_new_page(y, need=40):
-        """Гарантирует место под блок; при нехватке делает новую страницу и рисует шапку."""
-        if y - need < M_B:
-            pdf.showPage()
-            return draw_header()
-        return y
+    # ===== Старт страницы 1: рисуем шапку и таблицу с переносами =====
+    y = draw_header()  # рисуем шапку, получаем стартовую Y
+    y = draw_table_paginated(data, y - 10)  # рисуем таблицу (ниже шапки)
 
-    # --- страница 1: шапка + таблица (с переносами) ---
-    y = draw_header()                                             # рисуем шапку и получаем стартовую y
-    y = draw_table_paginated(data, y)                             # рисуем таблицу с переносами
+    # ===== Итоги под таблицей (с переносом при необходимости) =====
+    y -= 40
+    y = ensure_space_or_new_page(y, need=40)  # проверка места под блок итогов
+    pdf.setFont("Helvetica-Bold", 12)  # жирный 12pt
+    pdf.drawString(M_L, y, f"Net Weight: {total_net:,.2f} MT")  # общий Net
+    y -= 18  # сдвиг вниз
+    pdf.drawString(M_L, y, f"Revenue: ${total_amount:.2f}")  # общий Amount
+    y -= 24  # вернём, где остановились
 
-    # --- суммарные итоги под таблицей (перенос при нехватке места) ---
-    y = ensure_space_or_new_page(y, need=40)                      # проверка места под “Total…”
-    pdf.setFont("Helvetica-Bold", 11)
-    pdf.drawString(M_L, y, f"Total Net: {total_net:.2f} MT")
-    y -= 16
-    pdf.drawString(M_L, y, f"Total Amount: ${total_amount:.2f}")
-    y -= 24
-
-    # --- итоги по грейдам (с переносами) ---
     # агрегируем
     grade_summary = {}                                            # словарь агрегатов
     for d in deals:
@@ -1250,7 +1254,7 @@ def export_company_report_pdf(request):
 
     pdf.setFont("Helvetica", 10)
     for (grade, price), vals in items:
-        line = f"{grade} (${price:.2f}) – {vals['net']:.2f} MT – ${vals['amount']:.2f}"
+        line = f"{grade} (${price:.2f}) – {vals['net']:.2f} MT – ${vals['amount']:,.2f}"
         y = ensure_space_or_new_page(y, need=16)                  # перенос по мере необходимости
         pdf.drawString(M_L, y, line)
         y -= 14
@@ -2416,41 +2420,46 @@ def export_supply_list_pdf(request):
 
     # ===== Хелпер: пагинация таблицы (рисует порциями) =====
     def draw_table_paginated(all_rows, start_y):
-        col_widths = [80, 140, 60, 80, 80]                     # ширины колонок под A4 и поля
-        i, y_cur = 0, start_y                                  # индекс строки и текущая Y
-        while i < len(all_rows):                               # пока есть строки для вывода
-            low, high, fit = 2, len(all_rows) - i + 1, 0       # бинпоиск: минимум header+1
-            while low <= high:                                 # подбираем сколько строк влезет
-                mid = (low + high) // 2                        # пробное число (включая header)
-                chunk = all_rows[i:i + mid - 1]                # mid-1 строк данных
-                chunk_data = [all_rows[0]] + chunk             # + заголовок колонок
-                t = Table(chunk_data, colWidths=col_widths)    # создаём таблицу
-                t.setStyle(table_style())                      # применяем стиль
-                w, h = t.wrap(usable_w, 0)
+        col_widths = [80, 160, 80, 90, 100]  # подгони при желании
+        header = all_rows[0]
+        rows = all_rows[1:]
 
-                if y_cur - h >= M_B:                           # если помещается по высоте
-                    fit = mid - 1                              # запоминаем, сколько строк влезает
-                    low = mid + 1                              # пробуем больше
+        i, y_cur = 0, start_y
+
+        while i < len(rows):
+            # подобрать, сколько строк данных влезет вместе с header
+            low, high, fit = 1, len(rows) - i, 0
+            while low <= high:
+                mid = (low + high) // 2
+                trial = [header] + rows[i:i + mid]
+                t_try = Table(trial, colWidths=col_widths);
+                t_try.setStyle(table_style())
+                w_try, h_try = t_try.wrap(usable_w, 0)
+                if y_cur - h_try >= M_B:
+                    fit = mid
+                    low = mid + 1
                 else:
-                    high = mid - 1                             # иначе пробуем меньше
-            if fit == 0:                                       # если не влезла даже 1 строка
-                pdf.showPage()                                 # новая страница
-                y_cur = draw_header()                          # рисуем шапку
-                continue                                       # пытаемся снова
-            chunk = all_rows[i:i + fit]                        # берём порцию данных
-            t = Table([all_rows[0]] + chunk, colWidths=col_widths)  # таблица с заголовком
-            t.setStyle(table_style())                          # стиль
-            w, h = t.wrap(usable_w, 0)                         # снова замеряем высоту
+                    high = mid - 1
 
-            x = M_L + (usable_w - w) / 2  # центрируем в полезной ширине
+            if fit == 0:
+                pdf.showPage()
+                y_cur = draw_header()
+                continue
 
+            # рисуем порцию
+            chunk = [header] + rows[i:i + fit]
+            t = Table(chunk, colWidths=col_widths);
+            t.setStyle(table_style())
+            w, h = t.wrap(usable_w, 0)
+            x = M_L + (usable_w - w) / 2  # центр в полях
+            t.drawOn(pdf, x, y_cur - h)
+            y_cur -= h + 10
+            i += fit
 
-            t.drawOn(pdf,  x, y_cur - h)                      # рисуем слева, отступая поля
-            y_cur = y_cur - h - 10                             # новая Y (с небольшим отступом)
-            i += fit                                           # продвинули индекс
-            if i < len(all_rows) and y_cur < M_B + 60:         # если осталось мало места
-                pdf.showPage()                                 # делаем новую страницу
-                y_cur = draw_header()                          # перерисовываем шапку
+            if i < len(rows) and y_cur < M_B + 60:
+                pdf.showPage()
+                y_cur = draw_header()
+
         return y_cur                                           # возвращаем нижнюю Y после таблицы
 
     # ===== Старт страницы 1: рисуем шапку и таблицу с переносами =====
@@ -2461,9 +2470,9 @@ def export_supply_list_pdf(request):
     y -= 40
     y = ensure_space_or_new_page(y, need=40)                   # проверка места под блок итогов
     pdf.setFont("Helvetica-Bold", 12)                          # жирный 12pt
-    pdf.drawString(M_L, y, f"Total Weight: {total_net:.2f} MT")   # общий Net
+    pdf.drawString(M_L, y, f"Net Weight: {total_net:.2f} MT")   # общий Net
     y -= 18                                                    # сдвиг вниз
-    pdf.drawString(M_L, y, f"Revenue: ${total_amount:.2f}")  # общий Amount
+    pdf.drawString(M_L, y, f"Amount Due: ${total_amount:.2f}")  # общий Amount
     y -= 24                                                    # отступ перед сводкой по грейдам
 
     # ===== Итоги по каждому грейду (агрегация + перенос строк при необходимости) =====
