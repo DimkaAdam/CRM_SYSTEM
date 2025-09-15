@@ -1357,8 +1357,9 @@ def export_scale_ticket_pdf(request):
     date_src   = getattr(first_deal, "date", None) or datetime.today().date()  # дата сделки/сегодня
     year       = date_src.strftime("%Y")                                    # '2025'
     month_num  = date_src.strftime("%m")                                    # '09'
-    month_name = date_src.strftime("%B")                                    # 'September'
+    month = date_src.strftime("%B")                                    # 'September'
     month_dir  = f"{year}-{month_num}"                                      # '2025-09' для папок
+
 
     # ===== Входные параметры формы =====
     licence_plate = request.GET.get('licence_plate', "N/A")                 # госномер авто
@@ -1576,7 +1577,7 @@ def export_scale_ticket_pdf(request):
     raw_supplier_name = first_deal.supplier.name if first_deal.supplier else "Unknown Supplier"  # имя поставщика
     supplier_name = sanitize_filename(raw_supplier_name)                            # безопасное имя для FS
     directory = os.path.join(                                                       # папка: .../supplier/YYYY-MM/
-        settings.MEDIA_ROOT, "reports", "scale_tickets", supplier_name, month_dir
+        settings.MEDIA_ROOT, "reports", "scale_tickets", supplier_name, year, month
     )
     os.makedirs(directory, exist_ok=True)                                           # создаём при необходимости
 
