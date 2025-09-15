@@ -1313,160 +1313,284 @@ def get_deal_by_ticket(request):
 
 
 
-def export_scale_ticket_pdf(request):
-    ticket_number = request.GET.get('ticket_number', None)
 
-    if not ticket_number:
+
+
+def export_scale_ticket_pdf(request):
+    # ===== Импорты (если нет выше) =====
+    # from io import BytesIO                                   # буфер для PDF
+    # from datetime import datetime                            # даты/время
+    # from decimal import Decimal                              # точная арифметика
+    # import os                                                # пути/каталоги
+    # from django.http import HttpResponse                     # HTTP-ответ
+    # from reportlab.lib.pagesizes import A4                   # A4 как в supply list
+    # from reportlab.pdfgen import canvas                      # canvas PDF
+    # from reportlab.platypus import Table, TableStyle         # таблицы
+    # from reportlab.lib import colors                         # цвета
+    # from reportlab.lib.utils import ImageReader              # лого
+    # from django.conf import settings                         # BASE_DIR, MEDIA_ROOT
+    # from .models import Deals                                # модель сделок
+    # from .utils import sanitize_filename                     # безопасные имена
+
+    # ===== Хелпер: безопасное Decimal =====
+    def D(val, default='0'):
+        # # Приводит значение к Decimal, устойчиво к None/пустым строкам/числам
+        try:
+            if val is None or val == '':
+                return Decimal(default)
+            return Decimal(str(val))
+        except Exception:
+            return Decimal(default)
+
+    # ===== Параметры запроса =====
+    ticket_number = request.GET.get('ticket_number', None)                 # номер тикета из GET
+    if not ticket_number:                                                  # проверка наличия номера
         return HttpResponse("⚠️ No ticket number provided.", status=400)
 
-    # Получаем **все** сделки с таким scale_ticket
-    deals = Deals.objects.filter(scale_ticket=ticket_number)
-
-    if not deals.exists():
+    # ===== Данные из БД =====
+    deals = Deals.objects.filter(scale_ticket=ticket_number)               # все сделки по тикету
+    if not deals.exists():                                                 # если пусто — 404
         return HttpResponse("⚠️ No deals found for this ticket number.", status=404)
+    first_deal = deals.first()                                             # первая для шапки/дат
 
-    first_deal = deals.first()
+    # ===== Дата-источник =====
+    date_src   = getattr(first_deal, "date", None) or datetime.today().date()  # дата сделки/сегодня
+    year       = date_src.strftime("%Y")                                    # '2025'
+    month_num  = date_src.strftime("%m")                                    # '09'
+    month_name = date_src.strftime("%B")                                    # 'September'
+    month_dir  = f"{year}-{month_num}"                                      # '2025-09' для папок
 
-    # 📌 Считаем общий вес материалов и паллет
-    total_material_weight = sum(deal.received_quantity * 1000 for deal in deals)  # В кг
-    total_pallets_weight = sum(deal.received_pallets * 15 for deal in deals if deal.received_pallets)
+    # ===== Входные параметры формы =====
+    licence_plate = request.GET.get('licence_plate', "N/A")                 # госномер авто
+    tare_weight   = D(request.GET.get('tare_weight', '5170'))               # тара, кг (Decimal)
+    deal_time     = request.GET.get('time') or datetime.now().strftime('%H:%M')  # время HH:MM
 
-    # 📌 Получаем данные из формы (если переданы)
-    licence_plate = request.GET.get('licence_plate', "N/A")
-    tare_weight = float(request.GET.get('tare_weight', 5170))  # 🚛 Базовый вес
-    net_weight = float(total_material_weight) + float(total_pallets_weight)  # 📦 Итоговый net_weight
-    gross_weight = float(tare_weight) + float(net_weight)  # 📌 Gross = Tare + Net
+    # ===== Итоги веса (как Decimal) =====
+    # # received_quantity хранится в МТ → переводим в кг (*1000)
+    total_material_weight = sum(D(d.received_quantity) * D(1000) for d in deals)   # кг материалов
+    total_pallets_weight  = sum(D(d.received_pallets) * D(15) for d in deals)      # кг паллет (15 кг/шт)
+    net_weight   = total_material_weight + total_pallets_weight                     # нетто (кг)
+    gross_weight = tare_weight + net_weight                                        # брутто (кг)
 
-    # 📌 Форматируем числа
-    gross_weight_str = f"{gross_weight:.1f} KG"
-    tare_weight_str = f"{tare_weight:.1f} KG"
-    net_weight_str = f"{net_weight:.1f} KG"
+    # ===== Форматирование строк (с разделителями тысяч) =====
+    gross_weight_str = f"{gross_weight:,.1f} KG"                                   # '5,195.0 KG'
+    tare_weight_str  = f"{tare_weight:,.1f} KG"
+    net_weight_str   = f"{net_weight:,.1f} KG"
 
-    # 🕒 Время (из формы или по умолчанию)
-    deal_time = request.GET.get('time', "N/A")
+    # ===== Подготовка PDF (как в supply list) =====
+    buffer = BytesIO()                                                             # буфер в памяти
+    pdf = canvas.Canvas(buffer, pagesize=A4)                                       # формат A4
+    PAGE_W, PAGE_H = A4                                                            # ширина/высота
+    M_L, M_R, M_T, M_B = 30, 30, 40, 40                                           # поля страницы
+    usable_w = PAGE_W - M_L - M_R                                                  # полезная ширина
+    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'log.png')  # лого
+    INK = colors.HexColor('#141b2d')
 
-    # 🖨 Лог для отладки весов
-    print(f"📊 Scale Ticket #{ticket_number} | Gross: {gross_weight}, Tare: {tare_weight}, Net: {net_weight}")
+    # ===== Цвета/хелперы для футера =====
+    TEXT_MUTED = colors.HexColor("#555555")  # приглушённый текст
 
-    # Создаём PDF
-    buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    def hr(y):
+        """Горизонтальная тонкая линия-разделитель"""
+        pdf.setStrokeColor(colors.HexColor("#aaaaaa"))
+        pdf.setLineWidth(0.5)
+        pdf.line(M_L, y, PAGE_W - M_R, y)
 
-    # 🏢 Логотип
-    logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'company_logo.png')
+    def safe_supplier_address_lines():
+        # # Собираем строки адреса поставщика из первого контакта с address, если есть
+        lines = []
+        try:
+            supplier = getattr(first_deal, "supplier", None)  # # Компания-поставщик
+            if supplier:
+                lines.append(supplier.name or "Unknown")  # # Имя компании
+                # Пытаемся найти контакт с адресом
+                contact = getattr(supplier, "contacts", None)
+                if contact:
+                    c = contact.filter(address__isnull=False).first()
+                    if c and c.address:
+                        # Разбиваем адрес по строкам
+                        addr_lines = [ln.strip() for ln in str(c.address).split('\n') if ln.strip()]
+                        if addr_lines:
+                            lines.extend(addr_lines)
+                        else:
+                            lines.append("Address not available")
+                else:
+                    lines.append("Address not available")
+            else:
+                lines.append("Unknown")
+        except Exception:
+            lines = ["Unknown"]
+        return lines
 
-    if os.path.exists(logo_path):
-        pdf.drawImage(ImageReader(logo_path), 40, height - 80, width=70, height=50, mask='auto')
-        print(f"✅ Логотип найден: {logo_path}")
-    else:
-        print(f"🚨 Логотип НЕ найден: {logo_path}")
+    # ===== Хедер  =====
+    def draw_header():
+        y = PAGE_H - 60                                                            # старт по Y для шапки
 
-    # 📌 Название компании
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.setFillColor(colors.darkblue)
-    pdf.drawString(130, height - 45, "Local to Global Recycling Inc.")
+        if os.path.exists(logo_path):                                              # лого слева
+            pdf.drawImage(ImageReader(logo_path), M_L, y - 50, width=70, height=70, mask='auto')
 
-    # 📍 Адрес
-    pdf.setFont("Helvetica", 8)
-    pdf.setFillColor(colors.black)
-    pdf.drawString(130, height - 55, "19090 Lougheed Hwy.")
-    pdf.drawString(130, height - 65, "Pitt Meadows, BC V3Y 2M6")
+        pdf.setFont("Helvetica-Bold", 16)                                          # заголовок по центру
+        pdf.drawCentredString(PAGE_W / 2, y, "Scale Ticket")
 
-    # 🏷 Заголовок Scale Ticket
-    pdf.setFont("Helvetica", 12)
-    pdf.drawString(80, height - 110, f"Scale Ticket #: {ticket_number}")
+        pdf.setFont("Helvetica-Bold", 11)                                          # реквизиты справа
+        pdf.setFillColor(colors.darkblue)
+        pdf.drawRightString(PAGE_W - M_R, y, "Local to Global Recycling Inc.")
+        pdf.setFont("Helvetica", 9)
+        pdf.setFillColor(colors.HexColor("#555555"))
+        pdf.drawRightString(PAGE_W - M_R, y - 14, "19090 Lougheed Hwy.")
+        pdf.drawRightString(PAGE_W - M_R, y - 26, "Pitt Meadows, BC V3Y 2M6")
+        pdf.drawRightString(PAGE_W - M_R, y - 38, "wastepaperbrokers.com")
 
-    # 📆 Дата и время
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(80, height - 130, f"Date: {first_deal.date.strftime('%Y-%m-%d')}")
-    pdf.drawString(80, height - 150, f"Time: {deal_time}")
-    pdf.drawString(80, height - 170, f"Customer:")
+        pdf.setStrokeColor(colors.HexColor("#aaaaaa"))                             # разделительная линия
+        pdf.setLineWidth(0.5)
+        pdf.line(M_L, y - 50, PAGE_W - M_R, y - 50)
 
-    # 👤 Customer details (с переносами строк)
-    customer_details = [first_deal.supplier.name] if first_deal.supplier else ["Unknown"]
-    y_position = height - 190  # Опускаем ниже заголовка "Customer:"
-    for line in customer_details:
-        pdf.drawString(85, y_position, line.strip())
-        y_position -= 15  # Отступ вниз
+        # Блок «Ticket / Date / Time / Month» слева
+        y_info = PAGE_H - 160
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(M_L, y_info, f"Scale Ticket #: {ticket_number}")            # номер тикета
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(M_L, y_info - 16, f"Date:  {date_src.strftime('%Y-%m-%d')}")# дата
+        pdf.drawString(M_L, y_info - 30, f"Time:  {deal_time}")                    # время
 
-    # 📋 Данные справа
-    pdf.drawString(350, height - 110, f"Licence: {licence_plate}")
-    pdf.drawString(350, height - 130, f"Gross: {gross_weight_str}")
-    pdf.drawString(350, height - 150, f"Tare: {tare_weight_str}")
-    pdf.drawString(350, height - 170, f"Net: {net_weight_str}")
-    pdf.drawString(350, height - 190, f"Pallets #: {first_deal.received_pallets}")
 
-    # 📌 Позиция таблицы (ниже)
-    y_position = height - 320
+        # Блок «Customer»
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.setFillColor(INK)
+        pdf.drawString(M_L, y_info - 68, "Customer:")
+        pdf.setFont("Helvetica", 10)
 
-    # 📊 Данные таблицы
-    data = [['MATERIAL', 'WEIGHT (KG)', 'PRICE ($/KG)', 'AMOUNT']]
-    total_amount = 0
+        cust_lines = safe_supplier_address_lines()  # <-- имя + строки адреса
+        y_lines = y_info - 84
+        for ln in cust_lines:
+            pdf.drawString(M_L + 12, y_lines, str(ln).strip())
+            y_lines -= 14
 
-    for deal in deals:
-        received_kg = deal.received_quantity * 1000
-        sup_price = deal.supplier_price / 1000  # ✅ Цена за кг
-        amount = received_kg * sup_price
-        total_amount += amount
 
-        data.append([deal.grade, f"{received_kg:.1f}", f"${sup_price:.2f}", f"${amount:.2f}"])
+        # Правый блок с чипами весов/табличками (простым текстом, чтобы не усложнять)
+        r_x = PAGE_W - M_R - 220
+        pdf.setFont("Helvetica", 10)
+        pdf.drawRightString(PAGE_W - M_R, y_info,     f"Licence: {licence_plate}") # номер авто
+        pdf.drawRightString(PAGE_W - M_R, y_info - 16, f"Gross:   {gross_weight_str}") # брутто
+        pdf.drawRightString(PAGE_W - M_R, y_info - 30, f"Tare:    {tare_weight_str}")  # тара
+        pdf.drawRightString(PAGE_W - M_R, y_info - 44, f"Net:     {net_weight_str}")   # нетто
+        pdf.drawRightString(PAGE_W - M_R, y_info - 58, f"Pallets #: {int(D(getattr(first_deal,'received_pallets',0)))}") # паллеты
 
-    # 🏋 Добавляем вес паллет, если есть
-    if total_pallets_weight > 0:
-        data.append(['Pallets', f"{total_pallets_weight:.1f}", '', ''])
+        return min(y - 12, y_info - 120)                                      # вернуть нижнюю границу Y
 
-    # 📑 Создаем таблицу
-    table = Table(data, colWidths=[200, 100, 100, 100])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black)
-    ]))
+    def draw_footer():
+        # Нижняя линия + подпись всегда на одинаковой высоте
+        hr(M_B + 18)
+        pdf.setFont("Helvetica", 8);
+        pdf.setFillColor(TEXT_MUTED)
+        pdf.drawString(M_L, M_B + 6, "Thank you for recycling responsibly.")
+        pdf.drawRightString(PAGE_W - M_R, M_B + 6, "Generated by L2G CRM")
 
-    # 🖨 Вывод таблицы в PDF
-    table.wrapOn(pdf, width, height)
-    table.drawOn(pdf, 80, y_position)
 
-    # 💰 Итоговая сумма
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(80, y_position - 25, f"Total: ${total_amount:.2f}")
 
-    # 🗂 Структура директорий
-    today = datetime.today()
-    year = today.strftime("%Y")
-    month = today.strftime("%B")  # April, May и т.д.
-    raw_supplier_name = first_deal.supplier.name if first_deal.supplier else "Unknown Supplier"
+    # ===== Единый стиль таблицы (как в supply list) =====
+    def table_style():
+        return TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),                           # фон заголовка
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),                      # текст заголовка
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),                                  # выравнивание по центру
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),                        # жирный заголовок
+            ('FONTSIZE', (0, 0), (-1, 0), 9),                                       # кегль заголовка
+            ('FONTSIZE', (0, 1), (-1, -1), 9),                                      # кегль ячеек
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),                                  # отступ в заголовке
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),                          # сетка 0.5pt
+        ])
 
-    print(f"📌 Supplier name в PDF: {raw_supplier_name}")
+    # ===== Переход на новую страницу при нехватке места =====
+    def ensure_space_or_new_page(y_cur, need=40):
+        if y_cur - need < M_B:
+            draw_footer()
+            pdf.showPage()                                                          # новая страница
+            return draw_header()                                                    # рисуем шапку заново
+        return y_cur                                                                # иначе вернуть текущую Y
 
-    supplier_name = sanitize_filename(raw_supplier_name)
+    # ===== Пагинация таблицы =====
+    def draw_table_paginated(all_rows, start_y):
+        col_widths = [140, 100, 100, 110]                                          # ширины колонок
+        header = all_rows[0]                                                        # шапка
+        rows = all_rows[1:]                                                         # данные
+        i, y_cur = 0, start_y                                                       # индекс и текущая Y
+        while i < len(rows):                                                        # пока не вывели все строки
+            # бинпоиск: сколько строк влезет
+            low, high, fit = 1, len(rows) - i, 0
+            while low <= high:
+                mid = (low + high) // 2
+                trial = [header] + rows[i:i + mid]
+                t_try = Table(trial, colWidths=col_widths); t_try.setStyle(table_style())
+                w_try, h_try = t_try.wrap(usable_w, 0)
+                if y_cur - h_try >= M_B:
+                    fit = mid; low = mid + 1
+                else:
+                    high = mid - 1
+            if fit == 0:                                                            # совсем не влезает
+                pdf.showPage(); y_cur = draw_header(); continue                     # новая страница и снова
+            # рисуем порцию
+            chunk = [header] + rows[i:i + fit]
+            t = Table(chunk, colWidths=col_widths); t.setStyle(table_style())
+            w, h = t.wrap(usable_w, 0)
+            x = M_L + (usable_w - w) / 2                                           # центрируем в полях
+            t.drawOn(pdf, x, y_cur - h)
+            y_cur -= h + 10                                                         # опускаем курсор
+            i += fit                                                                # смещаем индекс
+            if i < len(rows) and y_cur < M_B + 60:                                  # если на странице мало места
+                pdf.showPage(); y_cur = draw_header()                               # – новая страница
+        return y_cur                                                                # вернуть нижнюю границу
 
-    # 📂 Путь сохранения
-    directory = os.path.join(settings.MEDIA_ROOT, "reports", "scale_tickets", supplier_name, year, month)
-    os.makedirs(directory, exist_ok=True)
+    # ===== Подготовка данных таблицы =====
+    data = [['MATERIAL', 'WEIGHT (KG)', 'PRICE ($/KG)', 'AMOUNT ($)']]             # шапка
+    total_amount = Decimal('0')                                                     # итог в Decimal
+    for d in deals:                                                                 # по сделкам
+        received_kg  = D(d.received_quantity) * D(1000)                             # вес в кг
+        sup_price_kg = D(d.supplier_price) / D(1000)                                # $/кг
+        amount       = received_kg * sup_price_kg                                   # сумма
+        total_amount += amount                                                      # к итогу
+        data.append([
+            str(d.grade),                                                           # материал
+            f"{received_kg:,.1f}",                                                  # вес
+            f"{sup_price_kg:.4f}",                                                  # цена/кг (4 знака)
+            f"{amount:,.2f}",                                                       # сумма
+        ])
 
-    # 📝 Название файла
-    filename = f"Ticket {ticket_number}.pdf"
-    filepath = os.path.join(directory, filename)
+    if total_pallets_weight > 0:                                                    # добавить строку паллет
+        data.append(['Pallets (weight)', f"{total_pallets_weight:,.1f}", '', ''])   # вес паллет
 
-    # ✅ Завершаем PDF и перематываем буфер
-    pdf.save()
-    buffer.seek(0)
+    # ===== Рендер шапки и таблицы =====
+    y = draw_header()                                                               # рисуем шапку
+    y = draw_table_paginated(data, y - 10)                                          # рисуем таблицу с переносами
 
-    # 💾 Сохраняем PDF в файл
-    with open(filepath, "wb") as f:
+    # ===== Итог под таблицей =====
+    y = ensure_space_or_new_page(y, need=30)                                        # место под итог
+    pdf.setFont("Helvetica-Bold", 12)                                               # жирный шрифт
+    pdf.drawString(M_L, y - 18, f"Revenue: ${total_amount:,.2f}")                     # ИТОГО $
+
+    # === Футер на последней странице ===
+    draw_footer()
+
+
+    # ===== Пути сохранения =====
+    raw_supplier_name = first_deal.supplier.name if first_deal.supplier else "Unknown Supplier"  # имя поставщика
+    supplier_name = sanitize_filename(raw_supplier_name)                            # безопасное имя для FS
+    directory = os.path.join(                                                       # папка: .../supplier/YYYY-MM/
+        settings.MEDIA_ROOT, "reports", "scale_tickets", supplier_name, month_dir
+    )
+    os.makedirs(directory, exist_ok=True)                                           # создаём при необходимости
+
+    # ===== Имя файла (как указывал) =====
+    filename = f"Ticket {ticket_number}-{supplier_name}-{month_dir}.pdf"            # финальное имя
+    filepath = os.path.join(directory, filename)                                    # полный путь на диск
+
+    # ===== Завершение PDF/ответ =====
+    pdf.save()                                                                      # закрыть PDF
+    buffer.seek(0)                                                                  # перемотка на начало
+    with open(filepath, "wb") as f:                                                 # запись на диск
         f.write(buffer.getvalue())
-
-    print(f"✅ PDF сохранён в: {filepath}")
-
-    # 📤 Возвращаем как ответ пользователю
-    response = HttpResponse(buffer, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="Ticket {ticket_number}.pdf"'
+    response = HttpResponse(buffer, content_type="application/pdf")                 # HTTP-ответ
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'          # совпадает с файлом
     return response
 
 # Область доступа
