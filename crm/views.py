@@ -445,7 +445,7 @@ def deal_list(request):
     return render(request, 'crm/deal_list.html', context)
 
 
-from .models import ContactMaterial
+
 
 def get_price_by_supplier_and_grade(request):
     supplier_id = request.GET.get('supplier_id')
