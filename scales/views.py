@@ -10,6 +10,10 @@ from django.http import JsonResponse
 import openpyxl
 from openpyxl.styles import Alignment, Font
 from io import BytesIO
+from .utils import business_day
+from datetime import timedelta
+from django.http import HttpResponse
+from datetime import datetime
 
 
 @login_required
@@ -90,10 +94,7 @@ def api_delete_received(request, pk):
     return JsonResponse({"ok": True})
 
 
-from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-from datetime import datetime
-from .models import ReceivedMaterial
+
 
 @login_required
 def export_daily_pdf(request):
@@ -342,3 +343,17 @@ def export_monthly_excel(request):
 def home(request):
     is_manager = request.session.get("user_role") == "managers"  # <-- строго 'managers'
     return render(request, "scales/home.html", {"is_manager": is_manager})
+
+def scales_home(request):
+    today_bd = business_day()
+    prev_bd = today_bd - timedelta(days=1)
+
+    received_today = ReceivedMaterial.objects.filter(report_day=today_bd)
+    received_prev  = ReceivedMaterial.objects.filter(report_day=prev_bd)
+
+    return render(request, "scales/home.html", {
+        "today_bd": today_bd,
+        "prev_bd": prev_bd,
+        "received_today": received_today,
+        "received_prev": received_prev,
+    })

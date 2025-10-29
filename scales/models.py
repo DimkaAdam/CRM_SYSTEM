@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model   # ссылка на польз�
 class ReceivedMaterial(models.Model):
     # Дата приёма (по умолчанию — сегодня)
     date = models.DateField(auto_now_add=True)   # можно потом сделать ввод вручную
+    report_day = models.DateField(db_index=True, null=True, blank=True)
 
     # Краткое имя материала: CB / SOP / OCC
     material = models.CharField(max_length=32)   # хранит "CB" и т.п.
@@ -29,6 +30,12 @@ class ReceivedMaterial(models.Model):
     # Метки времени
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        from .utils import business_day
+        if not self.report_day:
+            self.report_day = business_day(self.created_at)
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["-created_at"]  # новые выше
