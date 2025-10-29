@@ -1,0 +1,101 @@
+{% load static %}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ title|default:"Material Received Report" }}</title>
+
+<link rel="stylesheet" href="{% static 'scales/css/home.css' %}">
+<script src="{% static 'scales/js/home.js' %}"></script>
+
+</head>
+<body>
+<div class="card">
+  <h1>Material Received Report</h1>
+  <p style="color:#94a3b8;margin:4px 0 18px 0;">Date: {% now "d/m/Y" %}</p>
+
+  <!-- Форма добавления -->
+  <div class="form-grid">
+    <div>
+      <label>Material:</label>
+      <select id="material">
+        <option value="Flexible Plastic">Flexible Plastic</option>
+        <option value="Mix Container">Mix Container</option>
+        <option value="Baled Cardboard">Baled Cardboard</option>
+      </select>
+    </div>
+    <div>
+      <label>Gross weight</label>
+      <input type="number" id="gross" placeholder="kg" step="0.1">
+    </div>
+    <div>
+      <label>Net weight</label>
+      <input type="number" id="net" placeholder="kg" step="0.1">
+    </div>
+    <div>
+      <label>Supplier:</label>
+      <select id="supplier">
+        <option>Hannam</option>
+        <option>Inno Food</option>
+        <option>Meridian</option>
+        <option>T-Brothers</option>
+      </select>
+    </div>
+    <div>
+      <label>Tag #</label>
+      <input type="number" id="tag">
+    </div>
+    <div style="align-self:center;">
+      <button onclick="addRow()">Add</button>
+    </div>
+  </div>
+
+  <!-- Таблица -->
+  <table id="report-table">
+    <thead>
+      <tr>
+        <th>Material</th>
+        <th>Gross kg</th>
+        <th>Net kg</th>
+        <th>Supplier</th>
+        <th>Tag #</th>
+        <th style="width:120px; text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div style="margin-top:20px;text-align:right;">
+    <form method="get" action="/scales/export/daily/" style="display:inline;">
+      <input type="date" name="date" value="{% now 'Y-m-d' %}">
+      <button>📄 Export Daily PDF</button>
+    </form>
+    <form method="get" action="/scales/export/monthly/" style="display:inline;margin-left:10px;">
+      <input type="month" name="month" value="{% now 'Y-m' %}">
+      <button>📊 Export Monthly Excel</button>
+    </form>
+  </div>
+
+
+</div>
+
+<!-- История по дням (отдельная карточка) -->
+<div class="history-card">
+  <div class="history-head">
+    <div class="history-title">History by day</div>
+    <div id="history-stats" class="history-stats"></div>
+  </div>
+  <div id="history-body" class="history-body"></div>
+    <!-- Хранилище и вывод по дням -->
+  <script type="application/json" id="daily-store">{}</script>
+  <div id="daily-sections" class="day-container"></div>
+
+</div>
+
+
+</body>
+
+
+</html>
+
+

@@ -1,0 +1,163 @@
+{% load static %}
+
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <!-- Адаптивная вёрстка на мобильных и десктопах -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Заголовок вкладки браузера -->
+  <title>Выбор компании</title>
+  <!-- Базовые стили: тёмная тема, сетка карточек без сторонних CSS-фреймворков -->
+  <style>
+    /* Общий фон и шрифт в тёмной теме */
+    body {
+      margin: 0;                              /* убираем отступы браузера по умолчанию */
+      font-family: system-ui, -apple-system,  /* современный системный шрифт */
+                   "Segoe UI", Roboto, Arial, sans-serif;
+      background: #141b2d;                    /* твой фирменный тёмный фон */
+      color: #e5e7eb;                         /* мягкий светлый текст */
+      min-height: 100vh;                      /* растягиваем на полный экран */
+      display: flex;                          /* центрируем контейнер */
+      align-items: center;                    /* вертикальное центрирование */
+      justify-content: center;                /* горизонтальное центрирование */
+    }
+
+    /* Контейнер контента по центру */
+    .container {
+      width: 100%;                            /* контейнер на всю ширину */
+      max-width: 1100px;                      /* но не шире 1100px */
+      padding: 24px;                          /* внутренние отступы */
+    }
+
+    /* Заголовок страницы */
+    .title {
+      font-size: 28px;                        /* размер шрифта заголовка */
+      font-weight: 700;                       /* жирный */
+      margin: 0 0 24px 0;                     /* отступ снизу */
+      letter-spacing: 0.3px;                  /* микро-кернинг */
+      color: #f3f4f6;                         /* чуть светлее заголовок */
+      text-align: center;                     /* выравниваем по центру */
+    }
+
+    /* Сетка карточек компаний */
+    .grid {
+      display: grid;                          /* сетка CSS Grid */
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* адаптивные колонки */
+      gap: 16px;                              /* промежутки между карточками */
+    }
+
+    /* Стили карточки */
+    .card {
+      background: #1f2937;                    /* тёмный серо-синий фон карточки */
+      border-radius: 16px;                    /* скруглённые углы */
+      padding: 20px;                           /* внутренние отступы */
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35); /* мягкая тень */
+      border: 1px solid rgba(255,255,255,0.06); /* тонкая граница */
+      text-align: center;                     /* выравнивание содержимого */
+      transition: transform 120ms ease,       /* плавная анимация наведения */
+                  box-shadow 120ms ease,
+                  border-color 120ms ease;
+    }
+
+    /* Наведение на карточку */
+    .card:hover {
+      transform: translateY(-2px);             /* лёгкий подъём */
+      box-shadow: 0 14px 40px rgba(0,0,0,0.45);/* усиление тени */
+      border-color: rgba(8,102,110,0.6);       /* подсветка границы в твоём фирменном цвете #08666e */
+      cursor: pointer;                          /* курсор-указатель */
+    }
+
+    /* Обёртка под логотип */
+    .logo-wrap {
+      width: 100%;                             /* по ширине карточки */
+      height: 120px;                           /* фиксируем высоту блока логотипа */
+      display: flex;                           /* центрируем логотип */
+      align-items: center;                     /* по вертикали */
+      justify-content: center;                 /* по горизонтали */
+      margin-bottom: 14px;                     /* отступ снизу */
+      overflow: hidden;                        /* скрываем выходящее за границы */
+    }
+
+    /* Сам логотип */
+    .logo {
+      max-width: 78%;                          /* не шире 78% карточки */
+      max-height: 100%;                        /* не выше блока */
+      object-fit: contain;                     /* сохранить пропорции */
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35)); /* лёгкая тень логотипу */
+    }
+
+    /* Название компании под логотипом */
+    .name {
+      font-size: 18px;                         /* размер шрифта названия */
+      font-weight: 600;                        /* полужирный */
+      margin: 0 0 12px 0;                      /* отступ снизу */
+      color: #e5e7eb;                          /* цвет текста */
+    }
+
+    /* Кнопка-ссылка "Войти" */
+    .enter {
+      display: inline-block;                   /* строчно-блочный для паддингов */
+      padding: 10px 14px;                      /* отступы */
+      border-radius: 10px;                     /* скругление */
+      border: 1px solid rgba(255,255,255,0.12);/* тонкая рамка */
+      text-decoration: none;                   /* убираем подчёркивание */
+      color: #e5e7eb;                          /* цвет текста */
+      background: linear-gradient(             /* лёгкий градиент фона */
+        180deg,
+        rgba(8,102,110,0.35) 0%,
+        rgba(8,102,110,0.22) 100%
+      );
+      transition: background 120ms ease, transform 120ms ease;
+    }
+
+    /* Наведение на кнопку */
+    .enter:hover {
+      background: linear-gradient(
+        180deg,
+        rgba(8,102,110,0.5) 0%,
+        rgba(8,102,110,0.3) 100%
+      );
+      transform: translateY(-1px);             /* лёгкий подъём */
+    }
+
+    /* Ссылку на карточку делаем блочной и кликабельной по всей карточке (через <a> вокруг .card) */
+    .card-link {
+      text-decoration: none;                   /* без подчёркивания для всего блока */
+      color: inherit;                          /* наследуем цвет */
+      display: block;                          /* блочный элемент */
+    }
+  </style>
+</head>
+<body>
+  <!-- Центральный контейнер -->
+  <div class="container">
+    <!-- Заголовок -->
+    <h1 class="title">Выберите компанию</h1>
+
+    <!-- Сетка карточек компаний -->
+    <div class="grid">
+      {% for c in companies %}
+        <!-- Ссылка-обёртка на set_company -->
+        <a class="card-link" href="{% url 'entry_portal:set_company' c.slug %}">
+          <!-- Карточка компании -->
+          <div class="card">
+            <!-- Блок логотипа (если есть загруженный логотип) -->
+            <div class="logo-wrap">
+              {% if c.logo %}
+                <img class="logo" src="{{ c.logo.url }}" alt="{{ c.name }}">
+              {% else %}
+                <!-- Фолбэк, когда логотип не загружен -->
+                <span class="name">{{ c.name }}</span>
+              {% endif %}
+            </div>
+            <!-- Название компании (дублируем, чтобы было и с логотипом) -->
+            <div class="name">{{ c.name }}</div>
+            <!-- Кнопка входа -->
+            <span class="enter">Перейти</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>

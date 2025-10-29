@@ -1,0 +1,30 @@
+[
+  {
+    "model": "entry_portal.portalcompany",
+    "pk": 1,
+    "fields": {
+      "name": "Local to Global",
+      "slug": "local-to-global",
+      "logo": "",
+      "redirect_url": "/crm/dashboard",
+      "is_active": true,
+      "order": 0,
+      "created_at": "2025-10-17T00:00:00Z",
+      "updated_at": "2025-10-17T00:00:00Z"
+    }
+  },
+  {
+    "model": "entry_portal.portalcompany",
+    "pk": 2,
+    "fields": {
+      "name": "Pitt Meadows Bottle Depot",
+      "slug": "pmb-depot",
+      "logo": "",
+      "redirect_url": "/scales/home",
+      "is_active": true,
+      "order": 1,
+      "created_at": "2025-10-17T00:00:00Z",
+      "updated_at": "2025-10-17T00:00:00Z"
+    }
+  }
+]
