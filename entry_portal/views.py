@@ -3,6 +3,7 @@ from django.utils.http import urlencode
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 
 from .models import PortalCompany
 
@@ -10,28 +11,6 @@ def choose_company(request):
     companies = PortalCompany.objects.filter(is_active=True)
     return render(request, "entry_portal/choose_company.html", {"companies": companies})
 
-def set_company(request, slug):
-    company = get_object_or_404(PortalCompany, slug=slug, is_active=True)
-    request.session["company_slug"] = company.slug
-    request.session["company_name"] = company.name
-
-    # Определяем целевой маршрут
-    if company.slug == "local-to-global":
-        target = "/crm/deals"
-    elif company.slug == "pmb-depot":
-        target = "/scales/home"
-    elif company.redirect_url:
-        target = company.redirect_url
-    else:
-        target = "/"
-
-    request.session["company_target"] = target
-
-    # 👉 Всегда ведём на наш “пароль для компании”
-    # (единая точка входа; здесь будет только поле “Пароль”)
-    query = urlencode({"next": target})
-    return redirect(f"/login?{query}")  # короткий путь (см. ниже корневой urls)
-    # или: return redirect(f"{reverse('entry_portal:company_login')}?{query}")
 
 @require_http_methods(["GET", "POST"])
 def company_login(request):
@@ -91,3 +70,57 @@ def company_login(request):
             "error": error,
         }
     )
+
+TARGETS = {
+    "pmb-depot": "/scales/home/",
+    "local-to-global": "/crm/deals/",
+}
+
+def portal_login(request, slug):
+    company = get_object_or_404(PortalCompany, slug=slug, is_active=True)
+
+    if request.method == "POST":
+        password = request.POST.get("password", "").strip()
+
+        if company.check_manager_password(password):
+            role = "managers"
+        elif company.check_staff_password(password):
+            role = "staff"
+        else:
+            messages.error(request, "❌ Неверный пароль.")
+            return render(request, "entry_portal/company_login.html", {"company": company})
+
+        # 🔹 очищаем прежний контекст компании/роли
+        for k in ("company_slug", "company_name", "user_role"):
+            request.session.pop(k, None)
+
+        # 🔹 техпользователь для сессии
+        User = get_user_model()
+        user, created = User.objects.get_or_create(
+            username=f"portal__{company.slug}",
+            defaults={"is_active": True}
+        )
+        if created and hasattr(user, "set_unusable_password"):
+            user.set_unusable_password()
+            user.save(update_fields=["password"])
+
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+
+        # 🔹 кладём свежий контекст
+        request.session["company_slug"] = company.slug
+        request.session["company_name"] = company.name
+        request.session["user_role"] = role
+
+        # 🔹 выбираем целевой путь:
+        # 1) если в БД у компании заполнен redirect_url — идём туда
+        # 2) иначе берём из мапы TARGETS
+        # 3) иначе на корень
+        target = company.redirect_url or TARGETS.get(company.slug, "/")
+
+        # обязательно абсолютный путь (начинается с "/")
+        if not target.startswith("/"):
+            target = "/" + target
+
+        return redirect(target)
+
+    return render(request, "entry_portal/company_login.html", {"company": company})

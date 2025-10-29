@@ -337,3 +337,8 @@ def export_monthly_excel(request):
     filename = f"monthly_report_{company}_{month_str}.xlsx"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+def home(request):
+    is_manager = request.session.get("user_role") == "managers"  # <-- строго 'managers'
+    return render(request, "scales/home.html", {"is_manager": is_manager})

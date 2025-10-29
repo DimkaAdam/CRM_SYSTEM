@@ -1,11 +1,9 @@
-from django.urls import path               # стандартный импорт для маршрутов
-from . import views                        # импортируем функции из views.py
+from django.urls import path
+from . import views
 
-app_name = "entry_portal"                  # пространство имён для URL-ов (удобно в шаблонах)
+app_name = "entry_portal"
 
 urlpatterns = [
-    path("", views.choose_company, name="choose_company"),       # экран выбора компании
-    path("set/<slug:slug>/", views.set_company, name="set_company"),  # установка сессии и редирект
-    path("login/", views.company_login, name="company_login"),   # ← новый
+    path("", views.choose_company, name="choose_company"),  # экран выбора компании
+    path("login/<slug:slug>/", views.portal_login, name="portal_login"),  # логин с паролем staff/manager
 ]
-

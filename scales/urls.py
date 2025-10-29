@@ -5,7 +5,7 @@ from . import views
 app_name = 'scales'
 
 urlpatterns = [
-    path('home', views.home, name='home'),
+    path('home/', views.home, name='home'),
     path("api/received/", views.api_list_received, name="api_received_list"),
     path("api/received/create/", views.api_create_received, name="api_received_create"),
     path("api/received/<int:pk>/update/", views.api_update_received, name="api_received_update"),
@@ -15,3 +15,4 @@ urlpatterns = [
     path("export/monthly/", views.export_monthly_excel, name="export_monthly_excel"),
 
 ]
+

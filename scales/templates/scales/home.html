@@ -26,11 +26,11 @@
     </div>
     <div>
       <label>Gross weight</label>
-      <input type="number" id="gross" placeholder="kg" step="0.1">
+      <input type="number" id="gross" placeholder="kg">
     </div>
     <div>
       <label>Net weight</label>
-      <input type="number" id="net" placeholder="kg" step="0.1">
+      <input type="number" id="net" placeholder="kg">
     </div>
     <div>
       <label>Supplier:</label>
@@ -67,11 +67,9 @@
 
   <div style="margin-top:20px;text-align:right;">
     <form method="get" action="/scales/export/daily/" style="display:inline;">
-      <input type="date" name="date" value="{% now 'Y-m-d' %}">
       <button>📄 Export Daily PDF</button>
     </form>
     <form method="get" action="/scales/export/monthly/" style="display:inline;margin-left:10px;">
-      <input type="month" name="month" value="{% now 'Y-m' %}">
       <button>📊 Export Monthly Excel</button>
     </form>
   </div>
@@ -80,18 +78,19 @@
 </div>
 
 <!-- История по дням (отдельная карточка) -->
-<div class="history-card">
-  <div class="history-head">
-    <div class="history-title">History by day</div>
-    <div id="history-stats" class="history-stats"></div>
+{% if is_manager %}
+  <div class="history-card">
+    <div class="history-head">
+      <div class="history-title">History by day</div>
+      <div id="history-stats" class="history-stats"></div>
+    </div>
+    <div id="history-body" class="history-body"></div>
+      <!-- Хранилище и вывод по дням -->
+    <script type="application/json" id="daily-store">{}</script>
+    <div id="daily-sections" class="day-container"></div>
+
   </div>
-  <div id="history-body" class="history-body"></div>
-    <!-- Хранилище и вывод по дням -->
-  <script type="application/json" id="daily-store">{}</script>
-  <div id="daily-sections" class="day-container"></div>
-
-</div>
-
+{% endif %}
 
 </body>
 
