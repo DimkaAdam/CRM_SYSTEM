@@ -270,7 +270,7 @@ window.openScaleTicketSidebarFromDeal = function () {
     const scaleTicket = document.getElementById("dealScaleTicket").innerText;
 
     if (!scaleTicket || scaleTicket === "N/A") {
-        alert("⛔ У этой сделки нет номера Scale Ticket.");
+        alert("⛔ Опа, нема номера Scale Ticket.");
         return;
     }
 
@@ -284,7 +284,7 @@ window.openScaleTicketSidebarFromDeal = function () {
             input.value = scaleTicket;
             fetchDealData(); // Автозагрузка данных
         } else {
-            console.error("⚠️ Не найден ticket_number!");
+            console.error("⚠️ Отакої, нема ticket_number!");
         }
     }, 300); // можно увеличить, если форма не успевает отрендериться
 };
