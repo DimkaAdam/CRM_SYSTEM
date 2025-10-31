@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
+from django.contrib.auth import views as auth_views
 from . import views
 from .views import (
     ClientCreateAPIView, DealCreateAPIView,
@@ -141,6 +142,8 @@ urlpatterns = [
     path("api/ai/supplier-monthly/", views.supplier_monthly_api, name="supplier_monthly_api"),
     path("api/ai/buyer-suppliers/", views.get_buyer_supplier_map, name="buyer_supplier_map"),
     path('api/ai/monthly-trends/',   views.monthly_trends_api,   name='ai_monthly_trends'),
+
+    path("logout/", auth_views.LogoutView.as_view(next_page='/'), name="logout"),
 
 
 ]

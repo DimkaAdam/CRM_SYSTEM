@@ -1,55 +1,120 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Вход в {{ company.name }}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    /* Центрирование страницы и фирменный тёмный фон */
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      background: #141b2d;
-      color: #e5e7eb;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: #212121;
+
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     }
-    .card {
-      background: #1f2937;
+
+    /* Карточка-форма с неоновым бордером (твоя формула) */
+    .form-container {
+      width: 380px;
+      background:
+        linear-gradient(#212121, #212121) padding-box,
+        linear-gradient(145deg, transparent 35%, #e81cff, #40c9ff) border-box;
+      border: 2px solid transparent;
+      padding: 32px 26px 30px 26px;
+      font-size: 14px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-sizing: border-box;
       border-radius: 16px;
-      padding: 24px;
-      min-width: 340px;
-      border: 1px solid rgba(255,255,255,.08);
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+
+    }
+
+    .title {
+      margin: 0;
+      font-size: 20px;
+      color: #f3f4f6;
       text-align: center;
     }
-    h1 { margin: 0 0 12px 0; color: #f3f4f6; font-size: 22px; }
-    p { color: #94a3b8; font-size: 14px; margin-bottom: 16px; }
-    label { display:block; margin:10px 0 6px 0; color:#cbd5e1; text-align:left; }
-    input {
-      width:100%; padding:10px;
-      border-radius:10px; border:1px solid rgba(255,255,255,.12);
-      background:#111827; color:#e5e7eb;
+    .subtitle {
+      margin: 2px 0 8px 0;
+      color: #94a3b8;
+      font-size: 13px;
+      text-align: center;
     }
-    .btn {
-      margin-top:14px; width:100%; padding:10px; border-radius:10px;
-      border:1px solid rgba(255,255,255,.12);
-      background:linear-gradient(180deg, rgba(8,102,110,.45), rgba(8,102,110,.28));
-      color:#e5e7eb; cursor:pointer;
-      transition: transform 0.15s ease;
+
+    .form { display: flex; flex-direction: column; gap: 16px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+    .form-group label {
+      color: #cbd5e1;
+      font-weight: 600;
+      font-size: 12px;
     }
-    .btn:hover { transform:translateY(-1px); }
-    .error { margin-top:10px; font-size:14px; color:#ef4444; }
-    .muted { margin-top:12px; font-size:13px; color:#94a3b8; }
-    a { color:#9dd6db; text-decoration:none; }
+
+    .form-group input {
+      width: 90%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: #fff;
+      background-color: transparent;
+      border: 1px solid #414141;
+      outline: none;
+    }
+    .form-group input::placeholder { opacity: .5; }
+    .form-group input:focus { border-color: #e81cff; }
+
+    .form-submit-btn {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      background: #313131;
+      border: 1px solid #414141;
+      padding: 12px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform .15s ease, background-color .15s ease, color .15s ease, border-color .15s ease;
+      color: #e5e7eb;
+    }
+    .form-submit-btn:hover {
+      background-color: #fff;
+      color: #111827;
+      border-color: #fff;
+    }
+    .form-submit-btn:active { transform: scale(0.98); }
+
+    .error {
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.35);
+      color: #fecaca;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .muted {
+      text-align: center;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 6px;
+    }
+    .muted a { color: #9dd6db; text-decoration: none; }
+    .muted a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <form class="card" method="post">
+  <form class="form-container" method="post" autocomplete="off">
     {% csrf_token %}
-    <h1>{{ company.name|default:company.slug }}</h1>
-    <p>Введите пароль для входа в систему</p>
+
+    <h1 class="title">{{ company.name|default:company.slug }}</h1>
 
     {% if messages %}
       {% for m in messages %}
@@ -57,14 +122,40 @@
       {% endfor %}
     {% endif %}
 
-    <label for="id_password">Пароль</label>
-    <input id="id_password" name="password" type="password" required autofocus>
+    <div class="form">
+      <div class="form-group">
+        <label for="id_password">Password</label>
+        <input
+          id="id_password"
+          name="password"
+          type="password"
+          required
+          autofocus
+          inputmode="text"
+          autocomplete="current-password"
+          placeholder="password" />
+      </div>
 
-    <button class="btn" type="submit">Войти</button>
-
-    <div class="muted">
-      <a href="/">← Вернуться к выбору компании</a>
+      <button class="form-submit-btn" type="submit">Enter</button>
+      <div class="muted">
+        <a href="/">← Back</a>
+      </div>
     </div>
   </form>
+
+  <!-- необязательная защита от двойной отправки -->
+  <script>
+    (function () {
+      const form = document.querySelector('form');
+      if (!form) return;
+      form.addEventListener('submit', function (e) {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Implementing…';
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

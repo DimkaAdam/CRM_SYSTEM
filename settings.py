@@ -106,11 +106,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
 
+TIME_ZONE = 'America/Vancouver'
+USE_TZ = True
 USE_I18N = True
 
-USE_TZ = True
 
 
 # settings.py
@@ -167,3 +167,4 @@ from decouple import config
 OPENAI_API_KEY = config("OPENAI_API_KEY")
 
 LOGIN_URL = "/accounts/login/"
+LOGOUT_REDIRECT_URL = '/'

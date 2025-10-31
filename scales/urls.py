@@ -1,5 +1,5 @@
 from django.urls import path
-
+from django.contrib.auth import views as auth_views
 from . import views
 
 app_name = 'scales'
@@ -13,6 +13,7 @@ urlpatterns = [
 
     path("export/daily/", views.export_daily_pdf, name="export_daily_pdf"),
     path("export/monthly/", views.export_monthly_excel, name="export_monthly_excel"),
+    path("logout/", auth_views.LogoutView.as_view(next_page='/'), name="logout"),
 
 ]
 
