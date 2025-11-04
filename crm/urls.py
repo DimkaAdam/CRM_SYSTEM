@@ -9,19 +9,16 @@ from . import views
 from .views import (
     ClientCreateAPIView, DealCreateAPIView,
     ClientViewSet, DealViewSet, export_company_report_pdf,
-    get_deal_by_ticket, export_scale_ticket_pdf,add_contact,task_list, get_events, add_event, delete_event,
-    get_licence_plates,get_grades,get_scheduled_shipments,add_scheduled_shipment,delete_scheduled_shipment,generate_bol_pdf,update_stage,
-    get_bol_counters, increment_bol_counters,get_clients_grouped, get_scale_ticket_counters,increment_scale_ticket_counters,
-    mark_shipment_done,send_scale_ticket_email
-
+    get_deal_by_ticket, export_scale_ticket_pdf, add_contact, task_list, get_events, add_event, delete_event,
+    get_licence_plates, get_grades, get_scheduled_shipments, add_scheduled_shipment, delete_scheduled_shipment, generate_bol_pdf, update_stage,
+    get_bol_counters, increment_bol_counters, get_clients_grouped, get_scale_ticket_counters, increment_scale_ticket_counters,
+    mark_shipment_done, send_scale_ticket_email
 )
-
 
 # 📌 Роутер для API
 router = DefaultRouter()
 router.register(r'clients', ClientViewSet, basename='client')
 router.register(r'deals', DealViewSet, basename='deal')
-
 
 # 📌 Основные маршруты
 urlpatterns = [
@@ -33,19 +30,10 @@ urlpatterns = [
     path('companies/', views.company_list, name='company_main'),
     path('contact/<int:id>/view/', views.view_contact, name='view_contact'),
 
-
     # 📌 React Kanban-доска
     path("api/update_stage/", views.update_stage, name="update_stage"),
     path("kanban/", views.kanban_board, name="kanban_board"),
     path("api/update_stage/", update_stage, name="update_stage"),
-
-
-
-
-    # 📌 API для работы с клиентами и сделками
-    path("api/clients/", ClientCreateAPIView.as_view(), name="api_add_client"),
-    path("api/deals/create/", DealCreateAPIView.as_view(), name="deal-create"),
-    path("api/", include(router.urls)),
 
     # 📌 Экспорт данных
     path("deals/export/", views.export_deals_to_excel, name="export_deals_to_excel"),
@@ -67,10 +55,6 @@ urlpatterns = [
     path('api/get_price/', views.get_price_by_supplier_and_grade, name='get_price_by_supplier_and_grade'),
     path('api/get_buyer_price/', views.get_price_by_buyer_and_grade, name='get_price_by_buyer_and_grade'),
 
-
-
-
-
     # 📌 Управление сотрудниками
     path("contacts/<int:contact_id>/add-material/", views.add_contact_material, name="add_contact_material"),
     path("contact-material/<int:pk>/edit/", views.edit_contact_material, name="edit_contact_material"),
@@ -81,8 +65,6 @@ urlpatterns = [
     path("contacts/<int:employee_id>/delete_employee/", views.delete_employee, name="delete_employee"),
     path("contacts/<int:employee_id>/edit_employee/", views.edit_employee, name="edit_employee"),
 
-
-
     # 📌 Работа со сделками
     path("deals/", views.deal_list, name="deal_list"),
     path("deals/<int:deal_id>/", views.get_deal_details, name="get_deal_details"),
@@ -92,26 +74,21 @@ urlpatterns = [
     # 📌 Отчёты
     path("reports/", views.report_list, name="report_list"),
     path("reports/company/", views.company_report, name="company_report"),
-
-    # HTML отчёт по поставщикам
     path("reports/supply/", views.supply_list, name="supply_list"),
-
-    # PDF экспорт по поставщикам
     path("reports/buyer/pdf/", views.export_supply_list_pdf, name="export_supply_list_pdf"),
     path("reports/supply/pdf/", views.export_company_report_pdf, name="export_company_report_pdf"),
     path("get-deal-by-ticket/", get_deal_by_ticket, name="get_deal_by_ticket"),
     path("export-scale-ticket/", export_scale_ticket_pdf, name="export_scale_ticket"),
 
-     #Tasks
+    # Tasks
     path("tasks/", task_list, name="task_list"),
     path("api/events/", get_events, name="get_events"),
     path("api/events/add/", add_event, name="add_event"),
     path("api/events/delete/<int:event_id>/", delete_event, name="delete_event"),
-    path("api/grades/", get_grades, name="get_grades"),  # ✅ Новый API
+    path("api/grades/", get_grades, name="get_grades"),
     path("api/scheduled-shipments/", get_scheduled_shipments, name="get_scheduled_shipments"),
     path("api/scheduled-shipments/add/", add_scheduled_shipment, name="add_scheduled_shipment"),
-    path("api/scheduled-shipments/delete/<int:shipment_id>/", delete_scheduled_shipment,
-       name="delete_scheduled_shipment"),
+    path("api/scheduled-shipments/delete/<int:shipment_id>/", delete_scheduled_shipment, name="delete_scheduled_shipment"),
     path('generate-bol-pdf/', generate_bol_pdf, name='generate_bol_pdf'),
     path("company/<int:id>/toggle-pickup/", views.toggle_pickup, name="toggle_pickup"),
 
@@ -124,7 +101,6 @@ urlpatterns = [
     path('api/scheduled-shipments/done/<int:shipment_id>/', mark_shipment_done, name='mark_shipment_done'),
 
     path('contacts/<int:contact_id>/tasks/', views.contact_tasks, name='contact_tasks'),
-
     path('contacts/<int:contact_id>/tasks/add/', views.add_task, name='add_task'),
 
     path("reports/scale-browser/", views.scale_ticket_browser, name="scale_ticket_browser"),
@@ -141,11 +117,15 @@ urlpatterns = [
     path("api/ai/pie-stats/", views.ai_pie_stats, name="ai_pie_stats"),
     path("api/ai/supplier-monthly/", views.supplier_monthly_api, name="supplier_monthly_api"),
     path("api/ai/buyer-suppliers/", views.get_buyer_supplier_map, name="buyer_supplier_map"),
-    path('api/ai/monthly-trends/',   views.monthly_trends_api,   name='ai_monthly_trends'),
+    path('api/ai/monthly-trends/', views.monthly_trends_api, name='ai_monthly_trends'),
 
     path("logout/", auth_views.LogoutView.as_view(next_page='/'), name="logout"),
 
-
+    # ⬇⬇⬇ ТОЛЬКО ПЕРЕНЕСЁННЫЙ В НИЗ БЛОК — БЕЗ ИЗМЕНЕНИЙ ⬇⬇⬇
+    # 📌 API для работы с клиентами и сделками (DRF router+APIView)
+    path("api/clients/", ClientCreateAPIView.as_view(), name="api_add_client"),
+    path("api/deals/create/", DealCreateAPIView.as_view(), name="deal-create"),
+    path("api/", include(router.urls)),
 ]
 
 # Подключаем статику
