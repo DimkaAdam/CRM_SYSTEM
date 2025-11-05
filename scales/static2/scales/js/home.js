@@ -95,7 +95,7 @@ function removeItemFromStore(item) {
    ====================== */
 
 const MATERIALS = ["Flexible Plastic", "Mix Container", "Baled Cardboard"];
-const SUPPLIERS = ["Hannam", "Inno Food", "Meridian", "T-Brothers"];
+const SUPPLIERS = ["Bottle Depot","Hannam", "Inno Food", "Meridian", "T-Brothers"];
 
 /* ======================
    4) Загрузка начальных данных
