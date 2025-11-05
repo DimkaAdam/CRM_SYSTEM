@@ -17,23 +17,25 @@ from datetime import datetime
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils import timezone
 from .utils import current_window, previous_window
+from datetime import timezone as dt_timezone
 
 
+@ensure_csrf_cookie
+@login_required
 @ensure_csrf_cookie
 @login_required
 def home(request):
     is_manager = request.session.get("user_role") == "managers"
     company = request.session.get("company_slug")
 
-    # Локальные границы 19:00→19:00
     start_loc, end_loc   = current_window()
     pstart_loc, pend_loc = previous_window()
 
-    # Переводим в UTC для сравнения с created_at
-    start  = start_loc.astimezone(timezone.utc)
-    end    = end_loc.astimezone(timezone.utc)
-    pstart = pstart_loc.astimezone(timezone.utc)
-    pend   = pend_loc.astimezone(timezone.utc)
+    # Переводим в UTC через datetime.timezone.utc
+    start  = start_loc.astimezone(dt_timezone.utc)
+    end    = end_loc.astimezone(dt_timezone.utc)
+    pstart = pstart_loc.astimezone(dt_timezone.utc)
+    pend   = pend_loc.astimezone(dt_timezone.utc)
 
     qs = ReceivedMaterial.objects.all()
     if company:
@@ -64,8 +66,8 @@ def api_list_received(request):
 
     if period in ("today", "prev"):
         s_loc, e_loc = current_window() if period == "today" else previous_window()
-        s = s_loc.astimezone(timezone.utc)
-        e = e_loc.astimezone(timezone.utc)
+        s = s_loc.astimezone(dt_timezone.utc)
+        e = e_loc.astimezone(dt_timezone.utc)
         qs = qs.filter(created_at__gte=s, created_at__lt=e)
 
     qs = qs.order_by("-created_at")[:500]
