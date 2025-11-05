@@ -15,7 +15,8 @@ from datetime import timedelta
 from django.http import HttpResponse
 from datetime import datetime
 from django.views.decorators.csrf import ensure_csrf_cookie
-
+from django.utils import timezone
+from .utils import current_window, previous_window
 
 
 @ensure_csrf_cookie
@@ -24,21 +25,28 @@ def home(request):
     is_manager = request.session.get("user_role") == "managers"
     company = request.session.get("company_slug")
 
-    today_bd = business_day()
-    prev_bd  = today_bd - timedelta(days=1)
+    # Локальные границы 19:00→19:00
+    start_loc, end_loc   = current_window()
+    pstart_loc, pend_loc = previous_window()
+
+    # Переводим в UTC для сравнения с created_at
+    start  = start_loc.astimezone(timezone.utc)
+    end    = end_loc.astimezone(timezone.utc)
+    pstart = pstart_loc.astimezone(timezone.utc)
+    pend   = pend_loc.astimezone(timezone.utc)
 
     qs = ReceivedMaterial.objects.all()
     if company:
         qs = qs.filter(company_slug=company)
 
-    received_today = qs.filter(report_day=today_bd).order_by("-created_at")
-    received_prev  = qs.filter(report_day=prev_bd).order_by("-created_at")
+    received_today = qs.filter(created_at__gte=start,  created_at__lt=end).order_by("-created_at")
+    received_prev  = qs.filter(created_at__gte=pstart, created_at__lt=pend).order_by("-created_at")
 
     return render(request, "scales/home.html", {
         "title": "Scales • Home",
         "is_manager": is_manager,
-        "today_bd": today_bd,
-        "prev_bd": prev_bd,
+        "start": start_loc, "end": end_loc,
+        "pstart": pstart_loc, "pend": pend_loc,
         "received_today": received_today,
         "received_prev": received_prev,
     })
@@ -46,21 +54,24 @@ def home(request):
 @login_required
 @require_http_methods(["GET"])
 def api_list_received(request):
-    # отдаём строки только выбранной компании
+    # /scales/api/received/?period=today|prev|all
     company = request.session.get("company_slug")
-    qs = ReceivedMaterial.objects.filter(company_slug=company).order_by("-created_at")[:500]
-    data = [
-        {
-            "id": r.id,
-            "date": r.date.isoformat(),
-            "material": r.material,
-            "gross": float(r.gross_kg),
-            "net": float(r.net_kg),
-            "supplier": r.supplier,
-            "tag": r.tag,
-        }
-        for r in qs
-    ]
+    period = (request.GET.get("period") or "today").lower()
+
+    qs = ReceivedMaterial.objects.all()
+    if company:
+        qs = qs.filter(company_slug=company)
+
+    if period in ("today", "prev"):
+        s_loc, e_loc = current_window() if period == "today" else previous_window()
+        s = s_loc.astimezone(timezone.utc)
+        e = e_loc.astimezone(timezone.utc)
+        qs = qs.filter(created_at__gte=s, created_at__lt=e)
+
+    qs = qs.order_by("-created_at")[:500]
+    data = [{"id": r.id, "date": r.date.isoformat(), "material": r.material,
+             "gross": float(r.gross_kg), "net": float(r.net_kg),
+             "supplier": r.supplier, "tag": r.tag} for r in qs]
     return JsonResponse({"items": data})
 
 @login_required
