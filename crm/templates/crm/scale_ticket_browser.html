@@ -71,7 +71,7 @@
 
 <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
     {% if back_path %}
-        <a href="?path={{ back_path }}" class="back-link">
+        <a href="?path={{ back_path|urlencode }}" class="back-link">
             <i class="fas fa-arrow-left"></i> Back
         </a>
     {% endif %}
@@ -86,14 +86,14 @@
     {% for folder in folders %}
         <li>
             <i class="fas fa-folder text-warning"></i>
-            <a href="?path={{ relative_path }}/{{ folder }}">{{ folder }}</a>
+            <a href="{% url 'scale_ticket_browser' %}?path={% if relative_path %}{{ (relative_path|add:'/'|add:folder)|urlencode }}{% else %}{{ folder|urlencode }}{% endif %}">{{ folder }}</a>
         </li>
     {% endfor %}
 
     {% for file in files %}
         <li class="file-item">
             <i class="fas fa-file-pdf text-danger"></i>
-            <a href="/media/reports/scale_tickets/{{ relative_path|urlencode }}/{{ file|urlencode }}" target="_blank">{{ file }}</a>
+            <a href="/media/reports/scale_tickets/{% if relative_path %}{{ relative_path|urlencode:'/' }}/{% endif %}{{ file|urlencode }}" target="_blank">{{ file }}</a>
 
             {% with relative_path|add:'/'|add:file as full_path %}
                 {% if file_statuses|dictkey:full_path %}
@@ -104,7 +104,7 @@
                     <button
                         class="btn btn-sm send-email-btn"
                         style="background-color: red; color: white;"
-                        data-path="{{ full_path|urlencode }}">
+                        data-path="{{ full_path }}">
                         <i class="fas fa-envelope"></i> Send
                     </button>
                     <code style="font-size: 11px; color: gray;">{{ full_path }}</code>
@@ -124,7 +124,7 @@ document.querySelectorAll('.send-email-btn').forEach(button => {
 
         if (!recipient) return;
 
-        fetch({% url 'send_scale_ticket_email' %}, {
+        fetch("{% url 'send_scale_ticket_email' %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
