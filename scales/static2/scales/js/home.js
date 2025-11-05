@@ -1,45 +1,50 @@
-
-
-/* --- Boot log (помогает понять, что файл точно подхватился) --- */
+/* --- Boot log --- */
 console.log("home.js LOADED");
 
 /* ======================
    1) Helpers / CSRF
    ====================== */
 
-/** Возвращает значение cookie по имени (для CSRF) */
+/** Вернуть cookie по имени */
 function getCookie(name) {
   const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
   return m ? m.pop() : "";
 }
 
-/** Токен CSRF из куки */
+/** Глобальный CSRF-токен из cookie */
 const csrftoken = getCookie('csrftoken');
 
 /* ======================
-   2) In-memory Store в <script id="daily-store">
+   2) Store в <script id="daily-store">
    ====================== */
 
-/** Прочитать JSON-Store из тега <script id="daily-store"> */
-function getStore() {
-  const el = document.getElementById('daily-store');
-  try {
-    return JSON.parse(el.textContent || '{}');
-  } catch {
-    return {};
+function getStoreEl() {
+  let el = document.getElementById('daily-store');
+  if (!el) {
+    // создаём "тихий" стор, чтобы код не падал, даже если блока нет в шаблоне
+    el = document.createElement('script');
+    el.type = 'application/json';
+    el.id = 'daily-store';
+    el.textContent = '{}';
+    document.body.appendChild(el);
   }
+  return el;
 }
 
-/** Записать JSON-Store в тег <script id="daily-store"> и отрендерить историю */
+function getStore() {
+  const el = getStoreEl();
+  try { return JSON.parse(el.textContent || '{}'); } catch { return {}; }
+}
+
 function setStore(obj) {
-  document.getElementById('daily-store').textContent = JSON.stringify(obj);
+  const el = getStoreEl();
+  el.textContent = JSON.stringify(obj);
 }
-
-/** Сгруппировать записи по датам (YYYY-MM-DD) и посчитать итоги */
+/** Группировка по датам YYYY-MM-DD */
 function groupByDate(items) {
   const out = {};
   for (const r of items) {
-    const d = (r.date || '').slice(0, 10) || 'unknown';
+    const d = (r.date || '').slice(0,10) || 'unknown';
     if (!out[d]) out[d] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
     out[d].items.push(r);
     out[d].totals.gross += +r.gross;
@@ -49,10 +54,9 @@ function groupByDate(items) {
   return out;
 }
 
-/** Добавить/обновить запись в Store (и пересчитать итоги дня) */
 function upsertItemToStore(item) {
   const store = getStore();
-  const d = (item.date || '').slice(0, 10) || 'unknown';
+  const d = (item.date || '').slice(0,10) || 'unknown';
   if (!store[d]) store[d] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
   const idx = store[d].items.findIndex(x => x.id === item.id);
   if (idx === -1) {
@@ -70,10 +74,9 @@ function upsertItemToStore(item) {
   renderAllDays();
 }
 
-/** Удалить запись из Store (и пересчитать итоги дня) */
 function removeItemFromStore(item) {
   const store = getStore();
-  const d = (item.date || '').slice(0, 10) || 'unknown';
+  const d = (item.date || '').slice(0,10) || 'unknown';
   if (!store[d]) return;
   const idx = store[d].items.findIndex(x => x.id === item.id);
   if (idx === -1) return;
@@ -100,12 +103,11 @@ const SUPPLIERS = ["Hannam", "Inno Food", "Meridian", "T-Brothers"];
 
 document.addEventListener("DOMContentLoaded", reloadFromDB);
 
-/** Подтянуть данные из API и отрисовать таблицу + историю */
 async function reloadFromDB() {
   try {
     const tbody = document.querySelector("#report-table tbody");
     tbody.innerHTML = "";
-    const res = await fetch("/scales/api/received/");
+    const res = await fetch("/scales/api/received/", { credentials: "same-origin" });
     const { items = [] } = await res.json();
     items.forEach(appendRow);
     recalcTotals();
@@ -117,10 +119,9 @@ async function reloadFromDB() {
 }
 
 /* ======================
-   5) Создание записи (Add)
+   5) Создание записи
    ====================== */
 
-/** Добавить новую строку: оптимистично в DOM + Store, потом POST на сервер */
 async function addRow() {
   const material = document.getElementById("material").value.trim();
   const gross = parseFloat(document.getElementById("gross").value.trim());
@@ -133,7 +134,7 @@ async function addRow() {
     return;
   }
 
-  // Оптимистичная вставка
+  // Оптимистичная вставка (по желанию)
   const tmp = {
     id: "tmp_" + Date.now(),
     date: new Date().toISOString(),
@@ -143,21 +144,23 @@ async function addRow() {
   upsertItemToStore(tmp);
   recalcTotals();
 
-  // POST на сервер
   try {
     const r = await fetch("/scales/api/received/create/", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken
+      },
       body: JSON.stringify({ material, gross, net, supplier, tag })
     });
     if (!r.ok) throw new Error("Save failed");
-    await reloadFromDB(); // подтянем реальные id/даты
+    await reloadFromDB(); // подтянуть реальные id/даты
   } catch (e) {
     console.error(e);
     alert("Save failed. Check server.");
   }
 
-  // Очистка полей формы
   document.getElementById("gross").value = "";
   document.getElementById("net").value = "";
   document.getElementById("tag").value = "";
@@ -165,10 +168,9 @@ async function addRow() {
 }
 
 /* ======================
-   6) Рендер строки таблицы
+   6) Рендер строки
    ====================== */
 
-/** Создать <tr> для записи и добавить в tbody */
 function appendRow({ id, date, material, gross, net, supplier, tag }) {
   const tbody = document.querySelector("#report-table tbody");
   const tr = document.createElement("tr");
@@ -188,10 +190,21 @@ function appendRow({ id, date, material, gross, net, supplier, tag }) {
 }
 
 /* ======================
-   7) Редактирование строки
+   7) Редактирование
    ====================== */
 
-/** Перевести строку в режим редактирования */
+function selectHTML(options, current) {
+  return `<select style="width:100%">${options.map(opt =>
+    `<option ${opt === current ? 'selected' : ''}>${opt}</option>`).join("")}</select>`;
+}
+
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escapeAttr(s) {
+  return (s || "").replace(/"/g,'&quot;').replace(/'/g,"&#39;");
+}
+
 function startEdit(btn) {
   const tr = btn.closest("tr");
   if (tr.dataset.editing === "1") return;
@@ -205,7 +218,7 @@ function startEdit(btn) {
 
   tr.querySelector("[data-col='material']").innerHTML = selectHTML(MATERIALS, material);
   tr.querySelector("[data-col='gross']").innerHTML = `<input type="number" step="0.1" value="${gross}" style="width:100%">`;
-  tr.querySelector("[data-col='net']").innerHTML = `<input type="number" step="0.1" value="${net}" style="width:100%">`;
+  tr.querySelector("[data-col='net']").innerHTML   = `<input type="number" step="0.1" value="${net}" style="width:100%">`;
   tr.querySelector("[data-col='supplier']").innerHTML = selectHTML(SUPPLIERS, supplier);
   tr.querySelector("[data-col='tag']").innerHTML = `<input type="text" value="${escapeHtml(tag)}" style="width:100%">`;
 
@@ -214,23 +227,6 @@ function startEdit(btn) {
     <button class="action-btn" onclick="cancelEdit(this,'${escapeAttr(material)}','${gross}','${net}','${escapeAttr(supplier)}','${escapeAttr(tag)}')">Cancel</button>`;
 }
 
-/** Сформировать <select> с текущим значением */
-function selectHTML(options, current) {
-  return `<select style="width:100%">${options.map(opt =>
-    `<option ${opt === current ? 'selected' : ''}>${opt}</option>`).join("")}</select>`;
-}
-
-/** Экранировать HTML в тексте */
-function escapeHtml(s) {
-  return (s || "").replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-}
-
-/** Экранировать для атрибута */
-function escapeAttr(s) {
-  return (s || "").replace(/"/g, '&quot;').replace(/'/g, "&#39;");
-}
-
-/** Отменить редактирование и вернуть исходные значения */
 function cancelEdit(btn, material, gross, net, supplier, tag) {
   const tr = btn.closest("tr");
   tr.dataset.editing = "0";
@@ -244,7 +240,6 @@ function cancelEdit(btn, material, gross, net, supplier, tag) {
     <button class="action-btn" onclick="deleteRow(this)">Delete</button>`;
 }
 
-/** Сохранить изменения на сервере и в таблице/Store */
 async function saveEdit(btn) {
   const tr = btn.closest("tr");
   const id = tr.dataset.id;
@@ -264,7 +259,11 @@ async function saveEdit(btn) {
   try {
     const r = await fetch(`/scales/api/received/${id}/update/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken
+      },
       body: JSON.stringify({ material, gross, net, supplier, tag })
     });
     if (!r.ok) throw new Error("Update failed");
@@ -272,19 +271,17 @@ async function saveEdit(btn) {
     const { item } = await r.json();
     if (!item.date) item.date = tr.dataset.date || new Date().toISOString();
 
-    // Обновить DOM
     tr.dataset.editing = "0";
     tr.dataset.date = item.date;
     tr.querySelector("[data-col='material']").textContent = item.material;
     tr.querySelector("[data-col='gross']").textContent = Number(item.gross).toFixed(1);
-    tr.querySelector("[data-col='net']").textContent = Number(item.net).toFixed(1);
+    tr.querySelector("[data-col='net']").textContent   = Number(item.net).toFixed(1);
     tr.querySelector("[data-col='supplier']").textContent = item.supplier;
     tr.querySelector("[data-col='tag']").textContent = item.tag;
     tr.querySelector(".action-row").innerHTML = `
       <button class="action-btn" onclick="startEdit(this)">Edit</button>
       <button class="action-btn" onclick="deleteRow(this)">Delete</button>`;
 
-    // Обновить Store и итоги
     upsertItemToStore(item);
     recalcTotals();
   } catch (e) {
@@ -294,15 +291,14 @@ async function saveEdit(btn) {
 }
 
 /* ======================
-   8) Удаление строки
+   8) Удаление
    ====================== */
 
-/** Удалить строку на сервере и из таблицы/Store */
 async function deleteRow(btn) {
   const tr = btn.closest("tr");
   const id = tr.dataset.id;
 
-  // Если временная строка — просто убрать из DOM/Store
+  // временная строка — просто убрать локально
   if (!id || String(id).startsWith("tmp_")) {
     const deleted = {
       id: id || "tmp",
@@ -321,6 +317,7 @@ async function deleteRow(btn) {
   try {
     const r = await fetch(`/scales/api/received/${id}/delete/`, {
       method: "POST",
+      credentials: "same-origin",
       headers: { "X-CSRFToken": csrftoken }
     });
     if (!r.ok) throw new Error("Delete failed");
@@ -341,10 +338,9 @@ async function deleteRow(btn) {
 }
 
 /* ======================
-   9) Итоги таблицы (tfoot)
+   9) Итоги таблицы
    ====================== */
 
-/** Пересчитать и отрисовать Totals в tfoot */
 function recalcTotals() {
   const grossTotal = [...document.querySelectorAll("#report-table tbody tr td:nth-child(2)")]
     .reduce((s, td) => s + (parseFloat(td.textContent) || 0), 0);
@@ -366,40 +362,33 @@ function recalcTotals() {
 }
 
 /* ======================
-   10) История по дням (карточками)
+   10) История по дням (карточки)
    ====================== */
 
-/** Форматировать число до 1 знака */
 function fmt(n) { return Number(n).toFixed(1); }
+function humanDate(iso) { try { return new Date(iso).toLocaleDateString(); } catch { return iso; } }
 
-/** Красиво форматировать дату из ISO */
-function humanDate(iso) {
-  try { return new Date(iso).toLocaleDateString(); } catch { return iso; }
-}
-
-/** Нарисовать карточки дней в #history-body и краткую статистику в #history-stats */
 function renderAllDays() {
   const body = document.getElementById('history-body');
   const statsEl = document.getElementById('history-stats');
+  if (!body || !statsEl) return; // если блоков нет (например, для рабочих), выходим тихо
+
   const store = getStore();
   body.innerHTML = '';
 
-  // общая статистика в заголовке
   let totalNet = 0, totalCount = 0;
   for (const d of Object.keys(store)) {
     totalNet += store[d].totals.net;
     totalCount += store[d].totals.count;
   }
-  statsEl.textContent = `Total net: ${fmt(totalNet)} kg • records: ${totalCount}`;
+  statsEl.textContent = `Total net: ${Number(totalNet).toFixed(1)} kg • records: ${totalCount}`;
 
   const days = Object.keys(store).sort((a, b) => b.localeCompare(a));
   for (const d of days) {
     const day = store[d];
-
     const card = document.createElement('div');
     card.className = 'day-card';
 
-    // шапка карточки
     const top = document.createElement('div');
     top.className = 'day-row';
     const left = document.createElement('div');
@@ -413,10 +402,8 @@ function renderAllDays() {
     top.appendChild(left); top.appendChild(right);
     card.appendChild(top);
 
-    // разделитель
     card.appendChild(document.createElement('div')).className = 'divider';
 
-    // мини-таблица записей
     const grid = document.createElement('div');
     grid.className = 'day-list';
     grid.innerHTML = `
@@ -439,7 +426,7 @@ function renderAllDays() {
 }
 
 /* ======================
-   11) Экспорт в window (чтобы работали onclick в HTML)
+   11) Экспорт в window
    ====================== */
 
 Object.assign(window, {

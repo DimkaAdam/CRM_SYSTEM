@@ -14,12 +14,28 @@ from .utils import business_day
 from datetime import timedelta
 from django.http import HttpResponse
 from datetime import datetime
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 
+
+@ensure_csrf_cookie
 @login_required
 def home(request):
-    return render(request, "scales/home.html", {  # ← ВАЖНО: .html
+    # если нужен флаг менеджера — клади его сюда:
+    is_manager = request.session.get("user_role") == "managers"
+    # если нужны business_day и др. — добавляй в контекст здесь же
+    today_bd = business_day()
+    prev_bd = today_bd - timedelta(days=1)
+    received_today = ReceivedMaterial.objects.filter(report_day=today_bd)
+    received_prev  = ReceivedMaterial.objects.filter(report_day=prev_bd)
+
+    return render(request, "scales/home.html", {
         "title": "Scales • Home",
+        "is_manager": is_manager,
+        "today_bd": today_bd,
+        "prev_bd": prev_bd,
+        "received_today": received_today,
+        "received_prev": received_prev,
     })
 
 @login_required
@@ -339,11 +355,8 @@ def export_monthly_excel(request):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
 
-
-def home(request):
-    is_manager = request.session.get("user_role") == "managers"  # <-- строго 'managers'
-    return render(request, "scales/home.html", {"is_manager": is_manager})
-
+@ensure_csrf_cookie
+@login_required
 def scales_home(request):
     today_bd = business_day()
     prev_bd = today_bd - timedelta(days=1)
