@@ -21,13 +21,18 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 @ensure_csrf_cookie
 @login_required
 def home(request):
-    # если нужен флаг менеджера — клади его сюда:
     is_manager = request.session.get("user_role") == "managers"
-    # если нужны business_day и др. — добавляй в контекст здесь же
+    company = request.session.get("company_slug")
+
     today_bd = business_day()
-    prev_bd = today_bd - timedelta(days=1)
-    received_today = ReceivedMaterial.objects.filter(report_day=today_bd)
-    received_prev  = ReceivedMaterial.objects.filter(report_day=prev_bd)
+    prev_bd  = today_bd - timedelta(days=1)
+
+    qs = ReceivedMaterial.objects.all()
+    if company:
+        qs = qs.filter(company_slug=company)
+
+    received_today = qs.filter(report_day=today_bd).order_by("-created_at")
+    received_prev  = qs.filter(report_day=prev_bd).order_by("-created_at")
 
     return render(request, "scales/home.html", {
         "title": "Scales • Home",
@@ -73,6 +78,7 @@ def api_create_received(request):
         tag       = str(body["tag"]).strip(),
         company_slug = company,
         created_by = request.user if request.user.is_authenticated else None,
+        report_day=business_day(),
     )
     return JsonResponse({"ok": True, "id": item.id})
 @login_required
@@ -354,19 +360,3 @@ def export_monthly_excel(request):
     filename = f"monthly_report_{company}_{month_str}.xlsx"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
-
-@ensure_csrf_cookie
-@login_required
-def scales_home(request):
-    today_bd = business_day()
-    prev_bd = today_bd - timedelta(days=1)
-
-    received_today = ReceivedMaterial.objects.filter(report_day=today_bd)
-    received_prev  = ReceivedMaterial.objects.filter(report_day=prev_bd)
-
-    return render(request, "scales/home.html", {
-        "today_bd": today_bd,
-        "prev_bd": prev_bd,
-        "received_today": received_today,
-        "received_prev": received_prev,
-    })

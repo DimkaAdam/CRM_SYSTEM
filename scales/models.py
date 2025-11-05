@@ -1,5 +1,7 @@
 from django.db import models                     # базовые классы моделей
 from django.contrib.auth import get_user_model   # ссылка на пользователя (кто ввёл)
+from .utils import business_day
+from django.utils import timezone
 
 class ReceivedMaterial(models.Model):
     # Дата приёма (по умолчанию — сегодня)
@@ -42,3 +44,13 @@ class ReceivedMaterial(models.Model):
 
     def __str__(self):
         return f"{self.date} {self.material} {self.net_kg}kg [{self.supplier}]"
+
+    class ReceivedMaterial(models.Model):
+        ...
+
+        def save(self, *args, **kwargs):
+            if not self.report_day:
+                # если объект уже создан, возьмём created_at; иначе — текущее время
+                dt = getattr(self, "created_at", None) or timezone.now()
+                self.report_day = business_day(dt)
+            super().save(*args, **kwargs)
