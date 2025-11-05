@@ -56,7 +56,12 @@ def home(request):
 @login_required
 @require_http_methods(["GET"])
 def api_list_received(request):
-    # /scales/api/received/?period=today|prev|all
+    """
+    GET /scales/api/received/?period=today|prev|all
+    - today: записи текущего окна (19:00→19:00)
+    - prev:  записи предыдущего окна
+    - all:   без ограничения окна
+    """
     company = request.session.get("company_slug")
     period = (request.GET.get("period") or "today").lower()
 
@@ -65,15 +70,22 @@ def api_list_received(request):
         qs = qs.filter(company_slug=company)
 
     if period in ("today", "prev"):
-        s_loc, e_loc = current_window() if period == "today" else previous_window()
+        s_loc, e_loc = (current_window() if period == "today" else previous_window())
         s = s_loc.astimezone(dt_timezone.utc)
         e = e_loc.astimezone(dt_timezone.utc)
         qs = qs.filter(created_at__gte=s, created_at__lt=e)
 
     qs = qs.order_by("-created_at")[:500]
-    data = [{"id": r.id, "date": r.date.isoformat(), "material": r.material,
-             "gross": float(r.gross_kg), "net": float(r.net_kg),
-             "supplier": r.supplier, "tag": r.tag} for r in qs]
+
+    data = [{
+        "id": r.id,
+        "date": r.date.isoformat(),
+        "material": r.material,
+        "gross": float(r.gross_kg),
+        "net": float(r.net_kg),
+        "supplier": r.supplier,
+        "tag": r.tag,
+    } for r in qs]
     return JsonResponse({"items": data})
 
 @login_required

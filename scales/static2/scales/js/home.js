@@ -105,13 +105,24 @@ document.addEventListener("DOMContentLoaded", reloadFromDB);
 
 async function reloadFromDB() {
   try {
+    // очистим верхнюю таблицу
     const tbody = document.querySelector("#report-table tbody");
     tbody.innerHTML = "";
-    const res = await fetch("/scales/api/received/", { credentials: "same-origin" });
-    const { items = [] } = await res.json();
-    items.forEach(appendRow);
+
+    // ВЕРХ (текущий деловой день 19:00→19:00)
+    const topRes = await fetch("/scales/api/received/?period=today", { credentials: "same-origin" });
+    const topJson = await topRes.json();
+    const topItems = topJson.items || [];
+    topItems.forEach(appendRow);
     recalcTotals();
-    setStore(groupByDate(items));
+
+    // НИЗ / ИСТОРИЯ (предыдущее окно 19:00→19:00)
+    const prevRes = await fetch("/scales/api/received/?period=prev", { credentials: "same-origin" });
+    const prevJson = await prevRes.json();
+    const prevItems = prevJson.items || [];
+
+    // История строится только по "вчера" (а не по всем дням)
+    setStore(groupByDate(prevItems));
     renderAllDays();
   } catch (e) {
     console.error("reloadFromDB failed:", e);
@@ -141,7 +152,6 @@ async function addRow() {
     material, gross, net, supplier, tag
   };
   appendRow(tmp);
-  upsertItemToStore(tmp);
   recalcTotals();
 
   try {
