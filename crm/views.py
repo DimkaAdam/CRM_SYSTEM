@@ -16,6 +16,8 @@ from rest_framework.decorators import action
 from .forms import TaskForm
 from .serializers import ClientSerializer,DealSerializer,PipeLineSerializer
 
+from django.http import HttpResponseBadRequest, Http404
+from urllib.parse import unquote
 from .forms import ContactForm, CompanyForm, ContactMaterialForm, DealForm
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -35,7 +37,7 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from django.views.decorators.http import require_POST
 import json
 
-
+from pathlib import Path
 from datetime import datetime,timezone,timedelta
 from django.utils import timezone as t
 from io import BytesIO
@@ -1601,49 +1603,52 @@ CREDENTIALS_FILE = os.path.join(BASE_DIR, "c_id.json")
 TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
 
 
-from .models import SCaleTicketStatus  # ← используй как названо у тебя
+from .models import SCaleTicketStatus
 
 def scale_ticket_browser(request):
-    relative_path = request.GET.get('path', '').strip('/')
+    # 1) Относительный путь из query, декодируем URL-символы
+    rel = (request.GET.get("path", "") or "").lstrip("/")
+    rel = unquote(rel)
 
-    base_dir = os.path.join(settings.MEDIA_ROOT, 'reports', 'scale_tickets')
-    abs_path = os.path.join(base_dir, relative_path)
+    # 2) Базовый корень браузера
+    base = (Path(settings.MEDIA_ROOT) / "reports" / "scale_tickets").resolve()
 
-    if not os.path.exists(abs_path):
-        return HttpResponse("❌ Path not found", status=404)
+    # 3) Абсолютный путь к целевой папке
+    target = (base / rel).resolve()
 
-    folders = []
-    files = []
+    # 4) Защита от выхода из корня
+    if not str(target).startswith(str(base)):
+        return HttpResponseBadRequest("Invalid path")
 
-    for entry in sorted(os.listdir(abs_path)):
-        full_entry = os.path.join(abs_path, entry)
-        if os.path.isdir(full_entry):
-            folders.append(entry)
-        elif entry.lower().endswith('.pdf'):
-            files.append(entry)
+    # 5) Проверки существования и типа
+    if not target.exists():
+        raise Http404("❌ Path not found")
+    if not target.is_dir():
+        return HttpResponseBadRequest("Not a directory")
 
-    if relative_path:
-        path_parts = relative_path.split('/')
-        back_path = '/'.join(path_parts[:-1])
-    else:
-        back_path = None
+    # 6) Чтение содержимого
+    folders = sorted(p.name for p in target.iterdir() if p.is_dir())
+    files = sorted(p.name for p in target.iterdir() if p.is_file() and p.suffix.lower() == ".pdf")
 
-    # ✅ Статусы
-    file_statuses = {
-        s.file_path.strip().replace('\\', '/'): True
-        for s in SCaleTicketStatus.objects.filter(sent=True)
-    }
+    # 7) Путь «назад»
+    back_path = "/".join(rel.split("/")[:-1]) if rel else ""
+
+    # 8) Статусы отправленных файлов
+    #    Нормализуем к виду "Company/2025/Nov/Ticket.pdf" (слеши — прямые, без ведущего "/")
+    file_statuses = {}
+    for p in SCaleTicketStatus.objects.filter(sent=True).values_list("file_path", flat=True):
+        k = (p or "").strip().replace("\\", "/").lstrip("/")
+        if k:
+            file_statuses[k] = True
 
     context = {
-        'relative_path': relative_path,
-        'folders': folders,
-        'files': files,
-        'back_path': back_path,
-        'file_statuses': file_statuses,
+        "relative_path": rel,
+        "folders": folders,
+        "files": files,
+        "back_path": back_path,
+        "file_statuses": file_statuses,
     }
-
-
-    return render(request, 'crm/scale_ticket_browser.html', context)
+    return render(request, "crm/scale_ticket_browser.html", context)
 
 from django.core.mail import EmailMessage
 

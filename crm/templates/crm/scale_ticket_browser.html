@@ -7,146 +7,160 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
 <style>
-    .browser-container {
-        background: #f5f5f5;
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        max-width: 800px;
-        margin: auto;
-    }
+  .browser-container {
+    background: #f5f5f5;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-width: 900px;
+    margin: auto;
+  }
+  .browser-header {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #222;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+  .back-link:hover { text-decoration: underline; color: #444; }
 
-    .browser-header {
-        font-size: 1.8rem;
-        font-weight: bold;
-        margin-bottom: 1.2rem;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: #222;
-    }
-
-    .file-list {
-        list-style: none;
-        padding-left: 0;
-    }
-
-    .file-list li {
-        margin: 0.4rem 0;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .file-list a {
-        text-decoration: none;
-        color: #08666e;
-        transition: all 0.2s;
-    }
-
-    .file-list a:hover {
-        text-decoration: underline;
-        color: #044f54;
-    }
-
-    .back-link {
-        margin-bottom: 1rem;
-        display: inline-block;
-        color: #666;
-        font-size: 0.95rem;
-    }
-
-    .back-link:hover {
-        text-decoration: underline;
-        color: #444;
-    }
-
+  .file-list { list-style: none; padding-left: 0; }
+  .file-list li {
+    margin: 0.45rem 0;
+    font-size: 1.05rem;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .file-list a { color: #08666e; text-decoration: none; }
+  .file-list a:hover { color: #044f54; text-decoration: underline; }
+  .file-item code { font-size: 11px; color: gray; }
+  .btn { border: 0; padding: 4px 8px; border-radius: 8px; cursor: pointer; }
 </style>
 
+<div class="browser-container">
+  <div class="browser-header"><i class="fas fa-folder-tree"></i> Scale Tickets Archive</div>
 
-<div class="browser-header">
-    <i class="fas fa-folder-tree"></i> Scale Tickets Archive
-</div>
-
-<div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-    {% if back_path %}
+  <div class="toolbar">
+    <div>
+      {% if back_path %}
         <a href="?path={{ back_path|urlencode }}" class="back-link">
-            <i class="fas fa-arrow-left"></i> Back
+          <i class="fas fa-arrow-left"></i> Back
         </a>
-    {% endif %}
-    {% if relative_path %}
+      {% endif %}
+    </div>
+    <div>
+      {% if relative_path %}
         <a href="{% url 'scale_ticket_browser' %}" class="back-link">
-            <i class="fas fa-home"></i> Root
+          <i class="fas fa-home"></i> Root
         </a>
-    {% endif %}
-</div>
+      {% endif %}
+    </div>
+  </div>
 
-<ul class="file-list">
+  <ul class="file-list">
+    {# --- ПАПКИ --- #}
     {% for folder in folders %}
-        <li>
-            <i class="fas fa-folder text-warning"></i>
-            <a href="{% url 'scale_ticket_browser' %}?path={% if relative_path %}{{ (relative_path|add:'/'|add:folder)|urlencode }}{% else %}{{ folder|urlencode }}{% endif %}">{{ folder }}</a>
-        </li>
+      <li>
+        <i class="fas fa-folder"></i>
+        {% if relative_path %}
+          {% with next_path=relative_path|add:'/'|add:folder %}
+            <a href="{% url 'scale_ticket_browser' %}?path={{ next_path|urlencode }}">{{ folder }}</a>
+          {% endwith %}
+        {% else %}
+            <a href="{% url 'scale_ticket_browser' %}?path={{ folder|urlencode }}">{{ folder }}</a>
+        {% endif %}
+      </li>
     {% endfor %}
 
+    {# --- ФАЙЛЫ (PDF) --- #}
     {% for file in files %}
-        <li class="file-item">
-            <i class="fas fa-file-pdf text-danger"></i>
-            <a href="/media/reports/scale_tickets/{% if relative_path %}{{ relative_path|urlencode:'/' }}/{% endif %}{{ file|urlencode }}" target="_blank">{{ file }}</a>
+      <li class="file-item">
+        <i class="fas fa-file-pdf"></i>
 
-            {% with relative_path|add:'/'|add:file as full_path %}
-                {% if file_statuses|dictkey:full_path %}
-                    <button class="btn btn-sm" style="color: green;" disabled>
-                        ✅ Sent
-                    </button>
-                {% else %}
-                    <button
-                        class="btn btn-sm send-email-btn"
-                        style="background-color: red; color: white;"
-                        data-path="{{ full_path }}">
-                        <i class="fas fa-envelope"></i> Send
-                    </button>
-                    <code style="font-size: 11px; color: gray;">{{ full_path }}</code>
-                {% endif %}
-            {% endwith %}
-        </li>
+        {# ссылка на PDF: кодируем сегменты, но не '/' #}
+        <a
+          href="/media/reports/scale_tickets/{% if relative_path %}{{ relative_path|urlencode:'/' }}/{% endif %}{{ file|urlencode }}"
+          target="_blank"
+        >{{ file }}</a>
+
+        {# full_path формируем раздельно в каждой ветке if #}
+        {% if relative_path %}
+          {% with full_path=relative_path|add:'/'|add:file %}
+            {% if file_statuses|dictkey:full_path %}
+              <button class="btn" style="color: green;" disabled>✅ Sent</button>
+            {% else %}
+              <button
+                class="btn send-email-btn"
+                style="background-color: #d7263d; color: white;"
+                data-path="{{ full_path }}"
+              >
+                <i class="fas fa-envelope"></i> Send
+              </button>
+              <code>{{ full_path }}</code>
+            {% endif %}
+          {% endwith %}
+        {% else %}
+          {% with full_path=file %}
+            {% if file_statuses|dictkey:full_path %}
+              <button class="btn" style="color: green;" disabled>✅ Sent</button>
+            {% else %}
+              <button
+                class="btn send-email-btn"
+                style="background-color: #d7263d; color: white;"
+                data-path="{{ full_path }}"
+              >
+                <i class="fas fa-envelope"></i> Send
+              </button>
+              <code>{{ full_path }}</code>
+            {% endif %}
+          {% endwith %}
+        {% endif %}
+      </li>
     {% endfor %}
-
-
-</ul>
+  </ul>
+</div>
 
 <script>
-document.querySelectorAll('.send-email-btn').forEach(button => {
+  // Кнопка "Send" — отправка scale ticket по email
+  document.querySelectorAll('.send-email-btn').forEach((button) => {
     button.addEventListener('click', () => {
-        const filePath = button.dataset.path;
-        const recipient = prompt("📧 Enter recipient email:");
+      const filePath = button.dataset.path;  // относительный путь внутри reports/scale_tickets
+      const recipient = prompt("📧 Enter recipient email:");
+      if (!recipient) return;
 
-        if (!recipient) return;
-
-        fetch("{% url 'send_scale_ticket_email' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-                path: filePath,
-                email: recipient
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert("✅ Email sent!");
-                location.reload();
-            } else {
-                alert("❌ Error: " + (data.error || "Unknown error"));
-            }
-        });
+      fetch("{% url 'send_scale_ticket_email' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ path: filePath, email: recipient })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert("✅ Email sent!");
+          location.reload();
+        } else {
+          alert("❌ Error: " + (data.error || "Unknown error"));
+        }
+      })
+      .catch(err => alert("❌ Network error: " + err.message));
     });
-});
+  });
 </script>
-
-
 {% endblock %}
