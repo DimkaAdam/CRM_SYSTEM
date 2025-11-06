@@ -51,25 +51,25 @@
   .btn { border: 0; padding: 4px 8px; border-radius: 8px; cursor: pointer; }
 </style>
 
-<div class="browser-container">
-  <div class="browser-header"><i class="fas fa-folder-tree"></i> Scale Tickets Archive</div>
 
-  <div class="toolbar">
-    <div>
-      {% if back_path %}
-        <a href="?path={{ back_path|urlencode }}" class="back-link">
-          <i class="fas fa-arrow-left"></i> Back
-        </a>
-      {% endif %}
-    </div>
-    <div>
-      {% if relative_path %}
-        <a href="{% url 'scale_ticket_browser' %}" class="back-link">
-          <i class="fas fa-home"></i> Root
-        </a>
-      {% endif %}
-    </div>
+<div class="browser-header"><i class="fas fa-folder-tree"></i> Scale Tickets Archive</div>
+
+<div class="toolbar">
+  <div>
+    {% if back_path %}
+      <a href="?path={{ back_path|urlencode }}" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+    {% endif %}
   </div>
+  <div>
+    {% if relative_path %}
+      <a href="{% url 'scale_ticket_browser' %}" class="back-link">
+        <i class="fas fa-home"></i> Root
+      </a>
+    {% endif %}
+  </div>
+</div>
 
   <ul class="file-list">
     {# --- ПАПКИ --- #}
