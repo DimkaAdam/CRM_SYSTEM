@@ -15,9 +15,49 @@ from datetime import timedelta
 from django.http import HttpResponse
 from datetime import datetime
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.utils import timezone
 from .utils import current_window, previous_window
 from datetime import timezone as dt_timezone
+from django.utils.timezone import get_current_timezone, localtime, is_naive, make_aware
+
+
+
+CUTOFF_HOUR = 0;
+CUTOFF_MINUTE = 1;
+
+def _parse_iso_local(s: str):
+    """
+    Принимает 'YYYY-MM-DDTHH:MM:SS' (или 'YYYY-MM-DDTHH:MM', или просто 'YYYY-MM-DD')
+    в ЛОКАЛЬНОЙ TZ проекта и возвращает aware-datetime.
+    """
+    s = (s or "").strip().replace(" ", "T")
+    # допускаем несколько форматов
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M", "%Y-%m-%d"):
+        try:
+            dt = datetime.strptime(s, fmt)
+            break
+        except ValueError:
+            dt = None
+    if dt is None:
+        raise ValueError("Unsupported datetime format")
+
+    tz = get_current_timezone()
+    # zoneinfo/pytz-агностично:
+    if is_naive(dt):
+        return make_aware(dt, timezone=tz)
+    else:
+        return dt.astimezone(tz)
+
+def _business_day_for(dt_local):
+    """
+    Деловая дата (YYYY-MM-DD) для произвольного локального datetime
+    с отсечкой по 00:01 (или любому другому времени).
+    """
+    d = dt_local.date()
+    if (dt_local.hour < CUTOFF_HOUR) or (
+        dt_local.hour == CUTOFF_HOUR and dt_local.minute < CUTOFF_MINUTE
+    ):
+        d = d - timedelta(days=1)
+    return d
 
 
 @ensure_csrf_cookie
@@ -57,36 +97,83 @@ def home(request):
 @require_http_methods(["GET"])
 def api_list_received(request):
     """
-    GET /scales/api/received/?period=today|prev|all
-    - today: записи текущего окна (19:00→19:00)
-    - prev:  записи предыдущего окна
-    - all:   без ограничения окна
+    GET /scales/api/received/
+      Варианты:
+        - ?period=today | prev
+        - ИЛИ ?from=YYYY-MM-DDTHH:MM:SS&to=YYYY-MM-DDTHH:MM:SS  (локальное время)
+        - ИЛИ ?period=all (без окон; ограничим разумным лимитом)
+
+    Ответ: {"items": [ ... ]}
+      где у каждой записи:
+        - date: ISO в локальной TZ
+        - report_day: YYYY-MM-DD (деловая дата с отсечкой 19:00)
     """
     company = request.session.get("company_slug")
-    period = (request.GET.get("period") or "today").lower()
+    period  = (request.GET.get("period") or "").lower()
+    frm     = request.GET.get("from")
+    to      = request.GET.get("to")
 
     qs = ReceivedMaterial.objects.all()
     if company:
         qs = qs.filter(company_slug=company)
 
+    # 1) Фильтрация по period=today/prev
     if period in ("today", "prev"):
         s_loc, e_loc = (current_window() if period == "today" else previous_window())
+        # created_at хранится в UTC — переводим границы в UTC
         s = s_loc.astimezone(dt_timezone.utc)
         e = e_loc.astimezone(dt_timezone.utc)
         qs = qs.filter(created_at__gte=s, created_at__lt=e)
 
-    qs = qs.order_by("-created_at")[:500]
+    # 2) Диапазон по from/to (локальные ISO-инпуты)
+    elif frm and to:
+        try:
+            from_loc = _parse_iso_local(frm)
+            to_loc   = _parse_iso_local(to)
+        except Exception:
+            return JsonResponse({"items": [], "error": "bad from/to"}, status=400)
+        # в БД created_at в UTC → границы тоже переводим в UTC
+        from_utc = from_loc.astimezone(dt_timezone.utc)
+        to_utc   = to_loc.astimezone(dt_timezone.utc)
+        qs = qs.filter(created_at__gte=from_utc, created_at__lte=to_utc)
 
-    data = [{
-        "id": r.id,
-        "date": r.date.isoformat(),
-        "material": r.material,
-        "gross": float(r.gross_kg),
-        "net": float(r.net_kg),
-        "supplier": r.supplier,
-        "tag": r.tag,
-    } for r in qs]
-    return JsonResponse({"items": data})
+    # 3) period=all — без ограничений окна
+    elif period == "all":
+        pass  # оставляем qs как есть
+
+    # 4) по умолчанию — текущий деловой день
+    else:
+        s_loc, e_loc = current_window()
+        s = s_loc.astimezone(dt_timezone.utc)
+        e = e_loc.astimezone(dt_timezone.utc)
+        qs = qs.filter(created_at__gte=s, created_at__lt=e)
+
+    # порядок и лимиты
+    limit = 10000 if (frm and to) or period == "all" else 500
+    qs = qs.order_by("-created_at")[:limit]
+
+    # Формируем ответ
+    items = []
+    for r in qs:
+        # приводим created_at к локальному времени проекта
+        created_local = localtime(r.created_at)
+        # report_day из БД, либо вычисляем от created_at (локально)
+        rep_day = r.report_day or _business_day_for(created_local)
+
+        items.append({
+            "id": r.id,
+            # Если у тебя есть r.date (DateField) для «календарной» даты — сохраняем,
+            # но фронту полезней видеть точное время создания:
+            "date": created_local.isoformat(timespec="seconds"),
+            "report_day": rep_day.isoformat(),  # YYYY-MM-DD
+            "material": r.material,
+            "gross": float(r.gross_kg),
+            "net": float(r.net_kg),
+            "supplier": r.supplier,
+            "tag": r.tag,
+        })
+
+    return JsonResponse({"items": items})
 
 @login_required
 @csrf_protect
@@ -105,7 +192,19 @@ def api_create_received(request):
         created_by = request.user if request.user.is_authenticated else None,
         report_day=business_day(),
     )
-    return JsonResponse({"ok": True, "id": item.id})
+    return JsonResponse({
+        "ok": True,
+        "item": {
+            "id": item.id,
+            "date": localtime(item.created_at).isoformat(timespec="seconds"),
+            "report_day": (item.report_day or _business_day_for(localtime(item.created_at))).isoformat(),
+            "material": item.material,
+            "gross": float(item.gross_kg),
+            "net": float(item.net_kg),
+            "supplier": item.supplier,
+            "tag": item.tag,
+        }
+    })
 @login_required
 @csrf_protect
 @require_http_methods(["POST"])

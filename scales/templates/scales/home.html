@@ -13,10 +13,10 @@
 <script src="{% static 'scales/js/home.js' %}"></script>
 
 </head>
-<body>
+<body class="xl-ui">
 <div class="card">
   <h1>Material Received Report</h1>
-  <p style="color:#94a3b8;margin:4px 0 18px 0;">Date: {% now "d/m/Y" %}</p>
+  <p style="color:#94a3b8;margin:4px 0 20px 0;">Date: {% now "d/m/Y" %}</p>
 
   <!-- Форма добавления -->
   <div class="form-grid">
@@ -44,6 +44,9 @@
         <option>Inno Food</option>
         <option>Meridian</option>
         <option>T-Brothers</option>
+        <option>Zoom Books</option>
+        <option>Green House</option>
+
       </select>
     </div>
     <div>
@@ -51,7 +54,18 @@
       <input type="number" id="tag">
     </div>
     <div style="align-self:center;">
-      <button onclick="addRow()">Add</button>
+      <button class="cssbuttons-io-button" onclick="addRow()">
+        <svg height="24"
+             width="24"
+             viewBox="0 0 24 24"
+             xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M0 0h24v24H0z" fill="none"></path>
+          <path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"
+                fill="currentColor"></path>
+        </svg>
+        <span>Add</span>
+      </button>
     </div>
   </div>
 

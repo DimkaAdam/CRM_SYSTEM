@@ -40,11 +40,39 @@ function setStore(obj) {
   const el = getStoreEl();
   el.textContent = JSON.stringify(obj);
 }
-/** Группировка по датам YYYY-MM-DD */
+
+/* ======================
+   2.1) Деловая дата (19:00 отсечка)
+   ====================== */
+
+/** Превращает ISO-дату записи в "деловую" дату YYYY-MM-DD с границей 19:00 */
+function toBusinessDay(iso) {
+  if (!iso) return 'unknown';
+  const d = new Date(iso);
+  const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+  const hour = d.getHours();
+  // если время до 19:00 — это еще вчерашний деловой день
+  const base = new Date(y, m, day - (hour < 0 || (hour === 0 && minute < 1) ? 1 : 0));
+  const YY = base.getFullYear();
+  const MM = String(base.getMonth() + 1).padStart(2, '0');
+  const DD = String(base.getDate()).padStart(2, '0');
+  return `${YY}-${MM}-${DD}`;
+}
+
+/** Текущая деловая дата "сейчас" */
+function currentBusinessDay() {
+  return toBusinessDay(new Date().toISOString());
+}
+
+/* ======================
+   2.2) Группировка по датам YYYY-MM-DD
+   ====================== */
+
 function groupByDate(items) {
   const out = {};
   for (const r of items) {
-    const d = (r.date || '').slice(0,10) || 'unknown';
+    // приоритетно берём r.report_day, иначе считаем из r.date
+    const d = (r.report_day ? r.report_day.slice(0,10) : toBusinessDay(r.date)) || 'unknown';
     if (!out[d]) out[d] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
     out[d].items.push(r);
     out[d].totals.gross += +r.gross;
@@ -55,37 +83,38 @@ function groupByDate(items) {
 }
 
 function upsertItemToStore(item) {
+  // гарантируем деловую дату
+  const bd = (item.report_day || toBusinessDay(item.date || new Date().toISOString())).slice(0,10) || 'unknown';
   const store = getStore();
-  const d = (item.date || '').slice(0,10) || 'unknown';
-  if (!store[d]) store[d] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
-  const idx = store[d].items.findIndex(x => x.id === item.id);
+  if (!store[bd]) store[bd] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
+  const idx = store[bd].items.findIndex(x => x.id === item.id);
   if (idx === -1) {
-    store[d].items.push(item);
-    store[d].totals.gross += +item.gross;
-    store[d].totals.net += +item.net;
-    store[d].totals.count += 1;
+    store[bd].items.push(item);
+    store[bd].totals.gross += +item.gross;
+    store[bd].totals.net += +item.net;
+    store[bd].totals.count += 1;
   } else {
-    const old = store[d].items[idx];
-    store[d].totals.gross += (+item.gross - +old.gross);
-    store[d].totals.net += (+item.net - +old.net);
-    store[d].items[idx] = item;
+    const old = store[bd].items[idx];
+    store[bd].totals.gross += (+item.gross - +old.gross);
+    store[bd].totals.net += (+item.net - +old.net);
+    store[bd].items[idx] = item;
   }
   setStore(store);
   renderAllDays();
 }
 
 function removeItemFromStore(item) {
+  const bd = (item.report_day || toBusinessDay(item.date)).slice(0,10) || 'unknown';
   const store = getStore();
-  const d = (item.date || '').slice(0,10) || 'unknown';
-  if (!store[d]) return;
-  const idx = store[d].items.findIndex(x => x.id === item.id);
+  if (!store[bd]) return;
+  const idx = store[bd].items.findIndex(x => x.id === item.id);
   if (idx === -1) return;
-  const old = store[d].items[idx];
-  store[d].items.splice(idx, 1);
-  store[d].totals.gross -= +old.gross;
-  store[d].totals.net -= +old.net;
-  store[d].totals.count -= 1;
-  if (store[d].items.length === 0) delete store[d];
+  const old = store[bd].items[idx];
+  store[bd].items.splice(idx, 1);
+  store[bd].totals.gross -= +old.gross;
+  store[bd].totals.net -= +old.net;
+  store[bd].totals.count -= 1;
+  if (store[bd].items.length === 0) delete store[bd];
   setStore(store);
   renderAllDays();
 }
@@ -95,7 +124,7 @@ function removeItemFromStore(item) {
    ====================== */
 
 const MATERIALS = ["Flexible Plastic", "Mix Container", "Baled Cardboard"];
-const SUPPLIERS = ["Bottle Depot","Hannam", "Inno Food", "Meridian", "T-Brothers"];
+const SUPPLIERS = ["Bottle Depot","Hannam", "Inno Food", "Meridian", "T-Brothers", "Zoom Books", "Green House"];
 
 /* ======================
    4) Загрузка начальных данных
@@ -103,26 +132,91 @@ const SUPPLIERS = ["Bottle Depot","Hannam", "Inno Food", "Meridian", "T-Brothers
 
 document.addEventListener("DOMContentLoaded", reloadFromDB);
 
+/** Границы месяца YYYY, M -> ISO from/to */
+function monthBounds(y, m /* 0..11 */) {
+  const from = new Date(y, m, 1, 0, 0, 0);
+  const to   = new Date(y, m + 1, 0, 23, 59, 59); // последний день месяца 23:59:59
+  const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,19);
+  return { from: iso(from), to: iso(to) };
+}
+
+/**
+ * Грузим историю «за все дни».
+ * Т.к. на бэке есть from/to — идём помесячно назад до N месяцев,
+ * и останавливаемся, если подряд встретили несколько пустых месяцев.
+ */
+async function loadFullHistory(maxMonths = 36, emptyBreak = 6) {
+  const now = new Date();
+  let y = now.getFullYear();
+  let m = now.getMonth(); // 0..11
+
+  const all = [];
+  const seen = new Set();              // <- здесь копим уже встреченные id
+  let emptyStreak = 0;
+  let noNewStreak = 0;                 // <- подряд месяцев без новых записей
+
+  const { from: debugFrom, to: debugTo } = monthBounds(y, m); // можно логировать при желании
+
+  for (let i = 0; i < maxMonths; i++) {
+    const { from, to } = monthBounds(y, m);
+    const url = `/scales/api/received/?from=${from}&to=${to}`;
+    const r = await fetch(url, { credentials: "same-origin" });
+    if (!r.ok) break;
+
+    const j = await r.json();
+    const items = (j.items || []);
+
+    // посчитаем, сколько реально новых записей добавили
+    let added = 0;
+    for (const it of items) {
+      const id = String(it.id ?? `${it.material}|${it.tag}|${it.date}`);
+      if (seen.has(id)) continue;      // уже добавляли — пропускаем
+      seen.add(id);
+      all.push(it);
+      added += 1;
+    }
+
+    if (items.length === 0) {
+      emptyStreak += 1;
+      if (emptyStreak >= emptyBreak) break;
+    } else {
+      emptyStreak = 0;
+    }
+
+    // если месяц ничего нового не дал (бэкенд вернул тот же массив),
+    // считаем это «нет новинок»; много таких подряд — выходим
+    if (added === 0) {
+      noNewStreak += 1;
+      if (noNewStreak >= 3) break;     // 3 месяца подряд без новых -> стоп
+    } else {
+      noNewStreak = 0;
+    }
+
+    // шаг на месяц назад
+    m -= 1;
+    if (m < 0) { m = 11; y -= 1; }
+  }
+
+  const todayBD = currentBusinessDay();
+  return all
+    .map(it => ({ ...it, report_day: it.report_day || toBusinessDay(it.date) }))
+    .filter(it => (it.report_day || '').slice(0,10) !== todayBD);
+}
+
 async function reloadFromDB() {
   try {
-    // очистим верхнюю таблицу
-    const tbody = document.querySelector("#report-table tbody");
-    tbody.innerHTML = "";
-
-    // ВЕРХ (текущий деловой день 19:00→19:00)
+    // ВЕРХ: только текущие записи (как и просил — не трогаем)
     const topRes = await fetch("/scales/api/received/?period=today", { credentials: "same-origin" });
     const topJson = await topRes.json();
     const topItems = topJson.items || [];
+    const tbody = document.querySelector("#report-table tbody");
+    tbody.innerHTML = "";
     topItems.forEach(appendRow);
     recalcTotals();
 
-    // НИЗ / ИСТОРИЯ (предыдущее окно 19:00→19:00)
-    const prevRes = await fetch("/scales/api/received/?period=prev", { credentials: "same-origin" });
-    const prevJson = await prevRes.json();
-    const prevItems = prevJson.items || [];
-
-    // История строится только по "вчера" (а не по всем дням)
-    setStore(groupByDate(prevItems));
+    // НИЗ: вся история за все дни (много месяцев назад)
+    const allItems = await loadFullHistory(36, 6); // до 3 лет, остановка после 6 пустых месяцев подряд
+    setStore(groupByDate(allItems));
     renderAllDays();
   } catch (e) {
     console.error("reloadFromDB failed:", e);
