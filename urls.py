@@ -10,7 +10,7 @@ urlpatterns = [
 
     re_path(
         r"^contact/(?P<id>\d+)/view/?$",
-        RedirectView.as_view(pattern_name="crm:view_contact", permanent=False),
+        RedirectView.as_view(pattern_name="view_contact", permanent=False),
     ),
     path("admin/", admin.site.urls),
 
