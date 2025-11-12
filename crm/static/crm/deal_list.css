@@ -552,7 +552,7 @@
 /* ======= КНОПКИ ВНИЗУ САЙДБАРА ======= */
 .sidebar-buttons-container {
   position: absolute;
-  bottom: 40px;
+  bottom: 60px;
   left: 0;
   right: 0;
   display: flex;
