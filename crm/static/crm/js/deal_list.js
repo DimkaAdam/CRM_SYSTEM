@@ -212,6 +212,65 @@ document.addEventListener("DOMContentLoaded", () => {
       if (sidebar) sidebar.style.width = "0";
     });
   }
+  // открыть сайдбар
+    function openDealSidebar() {
+      const sidebar = document.getElementById("viewDealSidebar");
+      sidebar.classList.add("open");
+    }
+
+    // закрыть сайдбар
+    function closeDealSidebar() {
+      const sidebar = document.getElementById("viewDealSidebar");
+      sidebar.classList.remove("open");
+    }
+
+    // обработчик кнопки
+    document.getElementById("closeViewDealSidebarBtn")?.addEventListener("click", closeDealSidebar);
+    // Конфиг, похожий на пропсы GlassSurface:
+    const glassProps = {
+      displace: 15,             // влияет на baseFrequency
+      distortionScale: -150,    // берем модуль => scale
+      redOffset: 5,
+      greenOffset: 15,
+      blueOffset: 25,
+      brightness: 0.60,         // 0..1 (60%)
+      opacity: 0.80,            // 0..1
+      mixBlendMode: "screen"    // screen / lighten / overlay / normal
+    };
+
+    function applyGlassProps(el, props){
+      if(!el) return;
+      // CSS vars на .glass-panel
+      el.style.setProperty('--rgb-r', `${props.redOffset||0}px`);
+      el.style.setProperty('--rgb-g', `${props.greenOffset||0}px`);
+      el.style.setProperty('--rgb-b', `${props.blueOffset||0}px`);
+      el.style.setProperty('--brightness', String(props.brightness ?? 1));
+      el.style.setProperty('--glass-opacity', String(props.opacity ?? 0.85));
+      el.style.setProperty('--mix', props.mixBlendMode || 'screen');
+
+      // SVG filter tuning:
+      const filter = document.querySelector('#glass-disp');
+      const turb = filter?.querySelector('feTurbulence');
+      const disp = filter?.querySelector('feDisplacementMap');
+
+      if(turb){
+        // «displace»: чем больше значение, тем выше baseFrequency (0.004..0.02)
+        const base = 0.004 + Math.min(Math.max((props.displace||0)/100, 0), 0.12);
+        turb.setAttribute('baseFrequency', base.toFixed(4));
+      }
+      if(disp){
+        const s = Math.abs(props.distortionScale ?? 10);
+        disp.setAttribute('scale', String(s));
+      }
+    }
+
+    // Применяем при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+      const glass = document.querySelector('#viewDealSidebar .glass-panel');
+      applyGlassProps(glass, glassProps);
+    });
+
+
 
   // --- Включить режим редактирования
   const editDealBtn = byId("editDealBtn");

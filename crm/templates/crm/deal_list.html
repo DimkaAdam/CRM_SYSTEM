@@ -166,100 +166,133 @@
         </div>
 
         <!-- Сайдбар для редактирования и просмотра сделки -->
-        <div id="viewDealSidebar" class="sidebar-form" style="width: 0;">
+        <div id="viewDealSidebar" class="sidebar-form"><!-- шириной управляем классом .open -->
+          <div class="glass-panel">
+            <!-- RGB split highlights -->
+            <div class="glass-rgb glass-r"></div>
+            <div class="glass-rgb glass-g"></div>
+            <div class="glass-rgb glass-b"></div>
+
             <div class="sidebar-header">
-                <h3><span id="dealSupplier"></span></h3>
-                <button id="closeViewDealSidebarBtn" class="close-btn">&times;</button>
+              <h3><span id="dealSupplier"></span></h3>
+              <button id="closeViewDealSidebarBtn" class="close-btn" aria-label="Close">&times;</button>
             </div>
+
             <div id="dealDetailsContent">
-                <p><strong>Date:</strong> <span id="dealDate"></span></p>
-                <p><strong>Buyer:</strong> <span id="dealBuyer"></span></p>
-                <p><strong>Grade:</strong> <span id="dealGrade"></span></p>
-                <p><strong>Total Amount:</strong> <span id="dealTotalAmount"></span></p>
-                <p><strong>Scale Ticket:</strong> <span id="dealScaleTicket"></span></p>
+              <p><strong>Date:</strong> <span id="dealDate"></span></p>
+              <p><strong>Buyer:</strong> <span id="dealBuyer"></span></p>
+              <p><strong>Grade:</strong> <span id="dealGrade"></span></p>
+              <p><strong>Total Amount:</strong> <span id="dealTotalAmount"></span></p>
+              <p><strong>Scale Ticket:</strong> <span id="dealScaleTicket"></span></p>
             </div>
 
             <!-- Форма редактирования -->
-            <form id="editDealForm" style="display: none;">
-                <div class="form-field">
-                    <label for="editDate">Date</label>
-                    <input type="date" id="editDate" required>
-                </div>
-                <div class="form-field">
-                    <label for="editSupplier">Supplier</label>
-                    <select id="editSupplier" required>
-                        <option value="" disabled>Select a Supplier</option>
-                        {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label for="editBuyer">Buyer</label>
-                    <select id="editBuyer" required>
-                        <option value="" disabled>Select a Buyer</option>
-                        {% for buyer in buyers %}
-                            <option value="{{ buyer.id }}">{{ buyer.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label for="editGrade">Grade</label>
-                    <input type="text" id="editGrade" required>
-                </div>
-                <div class="form-field">
-                    <label for="editShippedQuantity">Shipped Quantity</label>
-                    <input type="number" id="editShippedQuantity" step="any" required>
-                </div>
-                <div class="form-field">
-                    <label for="editShippedPallets">Shipped Pallets</label>
-                    <input type="number" id="editShippedPallets" required>
-                </div>
-                <div class="form-field">
-                    <label for="editReceivedQuantity">Received Quantity</label>
-                    <input type="number" id="editReceivedQuantity" step="any" required>
-                </div>
-                <div class="form-field">
-                    <label for="editReceivedPallets">Received Pallets</label>
-                    <input type="number" id="editReceivedPallets" required>
-                </div>
-                <div class="form-field">
-                    <label for="editSupplierPrice">Supplier Price</label>
-                    <input type="number" id="editSupplierPrice" step="0.01" required>
-                </div>
-                <div class="form-field">
-                    <label for="editBuyerPrice">Buyer Price</label>
-                    <input type="number" id="editBuyerPrice" step="0.01" required>
-                </div>
-                <div class="form-field">
-                    <label for="editTransportCost">Transport Cost</label>
-                    <input type="number" id="editTransportCost" step="0.01" required>
-                </div>
-                <div class="form-field">
-                    <label for="editTransportCompany">Transport Company</label>
-                    <input type="text" id="editTransportCompany" required>
-                </div>
-                <div class="form-field">
-                    <label for="editScaleTicket">Scale Ticket</label>
-                    <input type="text" id="editScaleTicket" required>
-                </div>
-                <div class="action-buttons">
-                    <button type="submit" class="save-btn">Save</button>
-                    <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
-                </div>
+            <form id="editDealForm" style="display:none;">
+              <div class="form-field">
+                <label for="editDate">Date</label>
+                <input type="date" id="editDate" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editSupplier">Supplier</label>
+                <select id="editSupplier" required>
+                  <option value="" disabled>Select a Supplier</option>
+                  {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="editBuyer">Buyer</label>
+                <select id="editBuyer" required>
+                  <option value="" disabled>Select a Buyer</option>
+                  {% for buyer in buyers %}
+                    <option value="{{ buyer.id }}">{{ buyer.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="editGrade">Grade</label>
+                <input type="text" id="editGrade" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editShippedQuantity">Shipped Quantity</label>
+                <input type="number" id="editShippedQuantity" step="any" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editShippedPallets">Shipped Pallets</label>
+                <input type="number" id="editShippedPallets" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editReceivedQuantity">Received Quantity</label>
+                <input type="number" id="editReceivedQuantity" step="any" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editReceivedPallets">Received Pallets</label>
+                <input type="number" id="editReceivedPallets" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editSupplierPrice">Supplier Price</label>
+                <input type="number" id="editSupplierPrice" step="0.01" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editBuyerPrice">Buyer Price</label>
+                <input type="number" id="editBuyerPrice" step="0.01" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editTransportCost">Transport Cost</label>
+                <input type="number" id="editTransportCost" step="0.01" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editTransportCompany">Transport Company</label>
+                <input type="text" id="editTransportCompany" required>
+              </div>
+
+              <div class="form-field">
+                <label for="editScaleTicket">Scale Ticket</label>
+                <input type="text" id="editScaleTicket" required>
+              </div>
+
+              <div class="action-buttons">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
+              </div>
             </form>
+
             <div class="sidebar-buttons-container">
-                <button id="editDealBtn" class="edit-btn">
-                    <img src="{% static 'crm/images/icons/edit.png' %}" alt="Edit">
-                </button>
-                <button id="deleteDealBtn" class="delete-btn">
-                    <img src="{% static 'crm/images/icons/trash.png' %}" alt="Delete">
-                </button>
-                <button onclick="openScaleTicketSidebarFromDeal()" class="scale-btn">
-                    <img src="{% static 'crm/images/icons/scale_ticket.png' %}" alt="Add Icon" class="icon">
-                </button>
+              <button id="editDealBtn" class="edit-btn">
+                <img src="{% static 'crm/images/icons/edit.png' %}" alt="Edit">
+              </button>
+              <button id="deleteDealBtn" class="delete-btn">
+                <img src="{% static 'crm/images/icons/trash.png' %}" alt="Delete">
+              </button>
+              <button onclick="openScaleTicketSidebarFromDeal()" class="scale-btn">
+                <img src="{% static 'crm/images/icons/scale_ticket.png' %}" alt="Add Icon" class="icon">
+              </button>
             </div>
+          </div>
         </div>
+
+        <!-- Полупрозрачный оверлей -->
+        <div id="dealSidebarOverlay" hidden></div>
+
+        <!-- SVG-фильтр для «ряби» -->
+        <svg width="0" height="0" style="position:absolute">
+          <filter id="glass-disp">
+            <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="2" seed="7" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+        </svg>
 
         <!-- Таблица сделок -->
         <table id="dealTable" class="deal-table">
