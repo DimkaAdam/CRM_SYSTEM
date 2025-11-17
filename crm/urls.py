@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
 from django.contrib.auth import views as auth_views
-from . import views
+from . import views,views_emailbook
 from .views import (
     ClientCreateAPIView, DealCreateAPIView,
     ClientViewSet, DealViewSet, export_company_report_pdf,
@@ -119,6 +119,50 @@ urlpatterns = [
     path("api/ai/buyer-suppliers/", views.get_buyer_supplier_map, name="buyer_supplier_map"),
     path('api/ai/monthly-trends/', views.monthly_trends_api, name='ai_monthly_trends'),
 
+    path(
+        "api/email/prefs/",
+        views_emailbook.api_get_email_prefs,  # 👈 берём из view_emailbook
+        name="api_get_email_prefs",
+    ),
+
+    path(
+        "api/email/send/",
+        views_emailbook.api_send_report_email,
+        name="api_send_report_email",
+    ),
+
+    # если ещё не добавлял — пути для e-mail книжки:
+    path(
+        "api/companies/<int:company_id>/emails/add/",
+        views_emailbook.api_company_emails_add,
+        name="api_company_emails_add",
+    ),
+    path(
+        "api/companies/<int:company_id>/emails/<int:email_id>/delete/",
+        views_emailbook.api_company_emails_delete,
+        name="api_company_emails_delete",
+    ),
+
+    path(
+        "api/email/send/",
+        views.api_send_report_email,
+        name="api_send_report_email"
+    ),
+
+    # 📬 Управление email-ами компании
+    path(
+        "api/companies/<int:company_id>/emails/add/",
+        views_emailbook.api_company_emails_add,
+        name="api_company_emails_add"
+    ),
+    path(
+        "api/companies/<int:company_id>/emails/<int:email_id>/delete/",
+        views_emailbook.api_company_emails_delete,
+        name="api_company_emails_delete"
+    ),
+
+
+
     path("logout/", auth_views.LogoutView.as_view(next_page='/'), name="logout"),
 
     # ⬇⬇⬇ ТОЛЬКО ПЕРЕНЕСЁННЫЙ В НИЗ БЛОК — БЕЗ ИЗМЕНЕНИЙ ⬇⬇⬇
@@ -126,6 +170,7 @@ urlpatterns = [
     path("api/clients/", ClientCreateAPIView.as_view(), name="api_add_client"),
     path("api/deals/create/", DealCreateAPIView.as_view(), name="deal-create"),
     path("api/", include(router.urls)),
+
 ]
 
 # Подключаем статику

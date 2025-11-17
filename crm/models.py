@@ -241,3 +241,33 @@ class TruckProfile(models.Model):
     max_tons = models.FloatField()
     max_spots = models.IntegerField()
     base_cost = models.FloatField()
+
+
+class EmailRecipientPreference(models.Model):
+    company = models.ForeignKey('crm.Company', on_delete=models.CASCADE, related_name='email_recipient_prefs')
+    context = models.CharField(max_length=64)
+    employees = models.ManyToManyField('crm.Employee', blank=True, related_name='email_recipient_prefs')  # или твоя фактическая модель
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('company', 'context')
+
+    def __str__(self):
+        # Удобное отображение в админке/отладке
+        return f"{self.company.name} [{self.context}]"
+
+
+class CompanyEmail(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="emails")
+    name = models.CharField(max_length=120, blank=True)  # метка: AP / Logistics / Jason
+    email = models.EmailField()
+    is_default = models.BooleanField(default=False)      # предвыбор в модалке
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('company', 'email')
+
+    def __str__(self):
+        who = f"{self.name} " if self.name else ""
+        return f"{who}<{self.email}> @ {self.company.name}"

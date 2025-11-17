@@ -1,6 +1,7 @@
 from django.core.serializers import serialize
 import os
-from .models import Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,ScheduledShipment,SCaleTicketStatus,TruckProfile
+from .models import (Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,
+                     ScheduledShipment,SCaleTicketStatus,TruckProfile,EmailRecipientPreference)
 
 
 from datetime import datetime, date, time, timedelta
@@ -8,6 +9,8 @@ from decimal import Decimal
 from django.utils import timezone
 from django.db.models import Sum, Count, F, DecimalField, ExpressionWrapper,Value
 from django.db.models.functions import Coalesce
+
+from django.db import transaction
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -54,6 +57,9 @@ import glob
 
 from django.utils.timezone import make_aware
 from django.db.models import Sum, Count, F
+from urllib.parse import unquote
+
+
 
 from .models import Event
 
@@ -1606,35 +1612,59 @@ TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
 from .models import SCaleTicketStatus
 
 def scale_ticket_browser(request):
-    # 1) Относительный путь из query, декодируем URL-символы
-    rel = (request.GET.get("path", "") or "").lstrip("/")
+    # 1) относительный путь
+    rel = (request.GET.get("path", "") or "").strip("/")
     rel = unquote(rel)
 
-    # 2) Базовый корень браузера
+    # 2) базовая директория
     base = (Path(settings.MEDIA_ROOT) / "reports" / "scale_tickets").resolve()
-
-    # 3) Абсолютный путь к целевой папке
     target = (base / rel).resolve()
 
-    # 4) Защита от выхода из корня
     if not str(target).startswith(str(base)):
         return HttpResponseBadRequest("Invalid path")
-
-    # 5) Проверки существования и типа
     if not target.exists():
         raise Http404("❌ Path not found")
     if not target.is_dir():
         return HttpResponseBadRequest("Not a directory")
 
-    # 6) Чтение содержимого
     folders = sorted(p.name for p in target.iterdir() if p.is_dir())
-    files = sorted(p.name for p in target.iterdir() if p.is_file() and p.suffix.lower() == ".pdf")
-
-    # 7) Путь «назад»
+    files   = sorted(p.name for p in target.iterdir() if p.is_file() and p.suffix.lower() == ".pdf")
     back_path = "/".join(rel.split("/")[:-1]) if rel else ""
 
-    # 8) Статусы отправленных файлов
-    #    Нормализуем к виду "Company/2025/Nov/Ticket.pdf" (слеши — прямые, без ведущего "/")
+    # ---------- ОПРЕДЕЛЯЕМ company ----------
+    company = None
+    company_id = request.GET.get("company")
+
+    # 1) если явно передан ?company=11
+    if company_id and company_id.isdigit():
+        company = Company.objects.filter(id=int(company_id)).first()
+
+    # 2) если company не нашли, пробуем по верхней папке
+    if not company and rel:
+        top_folder = rel.split("/", 1)[0]          # 'Inno_Foods'
+        candidates = [
+            top_folder,
+            top_folder.replace("_", " "),          # 'Inno Foods'
+        ]
+
+        qs = Company.objects.all()
+        for name in candidates:
+            company = qs.filter(name__iexact=name).first()
+            if company:
+                break
+
+        if not company:
+            company = Company.objects.filter(unique_number__iexact=top_folder).first()
+
+    # 3) если нашли компанию — запомним в сессии
+    if company:
+        request.session["current_company_id"] = company.id
+    else:
+        saved_id = request.session.get("current_company_id")
+        if saved_id:
+            company = Company.objects.filter(id=saved_id).first()
+
+    # ---------- статусы отправок ----------
     file_statuses = {}
     for p in SCaleTicketStatus.objects.filter(sent=True).values_list("file_path", flat=True):
         k = (p or "").strip().replace("\\", "/").lstrip("/")
@@ -1647,6 +1677,7 @@ def scale_ticket_browser(request):
         "files": files,
         "back_path": back_path,
         "file_statuses": file_statuses,
+        "company": company,
     }
     return render(request, "crm/scale_ticket_browser.html", context)
 
@@ -2948,3 +2979,116 @@ def delete_truck(request, id):
 
     truck.delete()
     return redirect('view_contact', id=contact.id)
+
+
+
+
+from django.apps import apps
+
+def _get_staff_model():
+    # Пробуем несколько типичных имён модели сотрудников
+    for name in ("Employee", "Staff", "StaffContact", "CompanyEmployee"):
+        try:
+            return apps.get_model("crm", name)
+        except LookupError:
+            continue
+    raise LookupError("Не нашёл модель сотрудников в приложении crm (ожидал Employee/Staff/…).")
+
+@require_http_methods(["GET"])
+def api_company_contacts(request, company_id):
+    company = get_object_or_404(Company, pk=company_id)
+
+    Staff = _get_staff_model()  # модель сотрудников (имеет FK на Company)
+    # Подбираем поля имени (на случай full_name/name)
+    name_field = "name"
+    if not hasattr(Staff, name_field) and hasattr(Staff, "full_name"):
+        name_field = "full_name"
+
+    # Фильтруем сотрудников компании, у кого есть e-mail
+    qs = (
+        Staff.objects
+        .filter(company_id=company.id)
+        .filter(~Q(email=None))
+        .exclude(email__exact="")
+    )
+
+    data = [
+        {
+            "id": s.id,
+            "name": getattr(s, name_field, ""),
+            "email": s.email,
+        }
+        for s in qs
+    ]
+    return JsonResponse({"contacts": data})
+
+
+@require_http_methods(["POST"])
+def api_send_report_email(request):
+    """
+    Отправка scale ticket’а по выбранным сотрудникам.
+    Ожидаем:
+      - company_id      (пока не используем, но оставляем на будущее)
+      - subject
+      - body
+      - attachment_relative  (относительный путь внутри reports/scale_tickets)
+      - contact_ids          (JSON-список id сотрудников Employee)
+    """
+    company_id = request.POST.get("company_id")  # на будущее, не обязательно
+    subject = request.POST.get("subject", "Scale Ticket")
+    body = request.POST.get("body", "")
+    rel_path = request.POST.get("attachment_relative")
+    ids_raw = request.POST.get("contact_ids")
+
+    if not rel_path:
+        return HttpResponseBadRequest("attachment_relative is required")
+
+    # --- парсим список id сотрудников (contact_ids) ---
+    import json
+    try:
+        contact_ids = json.loads(ids_raw) if ids_raw else []
+    except Exception:
+        contact_ids = []
+
+    if not contact_ids:
+        return HttpResponseBadRequest("No recipients selected")
+
+    # --- достаём сотрудников и их email ---
+    employees = (
+        Employee.objects
+        .filter(id__in=contact_ids)
+        .exclude(email__isnull=True)
+        .exclude(email__exact="")
+    )
+    to_emails = [e.email for e in employees]
+
+    if not to_emails:
+        return HttpResponseBadRequest("No valid emails for selected employees")
+
+    # --- строим абсолютный путь к файлу ---
+    abs_path = os.path.join(
+        settings.MEDIA_ROOT,
+        "reports",
+        "scale_tickets",
+        rel_path
+    )
+    if not os.path.exists(abs_path):
+        return HttpResponseBadRequest(f"File not found: {rel_path}")
+
+    # --- шлём письмо ---
+    msg = EmailMessage(
+        subject=subject,
+        body=body,
+        from_email=settings.EMAIL_HOST_USER,
+        to=to_emails,
+    )
+    msg.attach_file(abs_path)
+    msg.send(fail_silently=False)
+
+    # --- отмечаем статус отправки в SCaleTicketStatus ---
+    status_obj, _ = SCaleTicketStatus.objects.get_or_create(file_path=rel_path)
+    status_obj.sent = True
+    status_obj.sent_at = timezone.now()
+    status_obj.save()
+
+    return JsonResponse({"ok": True, "sent_to": to_emails})
