@@ -1,237 +1,440 @@
-/* Цветовая палитра */
+/* ================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ================== */
 :root {
-    --primary-bg: #FFFAFA;
-    --secondary-bg: #FFFAFA;
-    --highlight: #8AAAA5;
-    --accent: #CABD9A;
-    --dark-accent: #A5956D;
-    --shadow-color: rgba(124, 138, 137, 0.6);
+  /* Цветовая палитра для контента и теней */
+  --primary-bg: #FFFAFA;                     /* фон основного контента */
+  --secondary-bg: #FFFAFA;                   /* запасной фон */
+  --highlight: #8AAAA5;                      /* акцентный зелёно-бирюзовый */
+  --accent: #CABD9A;                         /* бежевый акцент */
+  --dark-accent: #A5956D;                    /* тёмный бежево-коричневый */
+  --shadow-color: rgba(124, 138, 137, 0.6);  /* общий цвет теней */
+
+  /* Основной золотой (старый glider, сейчас для активных состояний) */
+  --main-color: #f7e479;
+
+  /* Кастомная кривая для появления капсулы (можно править для мягкости) */
+  --linear-ease: linear(
+    0,
+    0.068,
+    0.19 3.7%,
+    0.804 8.1%,
+    1.037,
+    1.199 13.2%,
+    1.245,
+    1.27 15.8%,
+    1.274,
+    1.272 17.4%,
+    1.249 19.1%,
+    0.996 28%,
+    0.949,
+    0.928 33.3%,
+    0.926,
+    0.933 36.8%,
+    1.001 45.6%,
+    1.013,
+    1.019 50.8%,
+    1.018 54.4%,
+    1 63.1%,
+    0.995 68%,
+    1.001 85%,
+    1
+  );
+
+  /* Цвета частиц и подсветки gooey-эффекта (CRM-палитра) */
+  --color-1: #f7e479;  /* золото */
+  --color-2: #cabd9a;  /* бежевый */
+  --color-3: #8aaaa5;  /* зелёно-бирюзовый */
+  --color-4: #b7a3f0;  /* мягкий фиолетовый */
 }
 
-/* Общий стиль для страницы */
+/* ================== БАЗОВЫЕ СТИЛИ СТРАНИЦЫ ================== */
+
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: white;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: white;
 }
 
-/* Основной макет */
 .layout {
-    display: flex;
-    min-height: 100vh;
-    flex-direction: row;
-    position: relative;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: row;
+  position: relative;
 }
 
-/* Боковая панель */
+/* ================== САЙДБАР СЛЕВА ================== */
+
 .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 210px;
-    height: 100vh;
-    background-color: black;
-    padding: 20px;
-    color: white;
-    box-shadow: 0 4px 30px 5px var(--shadow-color);
+  position: fixed;
+  left: 0;
+  width: 150px;
+  height: 100vh;
+  padding: 20px;
+  border-radius: 16px;
+  background-color: #000;
+  color: #fff;
+  box-shadow: 0 4px 30px 5px var(--shadow-color);
 }
 
 .sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .sidebar ul li {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 .sidebar ul li a {
-    color: white;
-    text-decoration: none;
-    font-size: 18px;
-    display: block;
-    padding: 10px 15px;
-    border-radius: 5px;
-    transition: color 0.3s ease-in-out;
+  display: block;
+  padding: 10px 15px;
+  font-size: 18px;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: color 0.3s ease-in-out;
 }
 
+/* на обычном ховере – просто белый, без золота */
 .sidebar ul li a:hover {
-    background-color: transparent;  /* убрали фон */
-    color: var(--main-color);       /* лёгкий эффект по тексту */
+  background-color: transparent;
+  color: #ffffff;
 }
 
+/* запасной класс active, если где-то используешь */
 .sidebar ul li a.active {
-    color: var(--main-color);       /* золотой текст */
-    font-weight: bold;
+  color: var(--main-color);
+  font-weight: bold;
 }
-
 
 .sidebar .logo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .logo img {
-    max-width: 100px;
-    height: auto;
+  max-width: 100px;
+  height: auto;
 }
 
-/* Основной контент */
+/* ================== ОСНОВНОЙ КОНТЕНТ ================== */
+
 .content {
-    flex-grow: 1;
-    padding: 20px;
-    background-color: var(--primary-bg);
-    border-radius: 8px;
-    margin-left: 250px;
-    min-height: 100vh;
-    box-shadow: 0 4px 30px 5px var(--shadow-color);
+  flex-grow: 1;
+  padding: 20px;
+  background-color: var(--primary-bg);
+  border-radius: 8px;
+  margin-left: 200px;
+  margin-top: 20px !important;
+  min-height: 100vh;
+  box-shadow: 0 4px 30px 5px var(--shadow-color);
 }
 
-/* золотая хрень */
-.radio-container {
-  --main-color: #f7e479;
-  --main-color-opacity: #f7e4791c;
+/* ================== GOOEY NAV ("ГУСИ") ================== */
 
-  /* change this according inputs count */
-  --total-radio: 3;
+.gooey-nav-container {
+  position: relative;
+  margin-top: 20px;
+  overflow: hidden;              /* чтобы подсветка не вылезала за сайдбар */
+}
 
+.gooey-nav-container nav {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-left: 0.5rem;
+  transform: translate3d(0, 0, 0.01px);
 }
-.radio-container input {
+
+.gooey-nav-container nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  z-index: 3;
+  color: #fff;
+  text-shadow: 0 1px 1px hsl(205deg 30% 10% / 0.2);
+}
+
+.gooey-nav-container nav ul li {
+  position: relative;
+  border-radius: 999px;
   cursor: pointer;
-  appearance: none;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+  box-shadow: 0 0 0.5px 1.5px transparent;
 }
-.radio-container .glider-container {
+
+.gooey-nav-container nav ul li a {
+  display: inline-block;
+  width: 100%;
+  padding: 0.6em 1.2em;
+  font-size: 16px;
+  color: #fff;
+  text-decoration: none;
+}
+
+/* ховер по тексту внутри гуся – просто белый */
+.gooey-nav-container nav ul li a:hover {
+  color: #ffffff;
+}
+
+/* фокус с клавиатуры */
+.gooey-nav-container nav ul li:focus-within:has(:focus-visible) {
+  box-shadow: 0 0 0.5px 1.5px #fff;
+}
+
+/* белая "капсула" под активным пунктом (резервный слой) */
+.gooey-nav-container nav ul li::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  opacity: 0;
+  transform: scale(0.2);
+  transition: all 0.3s var(--linear-ease);
+  z-index: -1;
+}
+
+.gooey-nav-container nav ul li.active {
+  color: #000;
+  text-shadow: none;
+}
+
+.gooey-nav-container nav ul li.active a {
+  color: #000;
+}
+
+.gooey-nav-container nav ul li.active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ====== ДВА СЛОЯ ЭФФЕКТА: ПИЛЮЛЯ + ТЕКСТ ====== */
+
+.gooey-nav-container .effect {
   position: absolute;
   left: 0;
   top: 0;
-  bottom: 0;
-  background: linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0) 0%,
-    rgba(27, 27, 27, 1) 50%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  width: 1px;
-}
-.radio-container .glider-container .glider {
-  position: relative;
-  width: 100%;
-  /* ❌ height: calc(100% / var(--total-radio)); */
-  height: 50px; /* будет переопределено через JS */
-  background: linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0) 0%,
-    var(--main-color) 50%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  transition: transform 0.5s cubic-bezier(0.37, 1.95, 0.66, 0.56);
-  border-radius: 5px;
+  width: 0;
+  height: 0;
+  opacity: 1;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
   z-index: 1;
 }
-.radio-container .glider-container .glider::before {
-  content: "";
+
+/* текст поверх таблетки */
+.gooey-nav-container .effect.text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+  transition: color 0.3s ease;
+}
+
+.gooey-nav-container .effect.text.active {
+  color: #000000;
+}
+
+/* слой для gooey + подсветка */
+.gooey-nav-container .effect.filter {
+  filter: blur(7px) contrast(100) blur(0);
+  mix-blend-mode: lighten;
+}
+
+/* фон вокруг эффекта (чтобы blend работал корректно) */
+.gooey-nav-container .effect.filter::before {
+  content: '';
   position: absolute;
-  height: 60%;
-  width: 300%;
+  inset: -20px;
+  z-index: -2;
+  background: #000000;
+}
+
+/* белая таблетка + ГЛОУ вокруг неё */
+.gooey-nav-container .effect.filter::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  transform: scale(0);
+  opacity: 0;
+  z-index: -1;
+  /* начальное свечение – мягкое */
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.45);
+  /* плавное "дыхание" в CRM-цветах */
+  animation: crmGlow 6s ease-in-out infinite alternate;
+}
+
+/* когда эффект активирован – добавляем анимацию раскрытия таблетки
+   + оставляем фоновое crmGlow */
+.gooey-nav-container .effect.active::after {
+  animation:
+    pill 0.3s var(--linear-ease) both,
+    crmGlow 6s ease-in-out infinite alternate;
+}
+
+/* анимация раскрытия таблетки при клике/смене пункта */
+@keyframes pill {
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* мягкое “дыхание” подсветки в палитре CRM */
+@keyframes crmGlow {
+  0% {
+    box-shadow:
+      0 0 26px rgba(247, 228, 121, 0.30),   /* золото */
+      0 0 34px rgba(255, 255, 255, 0.20);
+  }
+  33% {
+    box-shadow:
+      0 0 28px rgba(202, 189, 154, 0.30),   /* бежевый */
+      0 0 38px rgba(255, 255, 255, 0.22);
+  }
+  66% {
+    box-shadow:
+      0 0 30px rgba(138, 170, 165, 0.32),   /* зелёный/бирюзовый */
+      0 0 40px rgba(255, 255, 255, 0.24);
+  }
+  100% {
+    box-shadow:
+      0 0 32px rgba(183, 163, 240, 0.34),   /* фиолетовый */
+      0 0 42px rgba(255, 255, 255, 0.26);
+  }
+}
+
+/* частицы-гуси */
+
+.particle,
+.point {
+  display: block;
+  opacity: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 100%;
+  transform-origin: center;
+}
+
+.particle {
+  --time: 5s;
+  position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  background: var(--main-color);
-  filter: blur(10px);
-}
-.radio-container .glider-container .glider::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  height: 100%;
-  width: 150px;
-  background: linear-gradient(
-    90deg,
-    var(--main-color-opacity) 0%,
-    rgba(0, 0, 0, 0) 100%
-  );
-}
-.radio-container label {
-  cursor: pointer;
-  padding: 1rem;
-  position: relative;
-  color: grey;
-  transition: all 0.3s ease-in-out;
+  left: 50%;
+  animation: particle calc(var(--time)) ease 1 -350ms;
 }
 
-.radio-container input:checked + label {
-  color: var(--main-color);
+.point {
+  background: var(--color);
+  opacity: 1;
+  animation: point calc(var(--time)) ease 1 -350ms;
 }
 
-.radio-container input:nth-of-type(1):checked ~ .glider-container .glider {
-  transform: translateY(0);
+@keyframes particle {
+  0% {
+    transform: rotate(0deg) translate(var(--start-x), var(--start-y));
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  70% {
+    transform: rotate(calc(var(--rotate) * 0.5))
+               translate(calc(var(--end-x) * 1.2), calc(var(--end-y) * 1.2));
+    opacity: 1;
+    animation-timing-function: ease;
+  }
+  85% {
+    transform: rotate(calc(var(--rotate) * 0.66))
+               translate(var(--end-x), var(--end-y));
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(calc(var(--rotate) * 1.2))
+               translate(calc(var(--end-x) * 0.5), calc(var(--end-y) * 0.5));
+    opacity: 1;
+  }
 }
 
-.radio-container input:nth-of-type(2):checked ~ .glider-container .glider {
-  transform: translateY(100%);
+@keyframes point {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  25% {
+    transform: scale(calc(var(--scale) * 0.25));
+  }
+  38% {
+    opacity: 1;
+  }
+  65% {
+    transform: scale(var(--scale));
+    opacity: 1;
+    animation-timing-function: ease;
+  }
+  85% {
+    transform: scale(var(--scale));
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
 }
 
-.radio-container input:nth-of-type(3):checked ~ .glider-container .glider {
-  transform: translateY(200%);
+/* прячем оригинальный текст внутри активного li –
+   вместо него рисуется текстовый слой .effect.text */
+.gooey-nav-container nav ul li.active a {
+  color: transparent !important;
+  text-shadow: none !important;
 }
 
-.radio-container input:nth-of-type(4):checked ~ .glider-container .glider {
-  transform: translateY(300%);
+.gooey-nav-container nav ul li.active a:hover {
+  color: transparent !important;
 }
 
-.radio-container input:nth-of-type(5):checked ~ .glider-container .glider {
-  transform: translateY(400%);
-}
-
-.radio-container input:nth-of-type(6):checked ~ .glider-container .glider {
-  transform: translateY(500%);
-}
-
-.radio-container input:nth-of-type(7):checked ~ .glider-container .glider {
-  transform: translateY(600%);
-}
-
-.radio-container input:nth-of-type(8):checked ~ .glider-container .glider {
-  transform: translateY(700%);
-}
-
-.radio-container input:nth-of-type(9):checked ~ .glider-container .glider {
-  transform: translateY(800%);
-}
-
-.radio-container input:nth-of-type(10):checked ~ .glider-container .glider {
-  transform: translateY(900%);
-}
-
+/* ================== LOGOUT BUTTON ================== */
 
 .user-profile {
   width: 131px;
   height: 51px;
+  margin-top: 30px;
   border-radius: 15px;
   cursor: pointer;
-  transition: 0.3s ease;
-  background: linear-gradient(
-    to bottom right,
-    #2e8eff 0%,
-    rgba(46, 142, 255, 0) 30%
-  );
-  background-color: rgba(46, 142, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
+
+  background:
+    linear-gradient(
+      to bottom right,
+      rgba(46, 142, 255, 0.9) 0%,
+      rgba(46, 142, 255, 0.0) 32%
+    );
+  background-color: rgba(46, 142, 255, 0.22);
+
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.15s ease;
 }
 
 .user-profile:hover,
-.user-profile:focus {
+.user-profile:focus-visible {
   background-color: rgba(46, 142, 255, 0.7);
-  box-shadow: 0 0 10px rgba(46, 142, 255, 0.5);
+  box-shadow: 0 0 10px rgba(46, 142, 255, 0.55);
   outline: none;
+  transform: translateY(-1px);
 }
 
 .user-profile-inner {
@@ -243,12 +446,12 @@ body {
   align-items: center;
   justify-content: center;
   gap: 15px;
-  color: #fff;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .user-profile-inner svg {
   width: 27px;
   height: 27px;
-  fill: #fff;
+  fill: #ffffff;
 }

@@ -1,6 +1,6 @@
 {% extends 'crm/index.html' %}
 {% block title %}Reports{% endblock %}
-
+{% load static %
 {% block content %}
 <h2 class="report-title">Reports</h2>
 <ul class="report-list">
@@ -56,9 +56,5 @@
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
   }
 
-  body {
-    background: linear-gradient(145deg, #141b2d, #1e2a40);
-    min-height: 100vh;
-  }
 </style>
 {% endblock %}
