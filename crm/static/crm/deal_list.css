@@ -336,10 +336,10 @@
 
 
 @font-face {
-  font-family: 'Lora-Bold';
-  src: url('/static/crm/fronts/Lora-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
+    font-family: 'Lora-Bold';
+    src: url('fonts/Lora-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
 }
 
 
@@ -499,7 +499,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   padding: 8px 10px;
-  color: #f1f5f9;
+  color: #000000;
   font-size: 14px;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
@@ -580,4 +580,8 @@
   width: 20px;
   height: 20px;
   filter: brightness(1.4);
+}
+
+.sidebar-form.editing .sidebar-buttons-container {
+  display: none;
 }

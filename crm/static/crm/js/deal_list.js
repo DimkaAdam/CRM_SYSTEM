@@ -276,6 +276,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const editDealBtn = byId("editDealBtn");
   if (editDealBtn) {
     editDealBtn.addEventListener("click", () => {
+      const sidebar = byId("viewDealSidebar");
+      sidebar && sidebar.classList.add("editing");
       const details = byId("dealDetailsContent");
       const form = byId("editDealForm");
       details && (details.style.display = "none");
@@ -318,6 +320,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const cancelEditBtn = byId("cancelEditBtn");
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener("click", () => {
+      const sidebar = byId("viewDealSidebar");
+      sidebar && sidebar.classList.remove("editing");
       const details = byId("dealDetailsContent");
       const form = byId("editDealForm");
       details && (details.style.display = "block");
@@ -358,6 +362,8 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload),
       })
         .then((data) => {
+          const sidebar = byId("viewDealSidebar");
+          sidebar && sidebar.classList.remove("editing");
           alert("Changes saved successfully!");
           byId("dealDate") && (byId("dealDate").innerText = data.date ?? "");
           byId("dealSupplier") &&

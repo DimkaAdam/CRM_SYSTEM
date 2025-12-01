@@ -1,171 +1,186 @@
-from django.shortcuts import render
-from django.shortcuts import get_object_or_404
-from .models import ReceivedMaterial
-import json
-from decimal import Decimal
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_protect
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.http import JsonResponse, HttpResponse
+from django.utils.timezone import localtime, now, make_aware
+from django.conf import settings
+
+from .models import ReceivedMaterial
+from .utils import business_day, get_current_business_day
+
+import json
+from decimal import Decimal, InvalidOperation
+from datetime import datetime, timedelta, timezone as dt_timezone
+from io import BytesIO
+import os
+
 import openpyxl
 from openpyxl.styles import Alignment, Font
-from io import BytesIO
-from .utils import business_day
-from datetime import timedelta
-from django.http import HttpResponse
-from datetime import datetime
-from django.views.decorators.csrf import ensure_csrf_cookie
-from .utils import current_window, previous_window
-from datetime import timezone as dt_timezone
-from django.utils.timezone import get_current_timezone, localtime, is_naive, make_aware
 
 
-
-CUTOFF_HOUR = 0;
-CUTOFF_MINUTE = 1;
+# =====================
+# Helper Functions
+# =====================
 
 def _parse_iso_local(s: str):
     """
-    Принимает 'YYYY-MM-DDTHH:MM:SS' (или 'YYYY-MM-DDTHH:MM', или просто 'YYYY-MM-DD')
-    в ЛОКАЛЬНОЙ TZ проекта и возвращает aware-datetime.
+    Parses ISO string 'YYYY-MM-DDTHH:MM:SS' (or variants) as local time.
+    Returns timezone-aware datetime in project's timezone.
     """
     s = (s or "").strip().replace(" ", "T")
-    # допускаем несколько форматов
+
     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M", "%Y-%m-%d"):
         try:
             dt = datetime.strptime(s, fmt)
             break
         except ValueError:
-            dt = None
-    if dt is None:
-        raise ValueError("Unsupported datetime format")
-
-    tz = get_current_timezone()
-    # zoneinfo/pytz-агностично:
-    if is_naive(dt):
-        return make_aware(dt, timezone=tz)
+            continue
     else:
-        return dt.astimezone(tz)
+        raise ValueError(f"Unsupported datetime format: {s}")
 
-def _business_day_for(dt_local):
+    # Make timezone-aware in project's timezone
+    if dt.tzinfo is None:
+        return make_aware(dt)
+    return dt
+
+
+def _get_date_range_for_period(period: str):
     """
-    Деловая дата (YYYY-MM-DD) для произвольного локального datetime
-    с отсечкой по 00:01 (или любому другому времени).
+    Returns (start_dt, end_dt) for a given period ('today', 'prev').
+    Both are timezone-aware datetimes.
     """
-    d = dt_local.date()
-    if (dt_local.hour < CUTOFF_HOUR) or (
-        dt_local.hour == CUTOFF_HOUR and dt_local.minute < CUTOFF_MINUTE
-    ):
-        d = d - timedelta(days=1)
-    return d
+    local_now = localtime(now())
+    today_date = local_now.date()
+
+    if period == 'today':
+        # From midnight today to now
+        start = make_aware(datetime.combine(today_date, datetime.min.time()))
+        end = local_now
+    elif period == 'prev':
+        # Yesterday: from midnight to 23:59:59
+        yesterday = today_date - timedelta(days=1)
+        start = make_aware(datetime.combine(yesterday, datetime.min.time()))
+        end = make_aware(datetime.combine(yesterday, datetime.max.time()))
+    else:
+        # Default to today
+        start = make_aware(datetime.combine(today_date, datetime.min.time()))
+        end = local_now
+
+    return start, end
 
 
-@ensure_csrf_cookie
-@login_required
+def _safe_decimal(value, default='0'):
+    """Safely converts value to Decimal with error handling."""
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return Decimal(default)
+
+
+# =====================
+# Views
+# =====================
+
 @ensure_csrf_cookie
 @login_required
 def home(request):
+    """
+    Main scales home page.
+    Shows today's records and provides manager view for history.
+    """
     is_manager = request.session.get("user_role") == "managers"
     company = request.session.get("company_slug")
 
-    start_loc, end_loc   = current_window()
-    pstart_loc, pend_loc = previous_window()
-
-    # Переводим в UTC через datetime.timezone.utc
-    start  = start_loc.astimezone(dt_timezone.utc)
-    end    = end_loc.astimezone(dt_timezone.utc)
-    pstart = pstart_loc.astimezone(dt_timezone.utc)
-    pend   = pend_loc.astimezone(dt_timezone.utc)
+    # Get today's and yesterday's records
+    start_today, end_today = _get_date_range_for_period('today')
+    start_prev, end_prev = _get_date_range_for_period('prev')
 
     qs = ReceivedMaterial.objects.all()
     if company:
         qs = qs.filter(company_slug=company)
 
-    received_today = qs.filter(created_at__gte=start,  created_at__lt=end).order_by("-created_at")
-    received_prev  = qs.filter(created_at__gte=pstart, created_at__lt=pend).order_by("-created_at")
+    received_today = qs.filter(
+        created_at__gte=start_today,
+        created_at__lt=end_today
+    ).order_by("-created_at")
+
+    received_prev = qs.filter(
+        created_at__gte=start_prev,
+        created_at__lt=end_prev
+    ).order_by("-created_at")
 
     return render(request, "scales/home.html", {
         "title": "Scales • Home",
         "is_manager": is_manager,
-        "start": start_loc, "end": end_loc,
-        "pstart": pstart_loc, "pend": pend_loc,
+        "start": start_today,
+        "end": end_today,
+        "pstart": start_prev,
+        "pend": end_prev,
         "received_today": received_today,
         "received_prev": received_prev,
     })
+
 
 @login_required
 @require_http_methods(["GET"])
 def api_list_received(request):
     """
     GET /scales/api/received/
-      Варианты:
-        - ?period=today | prev
-        - ИЛИ ?from=YYYY-MM-DDTHH:MM:SS&to=YYYY-MM-DDTHH:MM:SS  (локальное время)
-        - ИЛИ ?period=all (без окон; ограничим разумным лимитом)
 
-    Ответ: {"items": [ ... ]}
-      где у каждой записи:
-        - date: ISO в локальной TZ
-        - report_day: YYYY-MM-DD (деловая дата с отсечкой 19:00)
+    Query params:
+        - period=today|prev|all
+        - from=YYYY-MM-DDTHH:MM:SS&to=YYYY-MM-DDTHH:MM:SS (local time)
+
+    Returns: {"items": [...]}
+    Each item includes:
+        - id, date (ISO), report_day (YYYY-MM-DD), material, gross, net, supplier, tag
     """
     company = request.session.get("company_slug")
-    period  = (request.GET.get("period") or "").lower()
-    frm     = request.GET.get("from")
-    to      = request.GET.get("to")
+    period = (request.GET.get("period") or "").lower()
+    frm = request.GET.get("from")
+    to = request.GET.get("to")
 
     qs = ReceivedMaterial.objects.all()
     if company:
         qs = qs.filter(company_slug=company)
 
-    # 1) Фильтрация по period=today/prev
+    # Filter by period
     if period in ("today", "prev"):
-        s_loc, e_loc = (current_window() if period == "today" else previous_window())
-        # created_at хранится в UTC — переводим границы в UTC
-        s = s_loc.astimezone(dt_timezone.utc)
-        e = e_loc.astimezone(dt_timezone.utc)
-        qs = qs.filter(created_at__gte=s, created_at__lt=e)
+        start, end = _get_date_range_for_period(period)
+        qs = qs.filter(created_at__gte=start, created_at__lt=end)
 
-    # 2) Диапазон по from/to (локальные ISO-инпуты)
+    # Filter by custom date range
     elif frm and to:
         try:
-            from_loc = _parse_iso_local(frm)
-            to_loc   = _parse_iso_local(to)
-        except Exception:
-            return JsonResponse({"items": [], "error": "bad from/to"}, status=400)
-        # в БД created_at в UTC → границы тоже переводим в UTC
-        from_utc = from_loc.astimezone(dt_timezone.utc)
-        to_utc   = to_loc.astimezone(dt_timezone.utc)
-        qs = qs.filter(created_at__gte=from_utc, created_at__lte=to_utc)
+            from_dt = _parse_iso_local(frm)
+            to_dt = _parse_iso_local(to)
+            qs = qs.filter(created_at__gte=from_dt, created_at__lte=to_dt)
+        except ValueError as e:
+            return JsonResponse({
+                "items": [],
+                "error": str(e)
+            }, status=400)
 
-    # 3) period=all — без ограничений окна
-    elif period == "all":
-        pass  # оставляем qs как есть
+    # period=all or default to today
+    elif period != "all":
+        start, end = _get_date_range_for_period('today')
+        qs = qs.filter(created_at__gte=start, created_at__lt=end)
 
-    # 4) по умолчанию — текущий деловой день
-    else:
-        s_loc, e_loc = current_window()
-        s = s_loc.astimezone(dt_timezone.utc)
-        e = e_loc.astimezone(dt_timezone.utc)
-        qs = qs.filter(created_at__gte=s, created_at__lt=e)
-
-    # порядок и лимиты
+    # Limit results
     limit = 10000 if (frm and to) or period == "all" else 500
     qs = qs.order_by("-created_at")[:limit]
 
-    # Формируем ответ
+    # Build response
     items = []
     for r in qs:
-        # приводим created_at к локальному времени проекта
         created_local = localtime(r.created_at)
-        # report_day из БД, либо вычисляем от created_at (локально)
-        rep_day = r.report_day or _business_day_for(created_local)
+        rep_day = r.report_day or business_day(created_local)
 
         items.append({
             "id": r.id,
-            # Если у тебя есть r.date (DateField) для «календарной» даты — сохраняем,
-            # но фронту полезней видеть точное время создания:
             "date": created_local.isoformat(timespec="seconds"),
-            "report_day": rep_day.isoformat(),  # YYYY-MM-DD
+            "report_day": rep_day.isoformat(),
             "material": r.material,
             "gross": float(r.gross_kg),
             "net": float(r.net_kg),
@@ -175,29 +190,66 @@ def api_list_received(request):
 
     return JsonResponse({"items": items})
 
+
 @login_required
 @csrf_protect
 @require_http_methods(["POST"])
 def api_create_received(request):
-    # принимаем JSON: {material, gross, net, supplier, tag}
-    body = json.loads(request.body.decode("utf-8"))
+    """
+    POST /scales/api/received/create/
+    Body: {"material", "gross_kg", "net_kg", "supplier", "tag"}
+
+    Creates new ReceivedMaterial record.
+    """
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    # Validate required fields
+    required = ["material", "supplier", "tag"]
+    missing = [f for f in required if not body.get(f)]
+    if missing:
+        return JsonResponse({
+            "error": f"Missing required fields: {', '.join(missing)}"
+        }, status=400)
+
+    # Get company
     company = request.session.get("company_slug") or "unknown"
+
+    # Parse weights with error handling
+    try:
+        gross_kg = _safe_decimal(body.get("gross_kg") or body.get("gross"))
+        net_kg = _safe_decimal(body.get("net_kg") or body.get("net"))
+
+        if gross_kg <= 0 or net_kg <= 0:
+            raise ValueError("Weights must be positive")
+    except (ValueError, InvalidOperation) as e:
+        return JsonResponse({
+            "error": f"Invalid weight values: {e}"
+        }, status=400)
+
+    # Create record
     item = ReceivedMaterial.objects.create(
-        material  = body["material"].strip(),
-        gross_kg  = Decimal(str(body["gross"])),
-        net_kg    = Decimal(str(body["net"])),
-        supplier  = body["supplier"].strip(),
-        tag       = str(body["tag"]).strip(),
-        company_slug = company,
-        created_by = request.user if request.user.is_authenticated else None,
-        report_day=business_day(),
+        material=body["material"].strip(),
+        gross_kg=gross_kg,
+        net_kg=net_kg,
+        supplier=body["supplier"].strip(),
+        tag=str(body["tag"]).strip(),
+        company_slug=company,
+        created_by=request.user if request.user.is_authenticated else None,
     )
+
+    # Return created item
+    created_local = localtime(item.created_at)
+    rep_day = item.report_day or business_day(created_local)
+
     return JsonResponse({
         "ok": True,
         "item": {
             "id": item.id,
-            "date": localtime(item.created_at).isoformat(timespec="seconds"),
-            "report_day": (item.report_day or _business_day_for(localtime(item.created_at))).isoformat(),
+            "date": created_local.isoformat(timespec="seconds"),
+            "report_day": rep_day.isoformat(),
             "material": item.material,
             "gross": float(item.gross_kg),
             "net": float(item.net_kg),
@@ -205,78 +257,126 @@ def api_create_received(request):
             "tag": item.tag,
         }
     })
+
+
 @login_required
 @csrf_protect
 @require_http_methods(["POST"])
 def api_update_received(request, pk):
+    """
+    POST /scales/api/received/<pk>/update/
+    Body: {"material", "gross_kg", "net_kg", "supplier", "tag"}
+
+    Updates existing ReceivedMaterial record.
+    """
     company = request.session.get("company_slug")
     obj = get_object_or_404(ReceivedMaterial, pk=pk, company_slug=company)
-    body = json.loads(request.body.decode("utf-8"))
 
-    # безопасно обновим поля
-    obj.material = body.get("material", obj.material).strip()
-    obj.gross_kg = Decimal(str(body.get("gross", obj.gross_kg)))
-    obj.net_kg   = Decimal(str(body.get("net", obj.net_kg)))
-    obj.supplier = body.get("supplier", obj.supplier).strip()
-    obj.tag      = str(body.get("tag", obj.tag)).strip()
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    # Update fields with validation
+    if "material" in body:
+        obj.material = body["material"].strip()
+
+    if "gross_kg" in body or "gross" in body:
+        try:
+            obj.gross_kg = _safe_decimal(body.get("gross_kg") or body.get("gross"))
+        except (ValueError, InvalidOperation):
+            return JsonResponse({"error": "Invalid gross weight"}, status=400)
+
+    if "net_kg" in body or "net" in body:
+        try:
+            obj.net_kg = _safe_decimal(body.get("net_kg") or body.get("net"))
+        except (ValueError, InvalidOperation):
+            return JsonResponse({"error": "Invalid net weight"}, status=400)
+
+    if "supplier" in body:
+        obj.supplier = body["supplier"].strip()
+
+    if "tag" in body:
+        obj.tag = str(body["tag"]).strip()
+
     obj.save()
+
+    # Return updated item
+    created_local = localtime(obj.created_at)
+    rep_day = obj.report_day or business_day(created_local)
 
     return JsonResponse({
         "ok": True,
         "item": {
-            "id": obj.id, "date": obj.date.isoformat(),
-            "material": obj.material, "gross": float(obj.gross_kg),
-            "net": float(obj.net_kg), "supplier": obj.supplier, "tag": obj.tag
+            "id": obj.id,
+            "date": created_local.isoformat(timespec="seconds"),
+            "report_day": rep_day.isoformat(),
+            "material": obj.material,
+            "gross": float(obj.gross_kg),
+            "net": float(obj.net_kg),
+            "supplier": obj.supplier,
+            "tag": obj.tag,
         }
     })
+
 
 @login_required
 @csrf_protect
 @require_http_methods(["POST"])
 def api_delete_received(request, pk):
+    """
+    POST /scales/api/received/<pk>/delete/
+
+    Deletes ReceivedMaterial record.
+    """
     company = request.session.get("company_slug")
     obj = get_object_or_404(ReceivedMaterial, pk=pk, company_slug=company)
     obj.delete()
+
     return JsonResponse({"ok": True})
 
 
-
+# =====================
+# Export Views
+# =====================
 
 @login_required
 def export_daily_pdf(request):
     """
-    Daily Material Report (Scales) — PDF с пагинацией.
-    ?date=YYYY-MM-DD (по умолчанию сегодня).
+    Daily Material Report (Scales) — PDF with pagination.
+    Query: ?date=YYYY-MM-DD (defaults to today)
     """
-    # ===== Локальные импорты для PDF =====
-    from io import BytesIO
     from reportlab.lib.pagesizes import A4
     from reportlab.pdfgen import canvas
     from reportlab.platypus import Table, TableStyle
     from reportlab.lib import colors
     from reportlab.lib.utils import ImageReader
-    from django.conf import settings
-    import os
 
-    # ===== Входные =====
+    # Get parameters
     company_slug = request.session.get("company_slug") or "unknown"
     company_name = request.session.get("company_name") or company_slug
     date_str = request.GET.get("date") or datetime.now().strftime("%Y-%m-%d")
-    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
 
-    # ===== Данные =====
-    qs = (ReceivedMaterial.objects
-          .filter(company_slug=company_slug, date=date_obj)
-          .order_by("created_at"))
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
 
-    # Основная таблица
+    # Get records for the date
+    qs = (
+        ReceivedMaterial.objects
+        .filter(company_slug=company_slug, report_day=date_obj)
+        .order_by("created_at")
+    )
+
+    # Build main table data
     data = [["Material", "Gross (kg)", "Net (kg)", "Supplier", "Tag #"]]
-
+    total_gross = 0.0
     total_net = 0.0
 
-    # Сводки
-    by_material = {}            # {"CB": {"gross":..., "net":..., "count":...}, ...}
-    by_supplier_mat = {}        # {"Inno Food": {"CB": {"gross":..., "net":...}, "_subtotal": {...}}, ...}
+    # Summaries
+    by_material = {}
+    by_supplier_mat = {}
 
     for r in qs:
         g = float(r.gross_kg)
@@ -290,55 +390,58 @@ def export_daily_pdf(request):
             str(r.tag),
         ])
 
+        total_gross += g
         total_net += n
 
-        # — по материалу (общая сводка)
-        bucket = by_material.setdefault(r.material, {"gross": 0.0, "net": 0.0, "count": 0})
-        bucket["gross"] += g
-        bucket["net"] += n
-        bucket["count"] += 1
+        # By material
+        if r.material not in by_material:
+            by_material[r.material] = {"gross": 0.0, "net": 0.0, "count": 0}
+        by_material[r.material]["gross"] += g
+        by_material[r.material]["net"] += n
+        by_material[r.material]["count"] += 1
 
-        # — по поставщику и материалу
-        sup_map = by_supplier_mat.setdefault(r.supplier, {})
-        mat_map = sup_map.setdefault(r.material, {"gross": 0.0, "net": 0.0})
-        mat_map["gross"] += g
-        mat_map["net"] += n
-        # подсумма по поставщику
-        st = sup_map.setdefault("_subtotal", {"gross": 0.0, "net": 0.0})
-        st["gross"] += g
-        st["net"] += n
+        # By supplier and material
+        if r.supplier not in by_supplier_mat:
+            by_supplier_mat[r.supplier] = {"_subtotal": {"gross": 0.0, "net": 0.0}}
 
-    # ===== PDF init =====
+        sup_map = by_supplier_mat[r.supplier]
+        if r.material not in sup_map:
+            sup_map[r.material] = {"gross": 0.0, "net": 0.0}
+
+        sup_map[r.material]["gross"] += g
+        sup_map[r.material]["net"] += n
+        sup_map["_subtotal"]["gross"] += g
+        sup_map["_subtotal"]["net"] += n
+
+    # PDF setup
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=A4)
+    pdf_canvas = canvas.Canvas(buffer, pagesize=A4)
     PAGE_W, PAGE_H = A4
-
-    # Поля и ширина
     M_L, M_R, M_T, M_B = 30, 30, 40, 40
     usable_w = PAGE_W - M_L - M_R
 
-    # Лого
     logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'logo3.png')
 
-    # ===== Хелперы =====
     def draw_header():
         y = PAGE_H - 60
         if os.path.exists(logo_path):
-            pdf.drawImage(ImageReader(logo_path), M_L, y - 50, width=70, height=70, mask='auto')
+            pdf_canvas.drawImage(ImageReader(logo_path), M_L, y - 50, width=70, height=70, mask='auto')
 
-        pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawCentredString(PAGE_W / 2, y, "Daily Material Report")
+        pdf_canvas.setFont("Helvetica-Bold", 16)
+        pdf_canvas.drawCentredString(PAGE_W / 2, y, "Daily Material Report")
 
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.setFillColor(colors.darkblue)
-        pdf.drawRightString(PAGE_W - M_R, y, company_name)
+        pdf_canvas.setFont("Helvetica-Bold", 11)
+        pdf_canvas.setFillColor(colors.darkblue)
+        pdf_canvas.drawRightString(PAGE_W - M_R, y, company_name)
 
-        pdf.setFont("Helvetica", 9)
-        pdf.setFillColor(colors.HexColor("#555555"))
-        pdf.drawRightString(PAGE_W - M_R, y - 14, f"Date: {date_obj.strftime('%d %b %Y')}")
-        pdf.setStrokeColor(colors.HexColor("#aaaaaa"))
-        pdf.setLineWidth(0.5)
-        pdf.line(M_L, y - 50, PAGE_W - M_R, y - 50)
+        pdf_canvas.setFont("Helvetica", 9)
+        pdf_canvas.setFillColor(colors.HexColor("#555555"))
+        pdf_canvas.drawRightString(PAGE_W - M_R, y - 14, f"Date: {date_obj.strftime('%d %b %Y')}")
+
+        pdf_canvas.setStrokeColor(colors.HexColor("#aaaaaa"))
+        pdf_canvas.setLineWidth(0.5)
+        pdf_canvas.line(M_L, y - 50, PAGE_W - M_R, y - 50)
+
         return PAGE_H - 135
 
     def table_style():
@@ -353,9 +456,9 @@ def export_daily_pdf(request):
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
         ])
 
-    def ensure_space_or_new_page(y_cur, need=40):
+    def ensure_space(y_cur, need=40):
         if y_cur - need < M_B:
-            pdf.showPage()
+            pdf_canvas.showPage()
             return draw_header()
         return y_cur
 
@@ -363,15 +466,17 @@ def export_daily_pdf(request):
         header = all_rows[0]
         rows = all_rows[1:]
         i, y_cur = 0, start_y
+
         while i < len(rows):
-            # бинарный поиск вместимости
             low, high, fit = 1, len(rows) - i, 0
+
             while low <= high:
                 mid = (low + high) // 2
-                trial = [header] + rows[i:i+mid]
+                trial = [header] + rows[i:i + mid]
                 t_try = Table(trial, colWidths=col_widths)
                 t_try.setStyle(table_style())
                 _, h_try = t_try.wrap(usable_w, 0)
+
                 if y_cur - h_try >= M_B:
                     fit = mid
                     low = mid + 1
@@ -379,95 +484,125 @@ def export_daily_pdf(request):
                     high = mid - 1
 
             if fit == 0:
-                pdf.showPage()
+                pdf_canvas.showPage()
                 y_cur = draw_header()
                 continue
 
-            chunk = [header] + rows[i:i+fit]
+            chunk = [header] + rows[i:i + fit]
             t = Table(chunk, colWidths=col_widths)
             t.setStyle(table_style())
             w, h = t.wrap(usable_w, 0)
             x = M_L + (usable_w - w) / 2
-            t.drawOn(pdf, x, y_cur - h)
+            t.drawOn(pdf_canvas, x, y_cur - h)
             y_cur -= h + 10
             i += fit
 
             if i < len(rows) and y_cur < M_B + 60:
-                pdf.showPage()
+                pdf_canvas.showPage()
                 y_cur = draw_header()
+
         return y_cur
 
-    # ===== 1) Основная таблица =====
+    # Draw main table
     y = draw_header()
-    y = draw_table_paginated(data, y - 10, col_widths=[70, 110, 80, 80, 140, 80])
+    y = draw_table_paginated(data, y - 10, col_widths=[100, 80, 80, 120, 80])
 
-    # ===== 2) Общие итоги по дню =====
+    # Draw summaries by supplier
+    y -= 30
+    y = ensure_space(y, need=50)
+
+    pdf_canvas.setFont("Helvetica-Bold", 14)
+    pdf_canvas.drawString(M_L, y, "Summary by Supplier:")
+    y -= 20
 
     for supplier in sorted(by_supplier_mat.keys()):
+        y = ensure_space(y, need=30)
         mat_map = by_supplier_mat[supplier]
-        print(f'{supplier}:')
 
+        pdf_canvas.setFont("Helvetica-Bold", 11)
+        pdf_canvas.drawString(M_L, y, f"{supplier}:")
+        y -= 16
+
+        pdf_canvas.setFont("Helvetica", 10)
         for mat in sorted([k for k in mat_map.keys() if k != '_subtotal']):
-            val = mat_map[mat]['net']
+            val = mat_map[mat]["net"]
+            pdf_canvas.drawString(M_L + 20, y, f"{mat}: {val:.1f} kg")
+            y -= 14
 
-            print(f'    {mat}- {val: .1f} kg;')
-    y -= 40
-    y = ensure_space_or_new_page(y, need=40)
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(M_L, y, f"{supplier}:")
-    y -= 14
-    for mat in sorted([k for k in mat_map.keys() if k != '_subtotal']):
-        val = mat_map[mat]["net"]
-        pdf.drawString(M_L + 20, y, f"{mat} - {val:.1f} kg;")
-        y -= 14
+    # Totals
+    y -= 20
+    y = ensure_space(y, need=40)
+    pdf_canvas.setFont("Helvetica-Bold", 12)
+    pdf_canvas.drawString(M_L, y, f"Total Gross: {total_gross:.1f} kg")
+    y -= 16
+    pdf_canvas.drawString(M_L, y, f"Total Net: {total_net:.1f} kg")
 
-    # ===== Вывод =====
-    pdf.save()
+    # Finish PDF
+    pdf_canvas.save()
     buffer.seek(0)
-    resp = HttpResponse(buffer, content_type="application/pdf")
+
+    response = HttpResponse(buffer, content_type="application/pdf")
     filename = f"Scales_Daily_{company_slug}_{date_obj.strftime('%Y-%m-%d')}.pdf"
-    resp["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
-    return resp
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-
+    return response
 
 
 @login_required
 def export_monthly_excel(request):
-    """Excel отчёт за месяц (по текущей компании)."""
+    """
+    Excel report for a month (current company).
+    Query: ?month=YYYY-MM (defaults to current month)
+    """
     company = request.session.get("company_slug")
-    month_str = request.GET.get("month")  # формат YYYY-MM
-    if not month_str:
-        month_str = datetime.now().strftime("%Y-%m")
-    year, month = map(int, month_str.split("-"))
+    month_str = request.GET.get("month") or datetime.now().strftime("%Y-%m")
 
+    try:
+        year, month = map(int, month_str.split("-"))
+    except ValueError:
+        return HttpResponse("Invalid month format. Use YYYY-MM", status=400)
+
+    # Get records
     records = ReceivedMaterial.objects.filter(
         company_slug=company,
-        date__year=year,
-        date__month=month
-    ).order_by("date")
+        report_day__year=year,
+        report_day__month=month
+    ).order_by("report_day", "created_at")
 
+    # Create workbook
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Monthly Report"
 
+    # Header
     ws.append(["Date", "Material", "Gross (kg)", "Net (kg)", "Supplier", "Tag #"])
     for cell in ws[1]:
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal="center")
 
-    total_gross = total_net = 0
+    # Data
+    total_gross = 0.0
+    total_net = 0.0
+
     for r in records:
-        ws.append([r.date.strftime("%Y-%m-%d"), r.material, float(r.gross_kg), float(r.net_kg), r.supplier, r.tag])
+        ws.append([
+            r.report_day.strftime("%Y-%m-%d"),
+            r.material,
+            float(r.gross_kg),
+            float(r.net_kg),
+            r.supplier,
+            r.tag
+        ])
         total_gross += float(r.gross_kg)
         total_net += float(r.net_kg)
 
+    # Totals
     ws.append([])
     ws.append(["Totals", "", total_gross, total_net, "", ""])
     for cell in ws[ws.max_row]:
         cell.font = Font(bold=True)
 
-    # автоширина
+    # Auto-width columns
     for col in ws.columns:
         max_length = 0
         col_letter = col[0].column_letter
@@ -476,11 +611,16 @@ def export_monthly_excel(request):
                 max_length = max(max_length, len(str(cell.value)))
         ws.column_dimensions[col_letter].width = max_length + 2
 
+    # Save to buffer
     output = BytesIO()
     wb.save(output)
     output.seek(0)
 
-    response = HttpResponse(output.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
     filename = f"monthly_report_{company}_{month_str}.xlsx"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
     return response

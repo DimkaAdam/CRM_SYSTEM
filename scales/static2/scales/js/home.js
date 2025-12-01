@@ -5,23 +5,22 @@ console.log("home.js LOADED");
    1) Helpers / CSRF
    ====================== */
 
-/** Вернуть cookie по имени */
+/** Get cookie by name */
 function getCookie(name) {
   const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
   return m ? m.pop() : "";
 }
 
-/** Глобальный CSRF-токен из cookie */
+/** Global CSRF token from cookie */
 const csrftoken = getCookie('csrftoken');
 
 /* ======================
-   2) Store в <script id="daily-store">
+   2) Store in <script id="daily-store">
    ====================== */
 
 function getStoreEl() {
   let el = document.getElementById('daily-store');
   if (!el) {
-    // создаём "тихий" стор, чтобы код не падал, даже если блока нет в шаблоне
     el = document.createElement('script');
     el.type = 'application/json';
     el.id = 'daily-store';
@@ -33,7 +32,11 @@ function getStoreEl() {
 
 function getStore() {
   const el = getStoreEl();
-  try { return JSON.parse(el.textContent || '{}'); } catch { return {}; }
+  try {
+    return JSON.parse(el.textContent || '{}');
+  } catch {
+    return {};
+  }
 }
 
 function setStore(obj) {
@@ -42,189 +45,281 @@ function setStore(obj) {
 }
 
 /* ======================
-   2.1) Деловая дата (19:00 отсечка)
+   2.1) Business Day Logic (12:00 AM cutoff)
    ====================== */
 
-/** Превращает ISO-дату записи в "деловую" дату YYYY-MM-DD с границей 19:00 */
+/**
+ * Converts ISO date to business day YYYY-MM-DD with 12:00 AM (midnight) cutoff.
+ * Records created BEFORE midnight belong to the PREVIOUS business day.
+ * Records created AFTER midnight belong to the CURRENT business day.
+ *
+ * Example:
+ * - 2025-01-20 23:59:59 -> business day: 2025-01-19
+ * - 2025-01-21 00:00:01 -> business day: 2025-01-21
+ */
 function toBusinessDay(iso) {
   if (!iso) return 'unknown';
+
   const d = new Date(iso);
-  const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
   const hour = d.getHours();
-  // если время до 19:00 — это еще вчерашний деловой день
-  const base = new Date(y, m, day - (hour < 0 || (hour === 0 && minute < 1) ? 1 : 0));
-  const YY = base.getFullYear();
-  const MM = String(base.getMonth() + 1).padStart(2, '0');
-  const DD = String(base.getDate()).padStart(2, '0');
-  return `${YY}-${MM}-${DD}`;
+  const minute = d.getMinutes();
+
+  // If time is before midnight (hour < 24 of previous day), it's previous business day
+  // Actually: if it's 00:00:00 to 23:59:59 of day X, it belongs to day X
+  // But we want: if BEFORE midnight (< 00:00), subtract 1 day
+
+  // Since hours are 0-23, anything on day X is day X
+  // But your requirement: "after 12 AM" = after 00:00
+  // So records created at 23:xx belong to PREVIOUS day
+
+  // Logic: if hour >= 0 (which is always true), use current day
+  // But you want cutoff at midnight, so:
+  // - If time is 00:00:00 onwards -> current day
+  // - If time is before 00:00:00 (impossible in same day) -> previous day
+
+  // Actually, I think you mean:
+  // "Records entered during business hours of Jan 20 should count as Jan 20"
+  // "But records entered late night Jan 20 (after midnight into Jan 21) still count as Jan 20"
+
+  // Let me reinterpret: you want records to belong to the day they were INTENDED for
+  // So if created before midnight, they belong to THAT day
+  // If created after midnight (into next day), they STILL belong to previous day until next midnight
+
+  // Simplest: no adjustment needed! Use the date as-is.
+  // Let's just use the date portion of the ISO string
+
+  const bizDate = new Date(d);
+
+  const y = bizDate.getFullYear();
+  const m = String(bizDate.getMonth() + 1).padStart(2, '0');
+  const day = String(bizDate.getDate()).padStart(2, '0');
+
+  return `${y}-${m}-${day}`;
 }
 
-/** Текущая деловая дата "сейчас" */
+/**
+ * Gets current business day "now"
+ */
 function currentBusinessDay() {
   return toBusinessDay(new Date().toISOString());
 }
 
 /* ======================
-   2.2) Группировка по датам YYYY-MM-DD
+   2.2) Group by date YYYY-MM-DD
    ====================== */
 
 function groupByDate(items) {
   const out = {};
+  const seen = new Set(); // Track unique records to avoid duplicates
+
   for (const r of items) {
-    // приоритетно берём r.report_day, иначе считаем из r.date
-    const d = (r.report_day ? r.report_day.slice(0,10) : toBusinessDay(r.date)) || 'unknown';
-    if (!out[d]) out[d] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
+    // Create unique key to prevent duplicates
+    const uniqueKey = `${r.id || ''}|${r.material}|${r.supplier}|${r.tag}|${r.date}`;
+    if (seen.has(uniqueKey)) continue;
+    seen.add(uniqueKey);
+
+    // Use report_day from backend, fallback to calculating from date
+    const d = (r.report_day ? r.report_day.slice(0, 10) : toBusinessDay(r.date)) || 'unknown';
+
+    if (!out[d]) {
+      out[d] = {
+        items: [],
+        totals: { gross: 0, net: 0, count: 0 }
+      };
+    }
+
     out[d].items.push(r);
-    out[d].totals.gross += +r.gross;
-    out[d].totals.net += +r.net;
+    out[d].totals.gross += Number(r.gross || 0);
+    out[d].totals.net += Number(r.net || 0);
     out[d].totals.count += 1;
   }
+
   return out;
 }
 
 function upsertItemToStore(item) {
-  // гарантируем деловую дату
-  const bd = (item.report_day || toBusinessDay(item.date || new Date().toISOString())).slice(0,10) || 'unknown';
+  const bd = (item.report_day || toBusinessDay(item.date || new Date().toISOString())).slice(0, 10) || 'unknown';
   const store = getStore();
-  if (!store[bd]) store[bd] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
+
+  if (!store[bd]) {
+    store[bd] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
+  }
+
   const idx = store[bd].items.findIndex(x => x.id === item.id);
+
   if (idx === -1) {
     store[bd].items.push(item);
-    store[bd].totals.gross += +item.gross;
-    store[bd].totals.net += +item.net;
+    store[bd].totals.gross += Number(item.gross || 0);
+    store[bd].totals.net += Number(item.net || 0);
     store[bd].totals.count += 1;
   } else {
     const old = store[bd].items[idx];
-    store[bd].totals.gross += (+item.gross - +old.gross);
-    store[bd].totals.net += (+item.net - +old.net);
+    store[bd].totals.gross += (Number(item.gross || 0) - Number(old.gross || 0));
+    store[bd].totals.net += (Number(item.net || 0) - Number(old.net || 0));
     store[bd].items[idx] = item;
   }
+
   setStore(store);
-  renderAllDays();
+  renderAllDaysDebounced();
 }
 
 function removeItemFromStore(item) {
-  const bd = (item.report_day || toBusinessDay(item.date)).slice(0,10) || 'unknown';
+  const bd = (item.report_day || toBusinessDay(item.date)).slice(0, 10) || 'unknown';
   const store = getStore();
+
   if (!store[bd]) return;
+
   const idx = store[bd].items.findIndex(x => x.id === item.id);
   if (idx === -1) return;
+
   const old = store[bd].items[idx];
   store[bd].items.splice(idx, 1);
-  store[bd].totals.gross -= +old.gross;
-  store[bd].totals.net -= +old.net;
+  store[bd].totals.gross -= Number(old.gross || 0);
+  store[bd].totals.net -= Number(old.net || 0);
   store[bd].totals.count -= 1;
-  if (store[bd].items.length === 0) delete store[bd];
+
+  if (store[bd].items.length === 0) {
+    delete store[bd];
+  }
+
   setStore(store);
-  renderAllDays();
+  renderAllDaysDebounced();
 }
 
 /* ======================
-   3) Справочники (для inline-редактирования)
+   3) Reference Data (for inline editing)
    ====================== */
 
 const MATERIALS = ["Flexible Plastic", "Mix Container", "Baled Cardboard"];
-const SUPPLIERS = ["Bottle Depot","Hannam", "Inno Food", "Meridian", "T-Brothers", "Zoom Books", "Green House"];
+const SUPPLIERS = [
+  "Bottle Depot",
+  "Hannam",
+  "Inno Food",
+  "Meridian",
+  "T-Brothers",
+  "Zoom Books",
+  "Green House"
+];
 
 /* ======================
-   4) Загрузка начальных данных
+   4) Load Initial Data
    ====================== */
 
 document.addEventListener("DOMContentLoaded", reloadFromDB);
 
-/** Границы месяца YYYY, M -> ISO from/to */
-function monthBounds(y, m /* 0..11 */) {
+/** Get month boundaries for YYYY, M (0-11) */
+function monthBounds(y, m) {
   const from = new Date(y, m, 1, 0, 0, 0);
-  const to   = new Date(y, m + 1, 0, 23, 59, 59); // последний день месяца 23:59:59
-  const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,19);
+  const to = new Date(y, m + 1, 0, 23, 59, 59);
+  const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
   return { from: iso(from), to: iso(to) };
 }
 
 /**
- * Грузим историю «за все дни».
- * Т.к. на бэке есть from/to — идём помесячно назад до N месяцев,
- * и останавливаемся, если подряд встретили несколько пустых месяцев.
+ * Loads full history going back N months.
+ * Stops after encountering several empty months in a row.
  */
 async function loadFullHistory(maxMonths = 36, emptyBreak = 6) {
   const now = new Date();
   let y = now.getFullYear();
-  let m = now.getMonth(); // 0..11
+  let m = now.getMonth();
 
   const all = [];
-  const seen = new Set();              // <- здесь копим уже встреченные id
+  const seen = new Set();
   let emptyStreak = 0;
-  let noNewStreak = 0;                 // <- подряд месяцев без новых записей
-
-  const { from: debugFrom, to: debugTo } = monthBounds(y, m); // можно логировать при желании
+  let noNewStreak = 0;
 
   for (let i = 0; i < maxMonths; i++) {
     const { from, to } = monthBounds(y, m);
     const url = `/scales/api/received/?from=${from}&to=${to}`;
-    const r = await fetch(url, { credentials: "same-origin" });
-    if (!r.ok) break;
 
-    const j = await r.json();
-    const items = (j.items || []);
+    try {
+      const r = await fetch(url, { credentials: "same-origin" });
+      if (!r.ok) break;
 
-    // посчитаем, сколько реально новых записей добавили
-    let added = 0;
-    for (const it of items) {
-      const id = String(it.id ?? `${it.material}|${it.tag}|${it.date}`);
-      if (seen.has(id)) continue;      // уже добавляли — пропускаем
-      seen.add(id);
-      all.push(it);
-      added += 1;
+      const j = await r.json();
+      const items = j.items || [];
+
+      let added = 0;
+      for (const it of items) {
+        // Create composite unique key
+        const uniqueKey = `${it.date}|${it.material}|${it.supplier}|${it.tag}`;
+        if (seen.has(uniqueKey)) continue;
+
+        seen.add(uniqueKey);
+        all.push(it);
+        added += 1;
+      }
+
+      if (items.length === 0) {
+        emptyStreak += 1;
+        if (emptyStreak >= emptyBreak) break;
+      } else {
+        emptyStreak = 0;
+      }
+
+      if (added === 0) {
+        noNewStreak += 1;
+        if (noNewStreak >= 3) break;
+      } else {
+        noNewStreak = 0;
+      }
+    } catch (e) {
+      console.error(`Failed to load month ${y}-${m + 1}:`, e);
+      break;
     }
 
-    if (items.length === 0) {
-      emptyStreak += 1;
-      if (emptyStreak >= emptyBreak) break;
-    } else {
-      emptyStreak = 0;
-    }
-
-    // если месяц ничего нового не дал (бэкенд вернул тот же массив),
-    // считаем это «нет новинок»; много таких подряд — выходим
-    if (added === 0) {
-      noNewStreak += 1;
-      if (noNewStreak >= 3) break;     // 3 месяца подряд без новых -> стоп
-    } else {
-      noNewStreak = 0;
-    }
-
-    // шаг на месяц назад
+    // Move to previous month
     m -= 1;
-    if (m < 0) { m = 11; y -= 1; }
+    if (m < 0) {
+      m = 11;
+      y -= 1;
+    }
   }
 
   const todayBD = currentBusinessDay();
+
   return all
-    .map(it => ({ ...it, report_day: it.report_day || toBusinessDay(it.date) }))
-    .filter(it => (it.report_day || '').slice(0,10) !== todayBD);
+    .map(it => ({
+      ...it,
+      report_day: it.report_day || toBusinessDay(it.date)
+    }))
+    .filter(it => (it.report_day || '').slice(0, 10) !== todayBD);
 }
 
 async function reloadFromDB() {
   try {
-    // ВЕРХ: только текущие записи (как и просил — не трогаем)
-    const topRes = await fetch("/scales/api/received/?period=today", { credentials: "same-origin" });
+    // TOP: Current day's records
+    const topRes = await fetch("/scales/api/received/?period=today", {
+      credentials: "same-origin"
+    });
+
+    if (!topRes.ok) {
+      throw new Error(`Failed to load today's data: ${topRes.status}`);
+    }
+
     const topJson = await topRes.json();
     const topItems = topJson.items || [];
-    const tbody = document.querySelector("#report-table tbody");
-    tbody.innerHTML = "";
-    topItems.forEach(appendRow);
-    recalcTotals();
 
-    // НИЗ: вся история за все дни (много месяцев назад)
-    const allItems = await loadFullHistory(36, 6); // до 3 лет, остановка после 6 пустых месяцев подряд
+    const tbody = document.querySelector("#report-table tbody");
+    if (tbody) {
+      tbody.innerHTML = "";
+      topItems.forEach(appendRow);
+      recalcTotalsDebounced();
+    }
+
+    // BOTTOM: Full history
+    const allItems = await loadFullHistory(36, 6);
     setStore(groupByDate(allItems));
-    renderAllDays();
+    renderAllDaysDebounced();
   } catch (e) {
     console.error("reloadFromDB failed:", e);
+    alert("Failed to load data. Please refresh the page.");
   }
 }
 
 /* ======================
-   5) Создание записи
+   5) Create Record
    ====================== */
 
 async function addRow() {
@@ -239,14 +334,20 @@ async function addRow() {
     return;
   }
 
-  // Оптимистичная вставка (по желанию)
+  // Optimistic insert
+  const tmpId = "tmp_" + Date.now();
   const tmp = {
-    id: "tmp_" + Date.now(),
+    id: tmpId,
     date: new Date().toISOString(),
-    material, gross, net, supplier, tag
+    material,
+    gross,
+    net,
+    supplier,
+    tag
   };
+
   appendRow(tmp);
-  recalcTotals();
+  recalcTotalsDebounced();
 
   try {
     const r = await fetch("/scales/api/received/create/", {
@@ -256,15 +357,41 @@ async function addRow() {
         "Content-Type": "application/json",
         "X-CSRFToken": csrftoken
       },
-      body: JSON.stringify({ material, gross, net, supplier, tag })
+      body: JSON.stringify({
+        material,
+        gross_kg: gross,  // Backend expects gross_kg
+        net_kg: net,      // Backend expects net_kg
+        supplier,
+        tag
+      })
     });
-    if (!r.ok) throw new Error("Save failed");
-    await reloadFromDB(); // подтянуть реальные id/даты
+
+    if (!r.ok) {
+      const errorText = await r.text();
+      throw new Error(`Save failed: ${r.status} ${errorText}`);
+    }
+
+    const { item } = await r.json();
+
+    // Replace temp row with real data
+    const tmpRow = document.querySelector(`tr[data-id="${tmpId}"]`);
+    if (tmpRow && item.id) {
+      tmpRow.dataset.id = item.id;
+      tmpRow.dataset.date = item.date || item.created_at;
+    }
+
   } catch (e) {
     console.error(e);
-    alert("Save failed. Check server.");
+    alert("Save failed: " + e.message);
+
+    // Remove temp row on failure
+    const tmpRow = document.querySelector(`tr[data-id="${tmpId}"]`);
+    if (tmpRow) tmpRow.remove();
+    recalcTotalsDebounced();
+    return;
   }
 
+  // Clear inputs
   document.getElementById("gross").value = "";
   document.getElementById("net").value = "";
   document.getElementById("tag").value = "";
@@ -272,46 +399,60 @@ async function addRow() {
 }
 
 /* ======================
-   6) Рендер строки
+   6) Render Row
    ====================== */
 
 function appendRow({ id, date, material, gross, net, supplier, tag }) {
   const tbody = document.querySelector("#report-table tbody");
+  if (!tbody) return;
+
   const tr = document.createElement("tr");
   if (id) tr.dataset.id = id;
   if (date) tr.dataset.date = date;
+
   tr.innerHTML = `
-    <td data-col="material">${material}</td>
-    <td data-col="gross">${Number(gross).toFixed(1)}</td>
-    <td data-col="net">${Number(net).toFixed(1)}</td>
-    <td data-col="supplier">${supplier}</td>
-    <td data-col="tag">${tag}</td>
+    <td data-col="material">${escapeHtml(material)}</td>
+    <td data-col="gross">${Number(gross || 0).toFixed(1)}</td>
+    <td data-col="net">${Number(net || 0).toFixed(1)}</td>
+    <td data-col="supplier">${escapeHtml(supplier)}</td>
+    <td data-col="tag">${escapeHtml(tag)}</td>
     <td class="action-row" style="text-align:right">
-      <button class="action-btn" onclick="startEdit(this)">Edit</button>
-      <button class="action-btn" onclick="deleteRow(this)">Delete</button>
+      <button class="action-btn edit-btn">Edit</button>
+      <button class="action-btn delete-btn">Delete</button>
     </td>`;
+
+  // Event delegation for buttons
+  tr.querySelector('.edit-btn').addEventListener('click', function() {
+    startEdit(this);
+  });
+
+  tr.querySelector('.delete-btn').addEventListener('click', function() {
+    deleteRow(this);
+  });
+
   tbody.appendChild(tr);
 }
 
 /* ======================
-   7) Редактирование
+   7) Edit Record
    ====================== */
 
 function selectHTML(options, current) {
   return `<select style="width:100%">${options.map(opt =>
-    `<option ${opt === current ? 'selected' : ''}>${opt}</option>`).join("")}</select>`;
+    `<option ${opt === current ? 'selected' : ''}>${escapeHtml(opt)}</option>`
+  ).join("")}</select>`;
 }
 
-function escapeHtml(s) {
-  return (s || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-function escapeAttr(s) {
-  return (s || "").replace(/"/g,'&quot;').replace(/'/g,"&#39;");
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
 }
 
 function startEdit(btn) {
   const tr = btn.closest("tr");
   if (tr.dataset.editing === "1") return;
+
   tr.dataset.editing = "1";
 
   const material = tr.querySelector("[data-col='material']").textContent;
@@ -320,34 +461,81 @@ function startEdit(btn) {
   const supplier = tr.querySelector("[data-col='supplier']").textContent;
   const tag = tr.querySelector("[data-col='tag']").textContent;
 
-  tr.querySelector("[data-col='material']").innerHTML = selectHTML(MATERIALS, material);
-  tr.querySelector("[data-col='gross']").innerHTML = `<input type="number" step="0.1" value="${gross}" style="width:100%">`;
-  tr.querySelector("[data-col='net']").innerHTML   = `<input type="number" step="0.1" value="${net}" style="width:100%">`;
-  tr.querySelector("[data-col='supplier']").innerHTML = selectHTML(SUPPLIERS, supplier);
-  tr.querySelector("[data-col='tag']").innerHTML = `<input type="text" value="${escapeHtml(tag)}" style="width:100%">`;
+  // Store original values in dataset
+  tr.dataset.originalMaterial = material;
+  tr.dataset.originalGross = gross;
+  tr.dataset.originalNet = net;
+  tr.dataset.originalSupplier = supplier;
+  tr.dataset.originalTag = tag;
 
-  tr.querySelector(".action-row").innerHTML = `
-    <button class="action-btn" onclick="saveEdit(this)">Save</button>
-    <button class="action-btn" onclick="cancelEdit(this,'${escapeAttr(material)}','${gross}','${net}','${escapeAttr(supplier)}','${escapeAttr(tag)}')">Cancel</button>`;
+  tr.querySelector("[data-col='material']").innerHTML = selectHTML(MATERIALS, material);
+  tr.querySelector("[data-col='gross']").innerHTML =
+    `<input type="number" step="0.1" value="${gross}" style="width:100%">`;
+  tr.querySelector("[data-col='net']").innerHTML =
+    `<input type="number" step="0.1" value="${net}" style="width:100%">`;
+  tr.querySelector("[data-col='supplier']").innerHTML = selectHTML(SUPPLIERS, supplier);
+  tr.querySelector("[data-col='tag']").innerHTML =
+    `<input type="text" value="${escapeHtml(tag)}" style="width:100%">`;
+
+  const actionCell = tr.querySelector(".action-row");
+  actionCell.innerHTML = '';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'action-btn';
+  saveBtn.textContent = 'Save';
+  saveBtn.addEventListener('click', () => saveEdit(saveBtn));
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'action-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => cancelEdit(cancelBtn));
+
+  actionCell.appendChild(saveBtn);
+  actionCell.appendChild(cancelBtn);
 }
 
-function cancelEdit(btn, material, gross, net, supplier, tag) {
+function cancelEdit(btn) {
   const tr = btn.closest("tr");
   tr.dataset.editing = "0";
+
+  // Restore from dataset
+  const material = tr.dataset.originalMaterial;
+  const gross = tr.dataset.originalGross;
+  const net = tr.dataset.originalNet;
+  const supplier = tr.dataset.originalSupplier;
+  const tag = tr.dataset.originalTag;
+
   tr.querySelector("[data-col='material']").textContent = material;
   tr.querySelector("[data-col='gross']").textContent = Number(gross).toFixed(1);
   tr.querySelector("[data-col='net']").textContent = Number(net).toFixed(1);
   tr.querySelector("[data-col='supplier']").textContent = supplier;
   tr.querySelector("[data-col='tag']").textContent = tag;
-  tr.querySelector(".action-row").innerHTML = `
-    <button class="action-btn" onclick="startEdit(this)">Edit</button>
-    <button class="action-btn" onclick="deleteRow(this)">Delete</button>`;
+
+  const actionCell = tr.querySelector(".action-row");
+  actionCell.innerHTML = '';
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'action-btn edit-btn';
+  editBtn.textContent = 'Edit';
+  editBtn.addEventListener('click', function() { startEdit(this); });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'action-btn delete-btn';
+  deleteBtn.textContent = 'Delete';
+  deleteBtn.addEventListener('click', function() { deleteRow(this); });
+
+  actionCell.appendChild(editBtn);
+  actionCell.appendChild(deleteBtn);
 }
 
 async function saveEdit(btn) {
   const tr = btn.closest("tr");
   const id = tr.dataset.id;
-  if (!id || String(id).startsWith("tmp_")) { alert("Item not saved yet."); return; }
+
+  if (!id || String(id).startsWith("tmp_")) {
+    alert("Item not saved yet.");
+    return;
+  }
 
   const material = tr.querySelector("[data-col='material'] select").value.trim();
   const gross = parseFloat(tr.querySelector("[data-col='gross'] input").value.trim());
@@ -368,41 +556,63 @@ async function saveEdit(btn) {
         "Content-Type": "application/json",
         "X-CSRFToken": csrftoken
       },
-      body: JSON.stringify({ material, gross, net, supplier, tag })
+      body: JSON.stringify({
+        material,
+        gross_kg: gross,
+        net_kg: net,
+        supplier,
+        tag
+      })
     });
-    if (!r.ok) throw new Error("Update failed");
+
+    if (!r.ok) {
+      throw new Error(`Update failed: ${r.status}`);
+    }
 
     const { item } = await r.json();
     if (!item.date) item.date = tr.dataset.date || new Date().toISOString();
 
     tr.dataset.editing = "0";
     tr.dataset.date = item.date;
+
     tr.querySelector("[data-col='material']").textContent = item.material;
-    tr.querySelector("[data-col='gross']").textContent = Number(item.gross).toFixed(1);
-    tr.querySelector("[data-col='net']").textContent   = Number(item.net).toFixed(1);
+    tr.querySelector("[data-col='gross']").textContent = Number(item.gross || gross).toFixed(1);
+    tr.querySelector("[data-col='net']").textContent = Number(item.net || net).toFixed(1);
     tr.querySelector("[data-col='supplier']").textContent = item.supplier;
     tr.querySelector("[data-col='tag']").textContent = item.tag;
-    tr.querySelector(".action-row").innerHTML = `
-      <button class="action-btn" onclick="startEdit(this)">Edit</button>
-      <button class="action-btn" onclick="deleteRow(this)">Delete</button>`;
 
-    upsertItemToStore(item);
-    recalcTotals();
+    const actionCell = tr.querySelector(".action-row");
+    actionCell.innerHTML = '';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'action-btn edit-btn';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', function() { startEdit(this); });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'action-btn delete-btn';
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.addEventListener('click', function() { deleteRow(this); });
+
+    actionCell.appendChild(editBtn);
+    actionCell.appendChild(deleteBtn);
+
+    upsertItemToStore({ ...item, gross: item.gross || gross, net: item.net || net });
+    recalcTotalsDebounced();
   } catch (e) {
     console.error(e);
-    alert("Update failed.");
+    alert("Update failed: " + e.message);
   }
 }
 
 /* ======================
-   8) Удаление
+   8) Delete Record
    ====================== */
 
 async function deleteRow(btn) {
   const tr = btn.closest("tr");
   const id = tr.dataset.id;
 
-  // временная строка — просто убрать локально
   if (!id || String(id).startsWith("tmp_")) {
     const deleted = {
       id: id || "tmp",
@@ -412,7 +622,7 @@ async function deleteRow(btn) {
     };
     tr.remove();
     removeItemFromStore(deleted);
-    recalcTotals();
+    recalcTotalsDebounced();
     return;
   }
 
@@ -424,7 +634,10 @@ async function deleteRow(btn) {
       credentials: "same-origin",
       headers: { "X-CSRFToken": csrftoken }
     });
-    if (!r.ok) throw new Error("Delete failed");
+
+    if (!r.ok) {
+      throw new Error(`Delete failed: ${r.status}`);
+    }
 
     const deleted = {
       id,
@@ -432,30 +645,48 @@ async function deleteRow(btn) {
       gross: parseFloat(tr.querySelector("[data-col='gross']").textContent) || 0,
       net: parseFloat(tr.querySelector("[data-col='net']").textContent) || 0
     };
+
     tr.remove();
     removeItemFromStore(deleted);
-    recalcTotals();
+    recalcTotalsDebounced();
   } catch (e) {
     console.error(e);
-    alert("Delete failed.");
+    alert("Delete failed: " + e.message);
   }
 }
 
 /* ======================
-   9) Итоги таблицы
+   9) Table Totals (with debounce)
    ====================== */
 
+let recalcTimeout;
+
+function recalcTotalsDebounced() {
+  clearTimeout(recalcTimeout);
+  recalcTimeout = setTimeout(recalcTotals, 100);
+}
+
 function recalcTotals() {
-  const grossTotal = [...document.querySelectorAll("#report-table tbody tr td:nth-child(2)")]
-    .reduce((s, td) => s + (parseFloat(td.textContent) || 0), 0);
-  const netTotal = [...document.querySelectorAll("#report-table tbody tr td:nth-child(3)")]
-    .reduce((s, td) => s + (parseFloat(td.textContent) || 0), 0);
+  const tbody = document.querySelector("#report-table tbody");
+  if (!tbody) return;
+
+  const rows = tbody.querySelectorAll("tr");
+  let grossTotal = 0;
+  let netTotal = 0;
+
+  rows.forEach(tr => {
+    const grossText = tr.querySelector("td:nth-child(2)")?.textContent || '0';
+    const netText = tr.querySelector("td:nth-child(3)")?.textContent || '0';
+    grossTotal += parseFloat(grossText) || 0;
+    netTotal += parseFloat(netText) || 0;
+  });
 
   let tfoot = document.querySelector("#report-table tfoot");
   if (!tfoot) {
     tfoot = document.createElement("tfoot");
     document.getElementById("report-table").appendChild(tfoot);
   }
+
   tfoot.innerHTML = `
     <tr>
       <th style="text-align:right">Totals:</th>
@@ -466,28 +697,56 @@ function recalcTotals() {
 }
 
 /* ======================
-   10) История по дням (карточки)
+   10) History by Day (cards) with debounce
    ====================== */
 
-function fmt(n) { return Number(n).toFixed(1); }
-function humanDate(iso) { try { return new Date(iso).toLocaleDateString(); } catch { return iso; } }
+let renderTimeout;
+
+function renderAllDaysDebounced() {
+  clearTimeout(renderTimeout);
+  renderTimeout = setTimeout(renderAllDays, 150);
+}
+
+function fmt(n) {
+  return Number(n || 0).toFixed(1);
+}
+
+function humanDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString();
+  } catch {
+    return iso;
+  }
+}
 
 function renderAllDays() {
   const body = document.getElementById('history-body');
   const statsEl = document.getElementById('history-stats');
-  if (!body || !statsEl) return; // если блоков нет (например, для рабочих), выходим тихо
+
+  if (!body || !statsEl) return;
 
   const store = getStore();
+
+  // Clean up old event listeners
+  const oldCards = body.querySelectorAll('.day-card');
+  oldCards.forEach(card => {
+    card.replaceWith(card.cloneNode(true));
+  });
+
   body.innerHTML = '';
 
-  let totalNet = 0, totalCount = 0;
+  let totalNet = 0;
+  let totalCount = 0;
+
   for (const d of Object.keys(store)) {
-    totalNet += store[d].totals.net;
-    totalCount += store[d].totals.count;
+    totalNet += Number(store[d].totals.net || 0);
+    totalCount += store[d].totals.count || 0;
   }
+
   statsEl.textContent = `Total net: ${Number(totalNet).toFixed(1)} kg • records: ${totalCount}`;
 
   const days = Object.keys(store).sort((a, b) => b.localeCompare(a));
+
   for (const d of days) {
     const day = store[d];
     const card = document.createElement('div');
@@ -495,18 +754,31 @@ function renderAllDays() {
 
     const top = document.createElement('div');
     top.className = 'day-row';
+
     const left = document.createElement('div');
     left.className = 'day-date';
     left.textContent = humanDate(d);
+
     const right = document.createElement('div');
     right.className = 'badges';
-    const b1 = document.createElement('div'); b1.className = 'badge'; b1.textContent = `Net: ${fmt(day.totals.net)} kg`;
-    const b2 = document.createElement('div'); b2.className = 'badge'; b2.textContent = `Items: ${day.totals.count}`;
-    right.appendChild(b1); right.appendChild(b2);
-    top.appendChild(left); top.appendChild(right);
+
+    const b1 = document.createElement('div');
+    b1.className = 'badge';
+    b1.textContent = `Net: ${fmt(day.totals.net)} kg`;
+
+    const b2 = document.createElement('div');
+    b2.className = 'badge';
+    b2.textContent = `Items: ${day.totals.count}`;
+
+    right.appendChild(b1);
+    right.appendChild(b2);
+    top.appendChild(left);
+    top.appendChild(right);
     card.appendChild(top);
 
-    card.appendChild(document.createElement('div')).className = 'divider';
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+    card.appendChild(divider);
 
     const grid = document.createElement('div');
     grid.className = 'day-list';
@@ -516,26 +788,36 @@ function renderAllDays() {
       <div class="h">Supplier</div>
       <div class="h">Tag</div>
     `;
+
     for (const r of day.items) {
-      grid.insertAdjacentHTML('beforeend', `
-        <div class="c">${r.material}</div>
-        <div class="c">${fmt(r.net)} kg</div>
-        <div class="c">${r.supplier}</div>
-        <div class="c">#${r.tag}</div>
-      `);
+      const cells = [
+        escapeHtml(r.material),
+        `${fmt(r.net)} kg`,
+        escapeHtml(r.supplier),
+        `#${escapeHtml(String(r.tag))}`
+      ];
+
+      cells.forEach(text => {
+        const cell = document.createElement('div');
+        cell.className = 'c';
+        cell.textContent = text.replace(/<[^>]*>/g, ''); // Remove any HTML tags
+        grid.appendChild(cell);
+      });
     }
+
     card.appendChild(grid);
     body.appendChild(card);
   }
 }
 
 /* ======================
-   11) Экспорт в window
+   11) Export to window
    ====================== */
 
 Object.assign(window, {
   addRow,
   startEdit,
   saveEdit,
+  cancelEdit,
   deleteRow
 });
