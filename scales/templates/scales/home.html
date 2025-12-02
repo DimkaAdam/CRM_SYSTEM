@@ -15,11 +15,14 @@
 </head>
 <body class="xl-ui">
 <div class="card">
-  <h1>Material Received Report</h1>
-  <p style="color:#94a3b8;margin:4px 0 20px 0;">Date: {% now "d/m/Y" %}</p>
+  <span class="glow"></span>  <!-- glow layer -->
 
-  <!-- Форма добавления -->
-  <div class="form-grid">
+  <div class="inner">
+    <h1>Material Received Report</h1>
+    <p style="color:#94a3b8;margin:4px 0 20px 0;">Date: {% now "d/m/Y" %}</p>
+
+    <!-- Форма + таблица + кнопки остаются без изменений -->
+    <div class="form-grid">
     <div>
       <label>Material:</label>
       <select id="material">
@@ -84,16 +87,15 @@
     <tbody></tbody>
   </table>
 
-  <div style="margin-top:20px;text-align:right;">
-    <form method="get" action="/scales/export/daily/" style="display:inline;">
-      <button>📄 Export Daily PDF</button>
-    </form>
-    <form method="get" action="/scales/export/monthly/" style="display:inline;margin-left:10px;">
-      <button>📊 Export Monthly Excel</button>
-    </form>
+   <div style="margin-top:20px;text-align:right;">
+      <form method="get" action="/scales/export/daily/" style="display:inline;">
+        <button>📄 Export Daily PDF</button>
+      </form>
+      <form method="get" action="/scales/export/monthly/" style="display:inline;margin-left:10px;">
+        <button>📊 Export Monthly Excel</button>
+      </form>
+    </div>
   </div>
-
-
 </div>
 
 <!-- История по дням (отдельная карточка) -->

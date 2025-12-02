@@ -551,28 +551,41 @@ def export_daily_pdf(request):
 @login_required
 def export_monthly_excel(request):
     """
-    Excel report for a month (current company).
-    Query: ?month=YYYY-MM (defaults to current month)
+    Excel report for ReceivedMaterial.
+
+    По умолчанию: все записи компании.
+    Если передан ?month=YYYY-MM — только указанный месяц.
     """
     company = request.session.get("company_slug")
-    month_str = request.GET.get("month") or datetime.now().strftime("%Y-%m")
 
-    try:
-        year, month = map(int, month_str.split("-"))
-    except ValueError:
-        return HttpResponse("Invalid month format. Use YYYY-MM", status=400)
+    month_str = request.GET.get("month")  # None / "" / "2025-11" / "all"
 
-    # Get records
-    records = ReceivedMaterial.objects.filter(
-        company_slug=company,
-        report_day__year=year,
-        report_day__month=month
-    ).order_by("report_day", "created_at")
+    qs = ReceivedMaterial.objects.filter(company_slug=company)
+
+    # Если указан конкретный месяц — фильтруем по нему
+    if month_str and month_str.lower() != "all":
+        try:
+            year, month = map(int, month_str.split("-"))
+        except ValueError:
+            return HttpResponse("Invalid month format. Use YYYY-MM or 'all'", status=400)
+
+        qs = qs.filter(
+            report_day__year=year,
+            report_day__month=month
+        )
+        filename_suffix = month_str
+        sheet_title = f"Report {month_str}"
+    else:
+        # Без month или month=all — всё
+        filename_suffix = "all"
+        sheet_title = "Full History"
+
+    records = qs.order_by("report_day", "created_at")
 
     # Create workbook
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Monthly Report"
+    ws.title = sheet_title
 
     # Header
     ws.append(["Date", "Material", "Gross (kg)", "Net (kg)", "Supplier", "Tag #"])
@@ -586,7 +599,7 @@ def export_monthly_excel(request):
 
     for r in records:
         ws.append([
-            r.report_day.strftime("%Y-%m-%d"),
+            r.report_day.strftime("%Y-%m-%d") if r.report_day else "",
             r.material,
             float(r.gross_kg),
             float(r.net_kg),
@@ -620,7 +633,7 @@ def export_monthly_excel(request):
         output.getvalue(),
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    filename = f"monthly_report_{company}_{month_str}.xlsx"
+    filename = f"received_{company}_{filename_suffix}.xlsx"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     return response

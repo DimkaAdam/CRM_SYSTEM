@@ -712,6 +712,16 @@ function fmt(n) {
 }
 
 function humanDate(iso) {
+  if (!iso) return '';
+
+  // Если пришёл просто день "YYYY-MM-DD" (без времени) — разбираем вручную
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const [y, m, d] = iso.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);  // локальная дата без смещения
+    return dt.toLocaleDateString();    // формат по локали: 11/30/2025 и т.п.
+  }
+
+  // На всякий случай fallback для полноценных ISO с временем
   try {
     return new Date(iso).toLocaleDateString();
   } catch {
@@ -726,12 +736,6 @@ function renderAllDays() {
   if (!body || !statsEl) return;
 
   const store = getStore();
-
-  // Clean up old event listeners
-  const oldCards = body.querySelectorAll('.day-card');
-  oldCards.forEach(card => {
-    card.replaceWith(card.cloneNode(true));
-  });
 
   body.innerHTML = '';
 
@@ -749,6 +753,28 @@ function renderAllDays() {
 
   for (const d of days) {
     const day = store[d];
+
+    // === агрегаты по материалам и по поставщику ===
+    const byMaterial = {};
+    const bySupplierMaterial = {};
+
+    for (const r of day.items) {
+      const mat = r.material || 'Unknown';
+      const sup = r.supplier || 'Unknown';
+      const net = Number(r.net || 0);
+
+      // по материалам
+      byMaterial[mat] = (byMaterial[mat] || 0) + net;
+
+      // по поставщику + материал
+      if (!bySupplierMaterial[sup]) {
+        bySupplierMaterial[sup] = {};
+      }
+      bySupplierMaterial[sup][mat] =
+        (bySupplierMaterial[sup][mat] || 0) + net;
+    }
+
+    // === карточка дня ===
     const card = document.createElement('div');
     card.className = 'day-card';
 
@@ -780,6 +806,7 @@ function renderAllDays() {
     divider.className = 'divider';
     card.appendChild(divider);
 
+    // === основная «таблица» записей ===
     const grid = document.createElement('div');
     grid.className = 'day-list';
     grid.innerHTML = `
@@ -800,19 +827,146 @@ function renderAllDays() {
       cells.forEach(text => {
         const cell = document.createElement('div');
         cell.className = 'c';
-        cell.textContent = text.replace(/<[^>]*>/g, ''); // Remove any HTML tags
+        cell.textContent = text.replace(/<[^>]*>/g, '');
         grid.appendChild(cell);
       });
     }
 
     card.appendChild(grid);
+
+    // === блок: ИТОГИ ПО МАТЕРИАЛАМ ===
+    const summary = document.createElement('div');
+    summary.className = 'day-summary';
+
+    const matTitle = document.createElement('div');
+    matTitle.className = 'summary-title';
+    matTitle.textContent = 'By material:';
+    summary.appendChild(matTitle);
+
+    const matRow = document.createElement('div');
+    matRow.className = 'summary-materials';
+
+    Object.keys(byMaterial).sort().forEach(mat => {
+      const chip = document.createElement('div');
+      chip.className = 'summary-chip';
+      chip.textContent = `${mat}: ${fmt(byMaterial[mat])} kg`;
+      matRow.appendChild(chip);
+    });
+
+    summary.appendChild(matRow);
+
+    // === блок: ИТОГИ ПО ПОСТАВЩИКУ/МАТЕРИАЛУ ===
+    const supTitle = document.createElement('div');
+    supTitle.className = 'summary-title';
+    supTitle.textContent = 'By supplier:';
+    summary.appendChild(supTitle);
+
+    const supList = document.createElement('div');
+    supList.className = 'summary-suppliers';
+
+    Object.keys(bySupplierMaterial).sort().forEach(sup => {
+      const supRow = document.createElement('div');
+      supRow.className = 'summary-supplier-row';
+
+      const supName = document.createElement('div');
+      supName.className = 'summary-supplier-name';
+      supName.textContent = `${sup}:`;
+      supRow.appendChild(supName);
+
+      const supMats = document.createElement('div');
+      supMats.className = 'summary-supplier-mats';
+
+      Object.keys(bySupplierMaterial[sup]).sort().forEach(mat => {
+        const chip = document.createElement('div');
+        chip.className = 'summary-chip summary-chip-small';
+        chip.textContent = `${mat} – ${fmt(bySupplierMaterial[sup][mat])} kg`;
+        supMats.appendChild(chip);
+      });
+
+      supRow.appendChild(supMats);
+      supList.appendChild(supRow);
+    });
+
+    summary.appendChild(supList);
+
+    card.appendChild(summary);
     body.appendChild(card);
   }
 }
 
+
 /* ======================
    11) Export to window
    ====================== */
+
+// ======================
+// 12) Glow-card effect
+// ======================
+
+document.addEventListener("DOMContentLoaded", () => {
+  const card = document.querySelector(".card");
+  if (!card) return;
+
+  card.addEventListener("pointermove", (e) => {
+    const pos = pointerPositionRelativeToElement(card, e);
+    const [px, py] = pos.pixels;
+    const [perx, pery] = pos.percent;
+    const [dx, dy] = distanceFromCenter(card, px, py);
+    const edge = closenessToEdge(card, px, py);
+    const angle = angleFromPointerEvent(dx, dy);
+
+    card.style.setProperty("--pointer-x", `${perx.toFixed(2)}%`);
+    card.style.setProperty("--pointer-y", `${pery.toFixed(2)}%`);
+    card.style.setProperty("--pointer-°", `${angle.toFixed(2)}deg`);
+    card.style.setProperty("--pointer-d", `${(edge * 100).toFixed(2)}`);
+    card.classList.remove("animating");
+  });
+});
+
+// helpers for glow effect
+function centerOfElement(el) {
+  const { width, height } = el.getBoundingClientRect();
+  return [width / 2, height / 2];
+}
+
+function pointerPositionRelativeToElement(el, e) {
+  const { left, top, width, height } = el.getBoundingClientRect();
+  const x = e.clientX - left;
+  const y = e.clientY - top;
+  const px = clamp((100 / width) * x);
+  const py = clamp((100 / height) * y);
+  return { pixels: [x, y], percent: [px, py] };
+}
+
+function distanceFromCenter(el, x, y) {
+  const [cx, cy] = centerOfElement(el);
+  return [x - cx, y - cy];
+}
+
+function angleFromPointerEvent(dx, dy) {
+  let angleDeg = 0;
+  if (dx !== 0 || dy !== 0) {
+    const angleRad = Math.atan2(dy, dx);
+    angleDeg = angleRad * (180 / Math.PI) + 90;
+    if (angleDeg < 0) angleDeg += 360;
+  }
+  return angleDeg;
+}
+
+function closenessToEdge(el, x, y) {
+  const [cx, cy] = centerOfElement(el);
+  const [dx, dy] = distanceFromCenter(el, x, y);
+  let kx = Infinity;
+  let ky = Infinity;
+  if (dx !== 0) kx = cx / Math.abs(dx);
+  if (dy !== 0) ky = cy / Math.abs(dy);
+  return clamp(1 / Math.min(kx, ky), 0, 1);
+}
+
+function clamp(value, min = 0, max = 100) {
+  return Math.min(Math.max(value, min), max);
+}
+
 
 Object.assign(window, {
   addRow,
@@ -821,3 +975,5 @@ Object.assign(window, {
   cancelEdit,
   deleteRow
 });
+
+

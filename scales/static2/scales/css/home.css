@@ -1,9 +1,18 @@
 body{
   margin:0;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-  background:#141b2d;
+  height:auto;
+
+  /* same bluish gradient as demo */
+  background-image:
+    linear-gradient(
+      180deg,
+      hsl(var(--h), 18%, 18%),
+      hsl(var(--h), 25%, 10%)
+    );
+  background-color:hsl(var(--h), 25%, 10%);
+
   color:#e5e7eb;
-  height: auto;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -11,14 +20,149 @@ body{
   padding-top:70px;
 }
 
+:root{
+  --h: 222;                    /* base hue for page background */
+  --dark: hsl(222, 20%, 20%);     /* base dark color for card */
+
+  --glow-sens: 30;
+  --card-bg: linear-gradient(
+      8deg,
+      var(--dark) 75%,
+      color-mix(in hsl, var(--dark), white 2.5%) 75.5%
+  );
+  --blend: soft-light;
+  --glow-blend: plus-lighter;
+  --glow-color: 40deg 80% 80%;
+  --glow-boost: 0%;
+  --pointer-°: 45deg;
+  --pointer-d: 0;
+}
+
+
 .card{
-  background:#1f2937;
-  border:1px solid rgba(255,255,255,0.08);
+  position: relative;
+  background: var(--card-bg);                 /* ключевой момент */
+  border:1px solid rgba(255,255,255,0.18);
   border-radius:18px;
   padding:32px;
   width:90%;
   max-width:900px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.35);
+  box-shadow:
+    rgba(0, 0, 0, 0.25) 0 10px 30px,
+    rgba(0, 0, 0, 0.4) 0 30px 80px;
+  isolation:isolate;
+  transform: translate3d(0,0,0.01px);
+  overflow:hidden;
+}
+
+/* внутренний контейнер, чтобы контент был над свечением */
+.card .inner{
+  position: relative;
+  z-index: 1;
+}
+
+/* общие слои свечения */
+.card::before,
+.card::after,
+.card > .glow{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  transition:opacity .25s ease-out;
+  z-index:-1;
+}
+
+/* когда мышь не над карточкой – свечение почти выключено */
+.card:not(:hover):not(.animating)::before,
+.card:not(:hover):not(.animating)::after,
+.card:not(:hover):not(.animating) > .glow{
+  opacity:0;
+  transition:opacity .75s ease-in-out;
+}
+
+/* цветной «бордер» */
+.card::before{
+  border:1px solid transparent;
+  background:
+    /* фон карточки */
+    var(--card-bg) padding-box,
+
+    /* прозрачный слой для бордера */
+    linear-gradient(to bottom, transparent 0%, transparent 100%) border-box,
+
+    /* цветные пятна по краям */
+    radial-gradient(at 80% 55%, hsla(268,100%,76%,1) 0px, transparent 50%) border-box,
+    radial-gradient(at 69% 34%, hsla(349,100%,74%,1) 0px, transparent 50%) border-box,
+    radial-gradient(at 8% 6%,  hsla(136,100%,78%,1) 0px, transparent 50%) border-box,
+    radial-gradient(at 41% 38%, hsla(192,100%,64%,1) 0px, transparent 50%) border-box,
+    radial-gradient(at 86% 85%, hsla(186,100%,74%,1) 0px, transparent 50%) border-box,
+    radial-gradient(at 82% 18%, hsla(52,100%,65%,1) 0px, transparent 50%) border-box,
+    radial-gradient(at 51% 4%,  hsla(12,100%,72%,1) 0px, transparent 50%) border-box,
+    linear-gradient(#c299ff 0 100%) border-box;
+
+  opacity: calc((var(--pointer-d) - (var(--glow-sens) + 20)) / (100 - (var(--glow-sens) + 20)));
+  mask-image: conic-gradient(
+      from var(--pointer-°) at center,
+      black 25%, transparent 40%, transparent 60%, black 75%
+  );
+}
+
+
+/* цветной фон-подложка */
+.card::after{
+  border:1px solid transparent;
+  background:
+    radial-gradient(at 80% 55%, hsla(268,100%,76%,1) 0px, transparent 50%) padding-box,
+    radial-gradient(at 69% 34%, hsla(349,100%,74%,1) 0px, transparent 50%) padding-box,
+    radial-gradient(at 8% 6%, hsla(136,100%,78%,1) 0px, transparent 50%) padding-box,
+    radial-gradient(at 41% 38%, hsla(192,100%,64%,1) 0px, transparent 50%) padding-box,
+    radial-gradient(at 86% 85%, hsla(186,100%,74%,1) 0px, transparent 50%) padding-box,
+    radial-gradient(at 82% 18%, hsla(52,100%,65%,1) 0px, transparent 50%) padding-box,
+    radial-gradient(at 51% 4%, hsla(12,100%,72%,1) 0px, transparent 50%) padding-box,
+    linear-gradient(#c299ff 0 100%) padding-box;
+
+  mask-image:
+    linear-gradient(to bottom, black, black),
+    radial-gradient(ellipse at 50% 50%, black 40%, transparent 65%),
+    radial-gradient(ellipse at 66% 66%, black 5%, transparent 40%),
+    radial-gradient(ellipse at 33% 33%, black 5%, transparent 40%),
+    radial-gradient(ellipse at 66% 33%, black 5%, transparent 40%),
+    radial-gradient(ellipse at 33% 66%, black 5%, transparent 40%),
+    conic-gradient(from var(--pointer-°) at center, transparent 5%, black 15%, black 85%, transparent 95%);
+  mask-composite: subtract,add,add,add,add,add;
+
+  opacity: calc((var(--pointer-d) - 50) / (100 - 50));
+  mix-blend-mode: var(--blend);
+}
+
+/* внешний glow */
+.card > .glow{
+  --outset: 40px;
+  inset: calc(var(--outset) * -1);
+  pointer-events:none;
+  z-index:1;
+
+  mask-image:
+    conic-gradient(
+      from var(--pointer-°) at center,
+      black 2.5%, transparent 10%, transparent 90%, black 97.5%
+    );
+
+  opacity: calc((var(--pointer-d) - var(--glow-sens)) / (100 - var(--glow-sens)));
+  mix-blend-mode: var(--glow-blend);
+}
+
+.card > .glow::before{
+  content:"";
+  position:absolute;
+  inset:var(--outset);
+  border-radius:inherit;
+  box-shadow:
+    inset 0 0 0 1px hsl(var(--glow-color) / 100%),
+    inset 0 0 3px 0 hsl(var(--glow-color) / 70%),
+    inset 0 0 25px 2px hsl(var(--glow-color) / 30%),
+    0 0 25px 2px hsl(var(--glow-color) / 30%);
 }
 
 h1{
@@ -225,3 +369,66 @@ tr:hover td{
 .cssbuttons-io-button svg{ width:22px; height:22px; }
 .cssbuttons-io-button:hover{ box-shadow:0 .5em 1.5em -.5em #14a73e98; transform:translateY(-1px); }
 .cssbuttons-io-button:active{ box-shadow:0 .3em 1em -.5em #14a73e98; transform:translateY(0); }
+
+
+
+.day-summary{
+  margin-top:10px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,0.06);
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.summary-title{
+  font-size:13px;
+  font-weight:600;
+  color:#9ca3af;
+  margin-top:4px;
+}
+
+.summary-materials{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.summary-suppliers{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.summary-supplier-row{
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+
+.summary-supplier-name{
+  font-weight:600;
+  color:#cbd5e1;
+  min-width:90px;
+}
+
+.summary-supplier-mats{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+}
+
+.summary-chip{
+  font-size:12px;
+  padding:3px 8px;
+  border-radius:999px;
+  background:rgba(8,102,110,0.15);
+  border:1px solid rgba(8,102,110,0.4);
+  color:#d1f5f7;
+}
+
+.summary-chip-small{
+  font-size:11px;
+  padding:2px 7px;
+}
