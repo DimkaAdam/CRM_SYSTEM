@@ -1,10 +1,3 @@
-const iconPath = '{% static 'crm/images/icons/name.png'%}';
-const iconPath_1 = '{% static 'crm/images/icons/phone.png'%}';
-const iconPath_2 = '{% static 'crm/images/icons/company.png'%}';
-const iconPath_3 = '{% static 'crm/images/icons/email.png'%}';
-const iconPath_4 = '{% static 'crm/images/icons/type.png'%}';
-
-
 // Open Add Client Sidebar
 document.getElementById('addContactBtn').addEventListener('click', function () {
     document.getElementById('addClientSidebar').style.width = '300px';

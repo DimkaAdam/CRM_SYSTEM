@@ -6,16 +6,19 @@
     <title>{% block title %}CRM System{% endblock %}</title>
 
     {% load static %}
-    <!-- Подключаем общие стили проекта -->
+    <!-- Общие стили проекта -->
     <link rel="stylesheet" href="{% static 'crm/index.css' %}">
     <link rel="stylesheet" href="{% static 'crm/styles.css' %}">
     <link rel="stylesheet" href="{% static 'crm/deal_list.css' %}">
+    <!-- Иконки для сайдбара -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
 
     {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-    <!-- Форма выхода (скрытая), чтобы можно было отправить POST по нажатию на кнопку Logout -->
+    <!-- Форма выхода (скрытая), чтобы отправить POST по нажатию на Logout -->
     <form id="logoutForm" action="{% url 'logout' %}" method="post" style="display:none;">
       {% csrf_token %}
     </form>
@@ -29,23 +32,54 @@
         </a>
       </div>
 
-      <!-- Gooey-меню вместо старого glider -->
-      <div class="gooey-nav-container" id="sidebar-gooey-nav">
+      <!-- Простое меню с иконками -->
+      <div class="gooey-nav-container">
         <nav>
           <ul>
-            <li><a href="{% url 'contacts_list' %}">Contacts</a></li>
-            <li><a href="{% url 'deal_list' %}">Deals</a></li>
-            <li><a href="{% url 'task_list' %}">Tasks</a></li>
-            <li><a href="{% url 'kanban_board' %}">Kanban Board</a></li>
-            <li><a href="{% url 'report_list' %}">Reports</a></li>
-            <li><a href="{% url 'sales_analytics' %}">Dashboard</a></li>
-            <li><a href="{% url 'ai_dashboard' %}">AI Dashboard</a></li>
+            <li>
+              <a href="{% url 'contacts_list' %}">
+                <i class="fa-solid fa-address-book"></i>
+                <span>Contacts</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'deal_list' %}">
+                <i class="fa-solid fa-handshake"></i>
+                <span>Deals</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'task_list' %}">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Tasks</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'kanban_board' %}">
+                <i class="fa-solid fa-table-columns"></i>
+                <span>Kanban Board</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'report_list' %}">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <span>Reports</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'sales_analytics' %}">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'ai_dashboard' %}">
+                <i class="fa-solid fa-brain"></i>
+                <span>AI Dashboard</span>
+              </a>
+            </li>
           </ul>
         </nav>
-
-        <!-- Два слоя эффекта: белая "пилюля" + текст поверх -->
-        <span class="effect filter"></span>
-        <span class="effect text"></span>
       </div>
 
       <!-- Кнопка выхода -->
@@ -69,227 +103,31 @@
       </div>
     </nav>
 
+
+    <!-- Верхняя панель -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <h1 class="top-bar-title">
+          {% block page_title %}Contacts{% endblock %}
+        </h1>
+      </div>
+
+      <div class="top-bar-right">
+        <button class="top-bar-icon-btn" type="button" aria-label="Notifications">
+          <i class="fa-solid fa-bell"></i>
+        </button>
+
+        <div class="top-bar-profile">
+          <span class="top-bar-avatar">DA</span>
+          <span class="top-bar-name">Dmitrii</span>
+        </div>
+      </div>
+    </header>
+
     <!-- Основной контент справа от сайдбара -->
     <div class="content">
         {% block content %}{% endblock %}
     </div>
-
-    <!-- Скрипт gooey-меню -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("sidebar-gooey-nav");
-  if (!container) return;
-
-  const nav = container.querySelector("ul");
-  if (!nav) return;
-
-  const filterEl = container.querySelector(".effect.filter");
-  const textEl   = container.querySelector(".effect.text");
-  const items    = Array.from(nav.querySelectorAll("li"));
-  if (!items.length) return;
-
-  const animationTime     = 600;
-  const particleCount     = 15;
-  const particleDistances = [90, 10];
-  const particleR         = 100;
-  const timeVariance      = 300;
-  const colors            = [1, 2, 3, 1, 2, 3, 1, 4];
-
-  function noise(n = 1) {
-    return n / 2 - Math.random() * n;
-  }
-
-  function getXY(distance, pointIndex, totalPoints) {
-    const angleDeg = ((360 + noise(8)) / totalPoints) * pointIndex;
-    const angleRad = angleDeg * (Math.PI / 180);
-    return [
-      distance * Math.cos(angleRad),
-      distance * Math.sin(angleRad)
-    ];
-  }
-
-  function createParticle(i, t, d, r) {
-    let rotate = noise(r / 10);
-    const colorIndex = colors[Math.floor(Math.random() * colors.length)];
-
-    return {
-      start: getXY(d[0], particleCount - i, particleCount),
-      end:   getXY(d[1] + noise(7), particleCount - i, particleCount),
-      time:  t,
-      scale: 1 + noise(0.2),
-      color: colorIndex,
-      rotate: rotate > 0
-        ? (rotate + r / 20) * 10
-        : (rotate - r / 20) * 10
-    };
-  }
-
-  function makeParticles(element) {
-    if (!element) return;
-
-    const d          = particleDistances;
-    const r          = particleR;
-    const bubbleTime = animationTime * 2 + timeVariance;
-
-    element.style.setProperty("--time", bubbleTime + "ms");
-    element.classList.remove("active");
-
-    for (let i = 0; i < particleCount; i++) {
-      const t = animationTime * 2 + noise(timeVariance * 2);
-      const p = createParticle(i, t, d, r);
-
-      setTimeout(() => {
-        const particle = document.createElement("span");
-        const point    = document.createElement("span");
-
-        particle.classList.add("particle");
-        particle.style.setProperty("--start-x", p.start[0] + "px");
-        particle.style.setProperty("--start-y", p.start[1] + "px");
-        particle.style.setProperty("--end-x",   p.end[0] + "px");
-        particle.style.setProperty("--end-y",   p.end[1] + "px");
-        particle.style.setProperty("--time",    p.time + "ms");
-        particle.style.setProperty("--scale",   p.scale);
-        particle.style.setProperty("--color",   "var(--color-" + p.color + ", white)");
-        particle.style.setProperty("--rotate",  p.rotate + "deg");
-
-        point.classList.add("point");
-        particle.appendChild(point);
-        element.appendChild(particle);
-
-        requestAnimationFrame(() => {
-          element.classList.add("active");
-        });
-
-        setTimeout(() => {
-          try {
-            element.removeChild(particle);
-          } catch (e) {}
-        }, t);
-      }, 30);
-    }
-  }
-
-  function updateEffectPosition(li) {
-    if (!container || !filterEl || !textEl || !li) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const liRect        = li.getBoundingClientRect();
-
-    const left   = liRect.x - containerRect.x;
-    const top    = liRect.y - containerRect.y;
-    const width  = liRect.width;
-    const height = liRect.height;
-
-    filterEl.style.left   = left + "px";
-    filterEl.style.top    = top + "px";
-    filterEl.style.width  = width + "px";
-    filterEl.style.height = height + "px";
-
-    textEl.style.left   = left + "px";
-    textEl.style.top    = top + "px";
-    textEl.style.width  = width + "px";
-    textEl.style.height = height + "px";
-
-    const link = li.querySelector("a");
-    textEl.innerText = link ? link.innerText : "";
-  }
-
-  // Определяем активный пункт по URL
-  let activeIndex   = 0;
-  const currentPath = window.location.pathname;
-
-  items.forEach((li, index) => {
-    const link = li.querySelector("a");
-    if (!link) return;
-    const linkPath = new URL(link.href, window.location.origin).pathname;
-    if (linkPath === currentPath) {
-      activeIndex = index;
-    }
-  });
-
-  // Установка активного пункта
-  function setActiveByIndex(index, withParticles = false, isInit = false) {
-    if (index < 0 || index >= items.length) return;
-
-    items.forEach(li => li.classList.remove("active"));
-
-    const li = items[index];
-    li.classList.add("active");
-    activeIndex = index;
-
-    updateEffectPosition(li);
-
-    // при инициализации вообще ничего не анимируем
-    if (isInit) return;
-
-    if (textEl) {
-      textEl.classList.remove("active");
-      void textEl.offsetWidth;
-      textEl.classList.add("active");
-    }
-
-    if (withParticles && filterEl) {
-      const particles = filterEl.querySelectorAll(".particle");
-      particles.forEach(p => p.remove());
-      makeParticles(filterEl);
-    }
-  }
-
-  // Взрыв вокруг уже активного пункта (используем только после загрузки)
-  function triggerBurst() {
-    const li = items[activeIndex];
-    if (!li) return;
-
-    if (textEl) {
-      textEl.classList.remove("active");
-      void textEl.offsetWidth;
-      textEl.classList.add("active");
-    }
-
-    if (filterEl) {
-      const particles = filterEl.querySelectorAll(".particle");
-      particles.forEach(p => p.remove());
-      makeParticles(filterEl);
-    }
-  }
-
-  // ===== ОБРАБОТЧИКИ КЛИКА =====
-  items.forEach((li, index) => {
-    const link = li.querySelector("a");
-    if (!link) return;
-
-    // ⚠️ ТУТ УБИРАЕМ ЭФФЕКТ ПРИ КЛИКЕ — только переход
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      window.location.href = link.href;   // просто переходим
-    });
-
-    link.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        window.location.href = link.href;
-      }
-    });
-  });
-
-  // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ =====
-
-
-
-  // 2) После прогрузки — один красивый взрыв (ТОЛЬКО тут, не при клике)
-  setTimeout(() => {
-    triggerBurst();
-  }, 10);
-
-  // Адаптация при ресайзе
-  const resizeObserver = new ResizeObserver(() => {
-    const li = items[activeIndex];
-    if (li) updateEffectPosition(li);
-  });
-
-  resizeObserver.observe(container);
-});
-</script>
 
 </body>
 </html>

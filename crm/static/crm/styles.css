@@ -497,3 +497,188 @@
 }
 
 
+/* Контейнер страницы контакта */
+.contact-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+}
+
+/* Верхний блок с компанией */
+.contact-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 24px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  margin-bottom: 24px;
+}
+
+.contact-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.contact-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.contact-subtitle {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Чипы / теги статусов */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag-warning {
+  background: #fff7ed;
+  color: #c05621;
+  border: 1px solid #fed7aa;
+}
+
+.tag-success {
+  background: #ecfdf3;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.tag-neutral {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.tag i {
+  font-size: 13px;
+}
+
+/* Кнопка "Change Stage" рядом с тегом */
+.link-button {
+  border: none;
+  background: none;
+  color: #2563eb;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+/* Сетка секций */
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+/* Карточки секций */
+.section-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Базовые кнопки */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background-color: #08666e;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #04454a;
+}
+
+.btn-secondary {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.btn-secondary:hover {
+  background-color: #d1d5db;
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #111827;
+}
+
+.btn-outline:hover {
+  background: #f3f4f6;
+}
+
+/* Элементы внутри списков */
+.list-item {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.list-item-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.list-item-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.muted {
+  font-size: 13px;
+  color: #9ca3af;
+}
