@@ -175,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Открыть сайдбар деталей по клику на строку
-  function attachDealRowHandler(row) {
+   function attachDealRowHandler(row) {
     row.addEventListener("click", () => {
       const dealId = row.dataset.id;
       if (!dealId) return;
@@ -192,6 +192,75 @@ document.addEventListener("DOMContentLoaded", () => {
             (byId("dealTotalAmount").innerText = data.total_amount ?? "");
           byId("dealScaleTicket") &&
             (byId("dealScaleTicket").innerText = data.scale_ticket ?? "");
+
+          // 🔹 KPI блок
+
+          const profit = Number(data.total_income_loss ?? 0);
+          const profitPerTon = data.profit_per_ton != null ? Number(data.profit_per_ton) : null;
+          const transportPerTon = data.transport_per_ton != null ? Number(data.transport_per_ton) : null;
+          const transportShare = data.transport_share != null ? Number(data.transport_share) : null;
+          const spreadPerTon = data.spread_per_ton != null ? Number(data.spread_per_ton) : null;
+          const varianceMt = data.variance_mt != null ? Number(data.variance_mt) : null;
+          const avgPalletKg = data.avg_pallet_weight_kg != null ? Number(data.avg_pallet_weight_kg) : null;
+
+          // Прибыль
+          if (byId("daProfit")) {
+            const el = byId("daProfit");
+            el.classList.remove("da-profit-positive", "da-profit-negative");
+            el.innerText = `${profit >= 0 ? "+" : "-"}$${Math.abs(profit).toFixed(2)}`;
+            if (profit > 0) el.classList.add("da-profit-positive");
+            if (profit < 0) el.classList.add("da-profit-negative");
+          }
+
+          // Прибыль на тонну
+          if (byId("daProfitPerTon")) {
+            byId("daProfitPerTon").innerText =
+              profitPerTon != null ? `$${profitPerTon.toFixed(2)} / MT` : "N/A";
+          }
+
+          // Спред
+          if (byId("daSpreadPerTon")) {
+            byId("daSpreadPerTon").innerText =
+              spreadPerTon != null ? `$${spreadPerTon.toFixed(2)} / MT` : "N/A";
+          }
+
+          // Транспорт на тонну
+          if (byId("daTransportPerTon")) {
+            byId("daTransportPerTon").innerText =
+              transportPerTon != null ? `$${transportPerTon.toFixed(2)} / MT` : "N/A";
+          }
+
+          // Доля логистики
+          if (byId("daTransportShareChip")) {
+            const chip = byId("daTransportShareChip");
+            chip.classList.remove("da-chip--green", "da-chip--yellow", "da-chip--red");
+
+            if (transportShare == null) {
+              chip.innerText = "N/A";
+            } else {
+              chip.innerText = `${transportShare.toFixed(1)} %`;
+
+              if (transportShare < 15) {
+                chip.classList.add("da-chip--green");
+              } else if (transportShare < 25) {
+                chip.classList.add("da-chip--yellow");
+              } else {
+                chip.classList.add("da-chip--red");
+              }
+            }
+          }
+
+          // Отклонение по весу
+          if (byId("daVariance")) {
+            byId("daVariance").innerText =
+              varianceMt != null ? `${varianceMt.toFixed(3)} MT` : "N/A";
+          }
+
+          // Средний вес паллеты
+          if (byId("daAvgPalletWeight")) {
+            byId("daAvgPalletWeight").innerText =
+              avgPalletKg != null ? `${avgPalletKg.toFixed(0)} kg` : "N/A";
+          }
 
           const sidebar = byId("viewDealSidebar");
           if (sidebar) {

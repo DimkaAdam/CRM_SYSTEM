@@ -625,32 +625,79 @@ def export_deals_to_excel(request):
 def get_deal_details(request, deal_id):
     deal = get_object_or_404(Deals, id=deal_id)
 
+    # Безопасные числа
+    shipped_qty = deal.shipped_quantity or Decimal("0")       # MT
+    received_qty = deal.received_quantity or Decimal("0")     # MT
+    shipped_pallets = deal.shipped_pallets or Decimal("0")
+    supplier_price = deal.supplier_price or Decimal("0")      # $/MT
+    buyer_price = deal.buyer_price or Decimal("0")            # $/MT
+    transport_cost = deal.transport_cost or Decimal("0")      # $
+    total_amount = deal.total_amount or Decimal("0")          # $ (выручка)
+    total_income_loss = deal.total_income_loss or Decimal("0")  # $ (прибыль/убыток)
+
+    # 1) Прибыль уже есть: total_income_loss
+
+    # 2) Прибыль на тонну
+    if shipped_qty > 0:
+        profit_per_ton = total_income_loss / shipped_qty      # $/MT
+    else:
+        profit_per_ton = None
+
+    # 3) Транспорт на тонну
+    if shipped_qty > 0:
+        transport_per_ton = transport_cost / shipped_qty      # $/MT
+    else:
+        transport_per_ton = None
+
+    # 4) Доля логистики в выручке
+    if total_amount > 0:
+        transport_share = (transport_cost / total_amount) * Decimal("100")  # %
+    else:
+        transport_share = None
+
+    # 5) Ценовой спред (buyer - supplier)
+    spread_per_ton = buyer_price - supplier_price             # $/MT
+
+    # 6) Отклонение по весу (MT)
+    variance_mt = received_qty - shipped_qty                  # MT
+
+    # 7) Средний вес паллеты (в кг)
+    if shipped_qty > 0 and shipped_pallets > 0:
+        avg_pallet_weight_kg = (shipped_qty * Decimal("1000")) / shipped_pallets
+    else:
+        avg_pallet_weight_kg = None
+
     return JsonResponse({
-        'id': deal.id,
-        'date': deal.date.strftime('%Y-%m-%d'),
+        "id": deal.id,
+        "date": deal.date.strftime("%Y-%m-%d"),
 
-        'supplier_id': deal.supplier.id if deal.supplier else None,
-        'supplier_name': deal.supplier.name if deal.supplier else "",
+        "supplier_id": deal.supplier.id if deal.supplier else None,
+        "supplier_name": deal.supplier.name if deal.supplier else "",
+        "buyer_id": deal.buyer.id if deal.buyer else None,
+        "buyer_name": deal.buyer.name if deal.buyer else "",
+        "grade": deal.grade,
 
-        'buyer_id': deal.buyer.id if deal.buyer else None,
-        'buyer_name': deal.buyer.name if deal.buyer else "",
+        "shipped_quantity": float(shipped_qty),
+        "shipped_pallets": float(shipped_pallets),
+        "received_quantity": float(received_qty),
+        "received_pallets": float(deal.received_pallets or 0),
+        "supplier_price": float(supplier_price),
+        "buyer_price": float(buyer_price),
+        "total_amount": float(total_amount),
+        "transport_cost": float(transport_cost),
+        "scale_ticket": deal.scale_ticket or "",
+        "transport_company_id": deal.transport_company.id if deal.transport_company else None,
+        "transport_company_name": deal.transport_company.name if deal.transport_company else "",
 
-        'grade': deal.grade,
-        'shipped_quantity': deal.shipped_quantity,
-        'shipped_pallets': deal.shipped_pallets,
-        'received_quantity': deal.received_quantity,
-        'received_pallets': deal.received_pallets,
-        'supplier_price': deal.supplier_price,
-        'buyer_price': deal.buyer_price,
-        'total_amount': deal.total_amount,
-
-        'transport_cost': deal.transport_cost,
-        'transport_company_id': deal.transport_company.id if deal.transport_company else None,
-        'transport_company_name': deal.transport_company.name if deal.transport_company else "",
-
-        'scale_ticket': deal.scale_ticket,
+        # KPI
+        "total_income_loss": float(total_income_loss),
+        "profit_per_ton": float(profit_per_ton) if profit_per_ton is not None else None,
+        "transport_per_ton": float(transport_per_ton) if transport_per_ton is not None else None,
+        "transport_share": float(transport_share) if transport_share is not None else None,
+        "spread_per_ton": float(spread_per_ton),
+        "variance_mt": float(variance_mt),
+        "avg_pallet_weight_kg": float(avg_pallet_weight_kg) if avg_pallet_weight_kg is not None else None,
     })
-
 
 @csrf_exempt
 def edit_deal(request, deal_id):

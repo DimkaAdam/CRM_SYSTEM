@@ -682,3 +682,101 @@
   font-size: 13px;
   color: #9ca3af;
 }
+
+
+
+/* Цельная панель без дробления */
+.deal-panel {
+  padding: 20px 22px;
+  background: rgba(20, 27, 45, 0.95);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.06);
+  margin: 14px;
+}
+
+/* Названия разделов */
+.section-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: #9ca9ff;
+  margin: 12px 0 8px;
+}
+
+/* Горизонтальная разделительная линия */
+.section-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 14px 0;
+}
+
+/* Строка данных */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.info-row span {
+  color: #94a3b8;
+}
+
+/* KPI (прибыль зелёный/красный и т.д.) */
+.kpi strong {
+  font-weight: 600;
+}
+
+.da-profit-positive { color: #4ade80; }
+.da-profit-negative { color: #f97373; }
+
+/* Транспорт share (чип + бар) */
+.share-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.da-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 48px;
+  text-align: center;
+}
+
+.da-chip--green {
+  background: rgba(34,197,94,0.25);
+  color: #4ade80;
+}
+
+.da-chip--yellow {
+  background: rgba(234,179,8,0.25);
+  color: #facc15;
+}
+
+.da-chip--red {
+  background: rgba(248,113,113,0.25);
+  color: #fca5a5;
+}
+
+/* Прогресс-бар */
+.da-bar {
+  width: 120px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(15,23,42,0.7);
+  overflow: hidden;
+}
+
+.da-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  transition: width 0.25s ease-out, background 0.25s ease-out;
+}
