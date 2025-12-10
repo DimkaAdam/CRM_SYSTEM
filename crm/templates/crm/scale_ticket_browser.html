@@ -9,7 +9,7 @@
 
 <style>
   body {
-    color: #e5e7eb;
+    color: #000000;
   }
   .browser-container {
     background: #111827;
@@ -18,7 +18,7 @@
     box-shadow: 0 4px 18px rgba(0,0,0,0.45);
     max-width: 960px;
     margin: 0 auto;
-    color: #e5e7eb;
+    color: #000000;
   }
   .browser-header {
     font-size: 1.8rem;
@@ -27,7 +27,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #f9fafb;
+    color: #000000;
   }
   .toolbar {
     display: flex;
@@ -38,13 +38,13 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #9ca3af;
+    color: #000000;
     font-size: 0.95rem;
     text-decoration: none;
   }
   .back-link:hover {
     text-decoration: underline;
-    color: #e5e7eb;
+    color: #000000;
   }
   .file-list {
     list-style: none;
@@ -61,16 +61,16 @@
     color: #e5e7eb;
   }
   .file-list a {
-    color: #38bdf8;
+    color: #000000;
     text-decoration: none;
   }
   .file-list a:hover {
-    color: #7dd3fc;
+    color: #000000;
     text-decoration: underline;
   }
   .file-item code {
     font-size: 11px;
-    color: #6b7280;
+    color: #000000;
   }
   .btn {
     border: 0;
@@ -81,65 +81,9 @@
   }
 </style>
 
-<div class="browser-container"
-     data-company-id="{{ company.id|default:'0' }}">
-
   <div class="browser-header">
     <i class="fas fa-folder-tree"></i> Scale Tickets Archive
   </div>
-
-  {# ===== БЛОК СО СПИСКОМ E-MAIL ДЛЯ КОМПАНИИ ===== #}
-  {% if company %}
-  <div class="email-box"
-       style="background:#1f2937; padding:20px; border-radius:12px; margin-bottom:20px;">
-    <h3 style="margin:0 0 10px; color:#f9fafb;">
-      Email recipients for {{ company.name }}
-    </h3>
-
-    <form action="{% url 'api_company_emails_add' company.id %}"
-          method="post"
-          style="margin-bottom:12px; display:flex; flex-wrap:wrap; gap:8px;">
-      {% csrf_token %}
-      <input name="name"
-             placeholder="Label (например AP)"
-             style="flex:0 0 140px; padding:6px; background:#111827; border:1px solid #374151; border-radius:8px; color:#e5e7eb;">
-      <input name="email"
-             placeholder="email@example.com"
-             required
-             style="flex:0 0 220px; padding:6px; background:#111827; border:1px solid #374151; border-radius:8px; color:#e5e7eb;">
-      <label style="display:flex; align-items:center; gap:4px; color:#e5e7eb;">
-        <input type="checkbox" name="is_default">
-        Default
-      </label>
-      <button type="submit"
-              style="background:#08666e; color:white; border:0; padding:6px 14px; border-radius:8px;">
-        Add
-      </button>
-    </form>
-
-    <ul style="list-style:none; padding-left:0; margin:0;">
-      {% for e in company.emails.all %}
-        {% if e.active %}
-        <li style="margin-bottom:6px; color:#e5e7eb;">
-          {{ e.name }} &lt;{{ e.email }}&gt;
-          {% if e.is_default %} <span style="color:#facc15;">★</span>{% endif %}
-
-          <form action="{% url 'api_company_emails_delete' company.id e.id %}"
-                method="post"
-                style="display:inline;">
-            {% csrf_token %}
-            <button style="background:#b91c1c; color:white; border:0; padding:4px 8px; border-radius:6px; margin-left:8px;">
-              Delete
-            </button>
-          </form>
-        </li>
-        {% endif %}
-      {% empty %}
-        <li style="color:#9ca3af;">Нет сохранённых адресов — добавь хотя бы один.</li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
 
   <div class="toolbar">
     <div>
