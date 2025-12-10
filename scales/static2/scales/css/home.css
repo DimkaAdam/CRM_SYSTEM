@@ -1,16 +1,15 @@
 body{
   margin:0;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-  height:auto;
+  min-height:100vh;
 
-  /* same bluish gradient as demo */
+  /* Цветочный фон + лёгкое затемнение сверху, как в демо */
   background-image:
-    linear-gradient(
-      180deg,
-      hsl(var(--h), 18%, 18%),
-      hsl(var(--h), 25%, 10%)
-    );
-  background-color:hsl(var(--h), 25%, 10%);
+    url("https://www.publicdomainpictures.net/pictures/610000/velka/seamless-floral-wallpaper-art-1715193626Gct.jpg");
+  background-repeat: repeat;          /* тайлится по всей странице */
+  background-size: 500px 500px;       /* размер плитки */
+  background-position: 0 0;
+  background-attachment: fixed;       /* фон «приклеен» к экрану */
 
   color:#e5e7eb;
   display:flex;
@@ -255,17 +254,25 @@ tr:hover td{
 .day-list li{ margin:2px 0; }
 
 .history-card {
-                /* тот же фон, что у верхней карточки */
-  border: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+  background: var(--card-bg);                 /* тот же фон, что у .card */
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 18px;
   padding: 32px;
-  width: 90%;                            /* те же пропорции */
-  max-width: 900px;                      /* совпадает с .card */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  margin-top: 20px;                      /* отступ сверху от таблицы */
-  margin-bottom: 90px;                   /* для logout */
-  box-sizing: border-box;
+  width: 90%;
+  max-width: 900px;
+  box-shadow:
+    rgba(0, 0, 0, 0.25) 0 10px 30px,
+    rgba(0, 0, 0, 0.4) 0 30px 80px;
+  isolation: isolate;
+  transform: translate3d(0,0,0.01px);
+  overflow: hidden;
+
+  /* своё позиционирование */
+  margin-top: 20px;
+  margin-bottom: 90px;
 }
+
 
 .history-head{
   display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
