@@ -1732,36 +1732,120 @@ from django.core.mail import EmailMessage
 
 @csrf_exempt
 def send_scale_ticket_email(request):
-    import json
-    from django.utils.timezone import now
+    """
+    Отправка Scale Ticket по email.
 
-    if request.method == 'POST':
+    Ожидаем в body (JSON):
+      - path  — относительный путь внутри reports/scale_tickets
+               (например: 'Local_to_Global_Recycling_Inc/2025/October/Ticket 108658-Local_to_Global_Recycling_Inc-2025-10.pdf')
+
+    Логика:
+      1) Строим абсолютный путь и проверяем, что файл существует.
+      2) По первой папке (имени поставщика) находим Company.
+      3) Берём всех Employee этой компании с непустым email.
+      4) Отправляем email с вложением.
+      5) Обновляем SCaleTicketStatus и Deals.scale_ticket_sent.
+    """
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST allowed"}, status=405)
+
+    try:
         data = json.loads(request.body)
-        relative_path = data.get('path')
-        recipient_email = data.get('email')  # в будущем можно сделать автоопределение
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-        abs_path = os.path.join(settings.MEDIA_ROOT, 'reports', 'scale_tickets', relative_path)
-        if not os.path.exists(abs_path):
-            return JsonResponse({'error': 'File not found'}, status=404)
+    relative_path = (data.get("path") or "").strip()
+    if not relative_path:
+        return JsonResponse({"error": "Field 'path' is required"}, status=400)
 
-        try:
-            email = EmailMessage(
-                subject="📎 Scale Ticket",
-                body="Attached scale ticket file.",
-                from_email=settings.EMAIL_HOST_USER,
-                to=[recipient_email],
-            )
-            email.attach_file(abs_path)
-            email.send()
+    # 1) Абсолютный путь к файлу
+    abs_path = os.path.join(
+        settings.MEDIA_ROOT,
+        "reports",
+        "scale_tickets",
+        relative_path
+    )
+    print("📎 relative_path:", relative_path)
+    print("📎 abs_path:", abs_path)
+    print("📎 exists?", os.path.exists(abs_path))
+    if not os.path.exists(abs_path):
+        return JsonResponse({"error": f"File not found: {relative_path}"}, status=404)
 
-            status, created = SCaleTicketStatus.objects.get_or_create(file_path=relative_path)
-            status.sent = True
-            status.sent_at = now()
-            status.save()
+    # 2) Определяем компанию по верхней папке
+    parts = relative_path.split("/")
+    company = None
+    if parts:
+        supplier_folder = parts[0]  # например 'Local_to_Global_Recycling_Inc'
+        candidates = [
+            supplier_folder,
+            supplier_folder.replace("_", " "),
+        ]
+        qs = Company.objects.all()
+        for name in candidates:
+            company = qs.filter(name__iexact=name).first()
+            if company:
+                break
+        # запасной вариант — по unique_number
+        if not company:
+            company = Company.objects.filter(unique_number__iexact=supplier_folder).first()
 
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+    if not company:
+        return JsonResponse({"error": "Supplier company not found for path"}, status=400)
+
+    # 3) Берём emails сотрудников этой компании
+    employees = (
+        Employee.objects
+        .filter(contact__company=company)
+        .exclude(email__isnull=True)
+        .exclude(email__exact="")
+    )
+    recipient_emails = [e.email for e in employees]
+
+    if not recipient_emails:
+        return JsonResponse(
+            {"error": "No employee emails found for this supplier"},
+            status=400,
+        )
+
+    # 4) Отправляем письмо
+    try:
+        email_msg = EmailMessage(
+            subject="📎 Scale Ticket",
+            body="Please find attached the scale ticket.",
+            from_email=settings.EMAIL_HOST_USER,
+            to=recipient_emails,
+        )
+        email_msg.attach_file(abs_path)
+        email_msg.send()
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+    # 5) Обновляем статус файла
+    status_obj, _ = SCaleTicketStatus.objects.get_or_create(file_path=relative_path)
+    status_obj.sent = True
+    status_obj.sent_at = now()
+    status_obj.save()
+
+    # 6) Проставляем Deals.scale_ticket_sent = True
+    try:
+        filename = Path(relative_path).name   # 'Ticket 108658-Local_to_Global_Recycling_Inc-2025-10.pdf'
+        ticket_number = None
+
+        if filename.startswith("Ticket "):
+            rest = filename[len("Ticket "):]  # '108658-Local_to_Global_Recycling_Inc-2025-10.pdf'
+            ticket_number = rest.split("-", 1)[0].strip()
+
+        if ticket_number:
+            Deals.objects.filter(
+                scale_ticket=ticket_number,
+                supplier=company
+            ).update(scale_ticket_sent=True)
+    except Exception:
+        # не критично, если парсинг номера не удался
+        pass
+
+    return JsonResponse({"success": True, "sent_to": recipient_emails})
 
 # ID календаря
 CALENDAR_ID = "dmitry@wastepaperbrokers.com"

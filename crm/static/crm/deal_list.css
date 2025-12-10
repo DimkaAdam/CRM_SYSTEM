@@ -638,3 +638,43 @@
     background: #e8f0fe;
     color: #1d4ed8;
 }
+
+.scale-ticket-status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.scale-ticket-status-btn.not-sent {
+  background: #7f1d1d;
+  color: #fee2e2;
+  box-shadow: 0 0 10px rgba(127, 29, 29, 0.4);
+}
+
+.scale-ticket-status-btn.sent {
+  background: #14532d;
+  color: #bbf7d0;
+  box-shadow: 0 0 10px rgba(20, 83, 45, 0.4);
+}
+
+.scale-ticket-status-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px rgba(15, 23, 42, 0.5);
+}
+
+.scale-ticket-status-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.no-scale-ticket {
+  color: #9ca3af;
+  font-size: 11px;
+}

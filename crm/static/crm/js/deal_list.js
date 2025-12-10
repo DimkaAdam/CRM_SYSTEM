@@ -158,8 +158,21 @@ document.addEventListener("DOMContentLoaded", () => {
               <td>${data.transport_company?.name ?? data.transport_company ?? ""}</td>
               <td>${data.total_income_loss ?? ""}</td>
               <td>${data.scale_ticket ?? ""}</td>
+              
+               <td>
+                ${
+                  data.scale_ticket
+                    ? `<button class="scale-ticket-status-btn ${data.scale_ticket_sent ? "sent" : "not-sent"}"
+                               data-path="${data.scale_ticket_relative_path || ""}">
+                         ${data.scale_ticket_sent ? "Sent" : "Send"}
+                       </button>`
+                    : `<span class="no-scale-ticket">N/A</span>`
+                }
+              </td>
+              <td>${data.total_income_loss ?? ""}</td>
             `;
             attachDealRowHandler(tr);
+            attachScaleTicketHandlers(tr);
           }
 
           byId("dealFormSidebar") && (byId("dealFormSidebar").style.width = "0");
@@ -270,6 +283,63 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch((err) => console.error("Error fetching deal details:", err));
     });
+    function attachScaleTicketHandlers(root) {
+      const scope = root || document;
+      const buttons = scope.querySelectorAll(".scale-ticket-status-btn");
+
+      buttons.forEach((btn) => {
+        if (btn.dataset.bound === "1") return;
+        btn.dataset.bound = "1";
+
+        btn.addEventListener("click", () => {
+          if (btn.classList.contains("sent")) return;
+
+          const path = btn.dataset.path;
+          if (!path) {
+            alert("No scale ticket file path for this deal.");
+            return;
+          }
+
+          const oldText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "Sending...";
+
+          fetch(u("send-scale-ticket-email/"), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrftoken,
+            },
+            body: JSON.stringify({ path }),
+          })
+            .then(assertJSON)
+            .then((data) => {
+              if (!data.success) {
+                throw new Error(data.error || "Send failed");
+              }
+              btn.classList.remove("not-sent");
+              btn.classList.add("sent");
+              btn.textContent = "Sent";
+            })
+            .catch((err) => {
+              console.error("Error sending scale ticket:", err);
+              alert("Error sending scale ticket: " + err.message);
+              btn.textContent = oldText;
+            })
+            .finally(() => {
+              btn.disabled = false;
+            });
+        });
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      attachScaleTicketHandlers(document);
+    });
+
+  // сразу после загрузки страницы:
+  attachScaleTicketHandlers(document);
+
   }
   document.querySelectorAll(".deal-row").forEach(attachDealRowHandler);
 

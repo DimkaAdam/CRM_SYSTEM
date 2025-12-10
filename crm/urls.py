@@ -171,6 +171,7 @@ urlpatterns = [
     path("api/deals/create/", DealCreateAPIView.as_view(), name="deal-create"),
     path("api/", include(router.urls)),
 
+
 ]
 
 # Подключаем статику

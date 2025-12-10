@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from django.db.models import F
 from django.conf import settings
+import re
+from datetime import datetime
 
 class Client(models.Model):
     contact_type = [
@@ -65,6 +67,13 @@ class Employee(models.Model):
     def __str__(self):
         return self.name
 
+def sanitize_filename(name: str) -> str:
+    name = (name or "").strip()
+    name = re.sub(r'[<>:"/\\|?*]', '_', name)
+    name = name.replace(" ", "_")
+    name = re.sub(r'_+', '_', name)
+    return name.strip('_')
+
 class Deals(models.Model):
     date = models.DateTimeField(default=timezone.now)  # Дата сделки
     supplier = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='deals_as_supplier')
@@ -86,7 +95,24 @@ class Deals(models.Model):
     transport_cost = models.DecimalField(max_digits=10, decimal_places=2,default=0)  # Стоимость транспорта
     transport_company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='deals_as_hauler')  # Название транспортной компании (может быть пустым)
     total_income_loss = models.DecimalField(max_digits=10, decimal_places=2,default=0)  # Общий доход/убыток
+    scale_ticket = models.CharField(max_length=50, blank=True, null=True)
+    scale_ticket_sent = models.BooleanField(default=False)
 
+    def get_scale_ticket_relative_path(self):
+        """
+        Возвращает относительный путь к PDF-инвойсу scale ticket
+        внутри media/reports/scale_tickets.
+        """
+        if not self.scale_ticket or not self.supplier or not self.date:
+            return None
+
+        supplier_name = sanitize_filename(self.supplier.name)
+        year = self.date.strftime("%Y")
+        month = self.date.strftime("%B")
+        month_dir = f"{year}-{self.date.strftime('%m')}"
+
+        filename = f"Ticket {self.scale_ticket}-{supplier_name}-{month_dir}.pdf"
+        return f"{supplier_name}/{year}/{month}/{filename}"
 
 
     def save(self, *args, **kwargs):

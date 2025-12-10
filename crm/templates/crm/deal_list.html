@@ -358,6 +358,7 @@
                 <th>Transport Company</th>
                 <th>Scale Ticket</th>
                 <th>Income/Loss</th>
+                <th>ST Email</th>
 
             </tr>
         </thead>
@@ -378,6 +379,24 @@
                 <td>{{ deal.transport_company }}</td>
                 <td>{{ deal.scale_ticket|default:"N/A" }}</td>
                 <td>{{ deal.total_income_loss }}</td>
+                <td>
+                  {% if deal.scale_ticket %}
+                    {% with rel_path=deal.get_scale_ticket_relative_path %}
+                      {% if rel_path %}
+                        <button
+                          class="scale-ticket-status-btn {% if deal.scale_ticket_sent %}sent{% else %}not-sent{% endif %}"
+                          data-path="{{ deal.get_scale_ticket_relative_path }}"
+                        >
+                          {% if deal.scale_ticket_sent %}Sent{% else %}Send{% endif %}
+                        </button>
+                      {% else %}
+                        <span class="no-scale-ticket">N/A</span>
+                      {% endif %}
+                    {% endwith %}
+                  {% else %}
+                    <span class="no-scale-ticket">N/A</span>
+                  {% endif %}
+                </td>
 
             </tr>
             {% empty %}

@@ -14,6 +14,9 @@ class DealSerializer(serializers.ModelSerializer):
     transport_company_name = serializers.CharField(source='transport_company.name', read_only=True)
     total_amount = serializers.SerializerMethodField()
 
+    scale_ticket_sent = serializers.BooleanField(read_only=True)
+    scale_ticket_relative_path = serializers.SerializerMethodField()
+
     class Meta:
         model = Deals
         fields = [
@@ -26,7 +29,9 @@ class DealSerializer(serializers.ModelSerializer):
             'supplier_price', 'buyer_price',
             'total_amount',
             'transport_cost', 'transport_company', 'transport_company_name',
-            'scale_ticket'
+            'scale_ticket',
+            'scale_ticket_sent',
+            'scale_ticket_relative_path',
         ]
 
     def get_total_amount(self, obj):
@@ -34,6 +39,12 @@ class DealSerializer(serializers.ModelSerializer):
             return round(obj.received_quantity * obj.buyer_price, 2)
         return 0.0
 
+    def get_scale_ticket_relative_path(self, obj):
+        # использует твой уже существующий helper в модели Deals
+        try:
+            return obj.get_scale_ticket_relative_path() or ""
+        except AttributeError:
+            return ""
 
 class PipeLineSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source="company.name", read_only=True)
