@@ -1,3 +1,4 @@
+
 // ===== Префикс для /crm/ =====
 function basePrefix() {
   return window.location.pathname.includes("/crm/") ? "/crm/" : "/";
@@ -45,9 +46,65 @@ function fetchJSON(url, opts = {}) {
   return fetch(url, opts).then(assertJSON);
 }
 
+// ===== Scale Ticket Handlers (GLOBAL) =====
+function attachScaleTicketHandlers(root) {
+  const scope = root || document;
+  const buttons = scope.querySelectorAll(".scale-ticket-status-btn");
+
+  buttons.forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation(); // Предотвращаем открытие sidebar сделки
+
+      if (btn.classList.contains("sent")) return;
+
+      const path = btn.dataset.path;
+      if (!path) {
+        alert("No scale ticket file path for this deal.");
+        return;
+      }
+
+      const oldText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Sending...";
+
+      fetch(u("send-scale-ticket-email/"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken,
+        },
+        body: JSON.stringify({ path }),
+      })
+        .then(assertJSON)
+        .then((data) => {
+          if (!data.success) {
+            throw new Error(data.error || "Send failed");
+          }
+          btn.classList.remove("not-sent");
+          btn.classList.add("sent");
+          btn.textContent = "Sent";
+        })
+        .catch((err) => {
+          console.error("Error sending scale ticket:", err);
+          alert("Error sending scale ticket: " + err.message);
+          btn.textContent = oldText;
+        })
+        .finally(() => {
+          btn.disabled = false;
+        });
+    });
+  });
+}
+
 // ===== Main =====
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Scale URL ->", u("api/scale-ticket-counters/"));
+
+  // Инициализация Scale Ticket handlers для существующих строк
+  attachScaleTicketHandlers(document);
 
   // --- Открыть сайдбар "Новая сделка"
   const addNewDealBtn = byId("addNewDealBtn");
@@ -105,12 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const transport_cost = toFloat(transportCostElement.value);
       const shipped_quantity = toFloat(byId("shipped_quantity")?.value);
 
-      // локальные расчёты (бэкенд всё равно пересчитает)
-      const total_amount = shipped_quantity * buyer_price;
-      const supplier_total = received_quantity * supplier_price;
-      const total_income_loss = total_amount - supplier_total - transport_cost;
-      void total_income_loss; // чтобы линтер не ругался
-
       const data = {
         date: byId("date")?.value,
         supplier: toInt(byId("supplier")?.value),
@@ -135,61 +186,86 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify(data),
       })
-        .then((data) => {
-          console.log("Deal created:", data);
+        .then((dealData) => {
+          console.log("Deal created:", dealData);
 
           const tbody = byId("dealTable")?.getElementsByTagName("tbody")?.[0];
           if (tbody) {
             const tr = tbody.insertRow();
             tr.classList.add("deal-row");
-            tr.dataset.id = data.id ?? "";
+            tr.dataset.id = dealData.id ?? "";
             tr.innerHTML = `
-              <td>${data.date ?? ""}</td>
-              <td>${data.supplier_name ?? ""}</td>
-              <td>${data.buyer ?? ""}</td>
-              <td>${data.grade ?? ""}</td>
-              <td>${data.shipped_quantity ?? ""} / ${data.shipped_pallets ?? ""}</td>
-              <td>${data.received_quantity ?? ""} / ${data.received_pallets ?? ""}</td>
-              <td>${data.supplier_price ?? ""}</td>
-              <td>${data.supplier_total ?? ""}</td>
-              <td>${data.buyer_price ?? ""}</td>
-              <td>${data.total_amount ?? ""}</td>
-              <td>${data.transport_cost ?? ""}</td>
-              <td>${data.transport_company?.name ?? data.transport_company ?? ""}</td>
-              <td>${data.total_income_loss ?? ""}</td>
-              <td>${data.scale_ticket ?? ""}</td>
-              
-               <td>
+              <td>${dealData.date ?? ""}</td>
+              <td>${dealData.supplier_name ?? ""}</td>
+              <td>${dealData.buyer ?? ""}</td>
+              <td>${dealData.grade ?? ""}</td>
+              <td>${dealData.shipped_quantity ?? ""} / ${dealData.shipped_pallets ?? ""}</td>
+              <td>${dealData.received_quantity ?? ""} / ${dealData.received_pallets ?? ""}</td>
+              <td>${dealData.supplier_price ?? ""}</td>
+              <td>${dealData.supplier_total ?? ""}</td>
+              <td>${dealData.buyer_price ?? ""}</td>
+              <td>${dealData.total_amount ?? ""}</td>
+              <td>${dealData.transport_cost ?? ""}</td>
+              <td>${dealData.transport_company?.name ?? dealData.transport_company ?? ""}</td>
+              <td>${dealData.total_income_loss ?? ""}</td>
+              <td>${dealData.scale_ticket ?? ""}</td>
+              <td>
                 ${
-                  data.scale_ticket
-                    ? `<button class="scale-ticket-status-btn ${data.scale_ticket_sent ? "sent" : "not-sent"}"
-                               data-path="${data.scale_ticket_relative_path || ""}">
-                         ${data.scale_ticket_sent ? "Sent" : "Send"}
+                  dealData.scale_ticket
+                    ? `<button class="scale-ticket-status-btn ${dealData.scale_ticket_sent ? "sent" : "not-sent"}"
+                               data-path="${dealData.scale_ticket_relative_path || ""}">
+                         ${dealData.scale_ticket_sent ? "Sent" : "Send"}
                        </button>`
                     : `<span class="no-scale-ticket">N/A</span>`
                 }
               </td>
-              <td>${data.total_income_loss ?? ""}</td>
+              <td>${dealData.total_income_loss ?? ""}</td>
             `;
             attachDealRowHandler(tr);
             attachScaleTicketHandlers(tr);
           }
 
-          byId("dealFormSidebar") && (byId("dealFormSidebar").style.width = "0");
+          const sidebar = byId("dealFormSidebar");
+          if (sidebar) sidebar.style.width = "0";
           dealForm.reset();
 
+          // Увеличиваем счётчик Scale Ticket
           return fetch(u("api/scale-ticket-counters/increment/"), {
             method: "POST",
-            headers: { "X-CSRFToken": csrftoken },
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrftoken
+            },
           });
         })
-        .catch((err) => console.error("Error (create deal):", err));
+        .then((response) => {
+          if (response && response.ok) {
+            console.log("✅ Scale ticket counter incremented");
+            return response.json();
+          } else if (response) {
+            console.error("❌ Failed to increment counter:", response.status);
+          }
+        })
+        .then((counterData) => {
+          if (counterData) {
+            console.log("New counter value:", counterData);
+          }
+        })
+        .catch((err) => {
+          console.error("Error (create deal or increment):", err);
+          alert("Ошибка: " + err.message);
+        });
     });
   }
 
   // --- Открыть сайдбар деталей по клику на строку
-   function attachDealRowHandler(row) {
-    row.addEventListener("click", () => {
+  function attachDealRowHandler(row) {
+    row.addEventListener("click", (e) => {
+      // Игнорируем клик, если кликнули на кнопку
+      if (e.target.closest(".scale-ticket-status-btn")) {
+        return;
+      }
+
       const dealId = row.dataset.id;
       if (!dealId) return;
 
@@ -206,8 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
           byId("dealScaleTicket") &&
             (byId("dealScaleTicket").innerText = data.scale_ticket ?? "");
 
-          // 🔹 KPI блок
-
+          // KPI блок
           const profit = Number(data.total_income_loss ?? 0);
           const profitPerTon = data.profit_per_ton != null ? Number(data.profit_per_ton) : null;
           const transportPerTon = data.transport_per_ton != null ? Number(data.transport_per_ton) : null;
@@ -216,7 +291,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const varianceMt = data.variance_mt != null ? Number(data.variance_mt) : null;
           const avgPalletKg = data.avg_pallet_weight_kg != null ? Number(data.avg_pallet_weight_kg) : null;
 
-          // Прибыль
           if (byId("daProfit")) {
             const el = byId("daProfit");
             el.classList.remove("da-profit-positive", "da-profit-negative");
@@ -225,25 +299,21 @@ document.addEventListener("DOMContentLoaded", () => {
             if (profit < 0) el.classList.add("da-profit-negative");
           }
 
-          // Прибыль на тонну
           if (byId("daProfitPerTon")) {
             byId("daProfitPerTon").innerText =
               profitPerTon != null ? `$${profitPerTon.toFixed(2)} / MT` : "N/A";
           }
 
-          // Спред
           if (byId("daSpreadPerTon")) {
             byId("daSpreadPerTon").innerText =
               spreadPerTon != null ? `$${spreadPerTon.toFixed(2)} / MT` : "N/A";
           }
 
-          // Транспорт на тонну
           if (byId("daTransportPerTon")) {
             byId("daTransportPerTon").innerText =
               transportPerTon != null ? `$${transportPerTon.toFixed(2)} / MT` : "N/A";
           }
 
-          // Доля логистики
           if (byId("daTransportShareChip")) {
             const chip = byId("daTransportShareChip");
             chip.classList.remove("da-chip--green", "da-chip--yellow", "da-chip--red");
@@ -263,13 +333,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
 
-          // Отклонение по весу
           if (byId("daVariance")) {
             byId("daVariance").innerText =
               varianceMt != null ? `${varianceMt.toFixed(3)} MT` : "N/A";
           }
 
-          // Средний вес паллеты
           if (byId("daAvgPalletWeight")) {
             byId("daAvgPalletWeight").innerText =
               avgPalletKg != null ? `${avgPalletKg.toFixed(0)} kg` : "N/A";
@@ -283,64 +351,8 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch((err) => console.error("Error fetching deal details:", err));
     });
-    function attachScaleTicketHandlers(root) {
-      const scope = root || document;
-      const buttons = scope.querySelectorAll(".scale-ticket-status-btn");
-
-      buttons.forEach((btn) => {
-        if (btn.dataset.bound === "1") return;
-        btn.dataset.bound = "1";
-
-        btn.addEventListener("click", () => {
-          if (btn.classList.contains("sent")) return;
-
-          const path = btn.dataset.path;
-          if (!path) {
-            alert("No scale ticket file path for this deal.");
-            return;
-          }
-
-          const oldText = btn.textContent;
-          btn.disabled = true;
-          btn.textContent = "Sending...";
-
-          fetch(u("send-scale-ticket-email/"), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrftoken,
-            },
-            body: JSON.stringify({ path }),
-          })
-            .then(assertJSON)
-            .then((data) => {
-              if (!data.success) {
-                throw new Error(data.error || "Send failed");
-              }
-              btn.classList.remove("not-sent");
-              btn.classList.add("sent");
-              btn.textContent = "Sent";
-            })
-            .catch((err) => {
-              console.error("Error sending scale ticket:", err);
-              alert("Error sending scale ticket: " + err.message);
-              btn.textContent = oldText;
-            })
-            .finally(() => {
-              btn.disabled = false;
-            });
-        });
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      attachScaleTicketHandlers(document);
-    });
-
-  // сразу после загрузки страницы:
-  attachScaleTicketHandlers(document);
-
   }
+
   document.querySelectorAll(".deal-row").forEach(attachDealRowHandler);
 
   // --- Закрыть сайдбар деталей
@@ -351,65 +363,44 @@ document.addEventListener("DOMContentLoaded", () => {
       if (sidebar) sidebar.style.width = "0";
     });
   }
-  // открыть сайдбар
-    function openDealSidebar() {
-      const sidebar = document.getElementById("viewDealSidebar");
-      sidebar.classList.add("open");
+
+  // Glass panel config
+  const glassProps = {
+    displace: 15,
+    distortionScale: -150,
+    redOffset: 5,
+    greenOffset: 15,
+    blueOffset: 25,
+    brightness: 0.60,
+    opacity: 0.80,
+    mixBlendMode: "screen"
+  };
+
+  function applyGlassProps(el, props){
+    if(!el) return;
+    el.style.setProperty('--rgb-r', `${props.redOffset||0}px`);
+    el.style.setProperty('--rgb-g', `${props.greenOffset||0}px`);
+    el.style.setProperty('--rgb-b', `${props.blueOffset||0}px`);
+    el.style.setProperty('--brightness', String(props.brightness ?? 1));
+    el.style.setProperty('--glass-opacity', String(props.opacity ?? 0.85));
+    el.style.setProperty('--mix', props.mixBlendMode || 'screen');
+
+    const filter = document.querySelector('#glass-disp');
+    const turb = filter?.querySelector('feTurbulence');
+    const disp = filter?.querySelector('feDisplacementMap');
+
+    if(turb){
+      const base = 0.004 + Math.min(Math.max((props.displace||0)/100, 0), 0.12);
+      turb.setAttribute('baseFrequency', base.toFixed(4));
     }
-
-    // закрыть сайдбар
-    function closeDealSidebar() {
-      const sidebar = document.getElementById("viewDealSidebar");
-      sidebar.classList.remove("open");
+    if(disp){
+      const s = Math.abs(props.distortionScale ?? 10);
+      disp.setAttribute('scale', String(s));
     }
+  }
 
-    // обработчик кнопки
-    document.getElementById("closeViewDealSidebarBtn")?.addEventListener("click", closeDealSidebar);
-    // Конфиг, похожий на пропсы GlassSurface:
-    const glassProps = {
-      displace: 15,             // влияет на baseFrequency
-      distortionScale: -150,    // берем модуль => scale
-      redOffset: 5,
-      greenOffset: 15,
-      blueOffset: 25,
-      brightness: 0.60,         // 0..1 (60%)
-      opacity: 0.80,            // 0..1
-      mixBlendMode: "screen"    // screen / lighten / overlay / normal
-    };
-
-    function applyGlassProps(el, props){
-      if(!el) return;
-      // CSS vars на .glass-panel
-      el.style.setProperty('--rgb-r', `${props.redOffset||0}px`);
-      el.style.setProperty('--rgb-g', `${props.greenOffset||0}px`);
-      el.style.setProperty('--rgb-b', `${props.blueOffset||0}px`);
-      el.style.setProperty('--brightness', String(props.brightness ?? 1));
-      el.style.setProperty('--glass-opacity', String(props.opacity ?? 0.85));
-      el.style.setProperty('--mix', props.mixBlendMode || 'screen');
-
-      // SVG filter tuning:
-      const filter = document.querySelector('#glass-disp');
-      const turb = filter?.querySelector('feTurbulence');
-      const disp = filter?.querySelector('feDisplacementMap');
-
-      if(turb){
-        // «displace»: чем больше значение, тем выше baseFrequency (0.004..0.02)
-        const base = 0.004 + Math.min(Math.max((props.displace||0)/100, 0), 0.12);
-        turb.setAttribute('baseFrequency', base.toFixed(4));
-      }
-      if(disp){
-        const s = Math.abs(props.distortionScale ?? 10);
-        disp.setAttribute('scale', String(s));
-      }
-    }
-
-    // Применяем при загрузке
-    document.addEventListener('DOMContentLoaded', () => {
-      const glass = document.querySelector('#viewDealSidebar .glass-panel');
-      applyGlassProps(glass, glassProps);
-    });
-
-
+  const glass = document.querySelector('#viewDealSidebar .glass-panel');
+  applyGlassProps(glass, glassProps);
 
   // --- Включить режим редактирования
   const editDealBtn = byId("editDealBtn");
@@ -548,7 +539,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ===== Scale ticket sidebar helpers =====
+  // ===== Scale ticket sidebar =====
   window.openScaleTicketSidebarFromDeal = function () {
     const scaleTicket = byId("dealScaleTicket")?.innerText;
     if (!scaleTicket || scaleTicket === "N/A") {
@@ -561,65 +552,50 @@ document.addEventListener("DOMContentLoaded", () => {
       if (input) {
         input.value = scaleTicket;
         fetchDealData();
-      } else {
-        console.error("⚠️ Отакої, нема ticket_number!");
       }
     }, 300);
   };
 
-  // --- Sidebar open/close
   (function initScaleTicketSidebar() {
-    console.log("✅ Script loaded: Scale Ticket Sidebar");
     const sidebar = byId("scaleTicketSidebar");
-    if (!sidebar) {
-      console.error("⚠️ Scale Ticket Sidebar НЕ найден в DOM! Проверь ID.");
-      return;
-    }
+    if (!sidebar) return;
+
     window.openScaleTicketSidebar = function () {
       sidebar.style.display = "block";
       setTimeout(() => sidebar.classList.add("open"), 10);
     };
+
     window.closeScaleTicketSidebar = function () {
       sidebar.classList.remove("open");
       setTimeout(() => (sidebar.style.display = "none"), 300);
     };
-    const openBtn = document.querySelector("button[onclick='openScaleTicketSidebar()']");
-    openBtn && openBtn.addEventListener("click", openScaleTicketSidebar);
+
     const closeBtn = document.querySelector("#scaleTicketSidebar .close-btn");
     closeBtn && closeBtn.addEventListener("click", closeScaleTicketSidebar);
   })();
 
-  // --- Scale ticket export / fetch
+  // Scale ticket export
   (function initScaleTicketExport() {
-    console.log("✅ Script loaded: Scale Ticket Export");
-
     function setCurrentTime() {
       const now = new Date();
       const formattedTime = now
         .toLocaleTimeString("en-US", { hour12: false })
         .slice(0, 5);
       const timeInput = byId("deal_time");
-      timeInput ? (timeInput.value = formattedTime) : console.warn("⚠️ Поле 'time' не найдено в DOM.");
+      if (timeInput) timeInput.value = formattedTime;
     }
     setCurrentTime();
 
     window.fetchDealData = function () {
       const ticketNumberElement = byId("ticket_number");
-      if (!ticketNumberElement) {
-        console.error("🚨 Ошибка: поле 'ticket_number' не найдено!");
-        return;
-      }
-      const ticketNumber = ticketNumberElement.value;
-      if (!ticketNumber || ticketNumber.length < 3) {
-        console.warn("⚠️ Введите минимум 3 символа для поиска сделки.");
-        return;
-      }
+      if (!ticketNumberElement) return;
 
-      console.log(`🔍 Fetching deal data for ticket: ${ticketNumber}`);
+      const ticketNumber = ticketNumberElement.value;
+      if (!ticketNumber || ticketNumber.length < 3) return;
+
       fetchJSON(u(`get-deal-by-ticket/?ticket_number=${encodeURIComponent(ticketNumber)}`))
         .then((data) => {
           if (!data.success) {
-            console.warn("❌ Deal not found for this Scale Ticket.");
             alert("Deal not found for this Scale Ticket.");
             return;
           }
@@ -627,7 +603,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const d = data.deal;
           const setVal = (id, val) => {
             const el = byId(id);
-            el ? (el.value = val) : console.warn(`⚠️ Поле '${id}' не найдено в DOM.`);
+            if (el) el.value = val;
           };
 
           setVal("selectedDealId", d.id);
@@ -645,12 +621,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
           const grossWeight = randomTareWeight + netWeight;
           setVal("gross_weight", grossWeight);
-
-          console.log(
-            `📌 Пересчет весов: Tare = ${randomTareWeight}, Net = ${netWeight}, Gross = ${grossWeight}`
-          );
         })
-        .catch((err) => console.error("🚨 Error fetching deal data:", err));
+        .catch((err) => console.error("Error fetching deal data:", err));
     };
 
     window.exportScaleTicket = function (event) {
