@@ -190,7 +190,7 @@ function removeItemFromStore(item) {
    3) Reference Data (for inline editing)
    ====================== */
 
-const MATERIALS = ["Flexible Plastic", "Mix Container", "Baled Cardboard"];
+const MATERIALS = ["Flexible Plastic", "Mix Container", "Baled Cardboard", 'Media'];
 const SUPPLIERS = [
   "Bottle Depot",
   "Hannam",
