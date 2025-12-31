@@ -198,7 +198,7 @@ const SUPPLIERS = [
   "Meridian",
   "T-Brothers",
   "Zoom Books",
-  "Green House"
+  "Green House",
   "Suzette's Cafe"
 
 ];
