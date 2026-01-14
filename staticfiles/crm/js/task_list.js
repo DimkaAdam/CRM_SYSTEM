@@ -120,7 +120,7 @@ document.addEventListener('click', function (e) {
     // 📌 Загрузка списка поставщиков, покупателей и грейдов
     function loadData() {
         Promise.all([
-            fetch("/api/companies-by-type/").then(res => res.json()),  // ✅ заменили clients на companies-by-type
+            fetch(u("api/companies-by-type/").then(res => res.json()),  // ✅ заменили clients на companies-by-type
             fetch("/api/grades/").then(res => res.json())
         ])
         .then(([companiesData, gradesData]) => {
