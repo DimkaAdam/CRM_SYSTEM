@@ -2059,7 +2059,7 @@ def generate_bol_pdf(request):
         y = height - 50
 
         # 📦 Логотип и название компании
-        logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'company_logo.png')
+        logo_path = os.path.join(settings.BASE_DIR, 'crm', 'static', 'crm', 'images', 'log.png')
         if os.path.exists(logo_path):
             p.drawImage(ImageReader(logo_path), 40, height - 75, width=70, height=50, mask='auto')
 
