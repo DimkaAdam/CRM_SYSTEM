@@ -171,6 +171,12 @@ urlpatterns = [
     path("api/deals/create/", DealCreateAPIView.as_view(), name="deal-create"),
     path("api/", include(router.urls)),
 
+    path("exports/", views.export_shipments_list, name="export_shipments_list"),
+    path("exports/<int:pk>/json/", views.export_shipment_detail_json, name="export_shipment_detail_json"),
+
+    path("exports/export-excel/", views.export_shipments_to_excel, name="export_shipments_to_excel"),
+
+
 
 ]
 

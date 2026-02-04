@@ -3,7 +3,8 @@ from django.utils import timezone
 from django.db.models import F
 from django.conf import settings
 import re
-from datetime import datetime
+from .export_models import *
+
 
 class Client(models.Model):
     contact_type = [
@@ -297,3 +298,4 @@ class CompanyEmail(models.Model):
     def __str__(self):
         who = f"{self.name} " if self.name else ""
         return f"{who}<{self.email}> @ {self.company.name}"
+

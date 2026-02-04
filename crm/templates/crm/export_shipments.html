@@ -1,0 +1,420 @@
+{% extends 'crm/index.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}Export Shipments{% endblock %}
+{% block page_title %}Export Shipments{% endblock %}
+{% block content %}
+
+<!-- Control buttons -->
+<div class="buttons-container">
+  <button id="addNewExportBtn" class="add-new-deal-btn" title="Add Export Shipment">
+    <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add" class="icon">
+  </button>
+
+  {# optional: export to excel button (add url later) #}
+  {# <a href="{% url 'export_shipments_to_excel' %}" class="export-btn">
+      <img src="{% static 'crm/images/icons/excel.png' %}" alt="Export" class="icon">
+     </a> #}
+</div>
+
+<!-- Filters -->
+<form method="get" action="{% url 'export_shipments_list' %}" class="filter-form">
+  <div class="filter-container">
+
+    <div class="filter-item">
+      <select name="lane" id="lane">
+        <option value="">All Lanes</option>
+        {% for lane in lanes %}
+          <option value="{{ lane.id }}" {% if selected_lane_id == lane.id %}selected{% endif %}>
+            {{ lane.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-item">
+      <select name="status" id="status">
+        <option value="">All Statuses</option>
+        {% for key,label in status_choices %}
+          <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-item">
+      <select name="mode" id="mode">
+        <option value="">All Modes</option>
+        {% for key,label in mode_choices %}
+          <option value="{{ key }}" {% if selected_mode == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-item">
+      <select name="schedule" id="schedule">
+        <option value="">All Schedules</option>
+        {% for s in schedules %}
+          <option value="{{ s.id }}" {% if selected_schedule_id == s.id %}selected{% endif %}>
+            {{ s.lane.name }} | {{ s.bkg_number }} | {{ s.vessel }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-item">
+      <select name="deal" id="deal">
+        <option value="">All Deals</option>
+        {% for d in deals %}
+          <option value="{{ d.id }}" {% if selected_deal_id == d.id %}selected{% endif %}>
+            {{ d.date|date:"Y-m-d" }} | {{ d.supplier.name }} | {{ d.grade }} | {{ d.transport_company.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-item">
+      <button type="submit" class="filter-btn">
+        <img src="{% static 'crm/images/icons/filter.png' %}" alt="Filter" class="icon">
+      </button>
+    </div>
+
+  </div>
+</form>
+
+<!-- Sidebar: Add Export Shipment -->
+<div id="exportFormSidebar" class="sidebar-form">
+  <div class="sidebar-header">
+    <h3>Add Export Shipment</h3>
+    <button id="closeExportSidebarBtn" class="close-btn">&times;</button>
+  </div>
+
+  <form id="exportForm">
+    {% csrf_token %}
+
+    <label for="export_date">Date</label>
+    <input type="date" id="export_date" name="date">
+
+    <label for="export_lane">Lane</label>
+    <select id="export_lane" name="lane">
+      <option value="" selected>—</option>
+      {% for lane in lanes %}
+        <option value="{{ lane.id }}">{{ lane.name }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="export_schedule">Schedule (BKG / Vessel)</label>
+    <select id="export_schedule" name="schedule">
+      <option value="" selected>—</option>
+      {% for s in schedules %}
+        <option value="{{ s.id }}">
+          {{ s.lane.name }} | {{ s.bkg_number }} | {{ s.vessel }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label for="export_deal">Deal (Supplier / Grade / Carrier)</label>
+    <select id="export_deal" name="deal">
+      <option value="" selected>—</option>
+      {% for d in deals %}
+        <option value="{{ d.id }}">
+          {{ d.date|date:"Y-m-d" }} | {{ d.supplier.name }} | {{ d.grade }} | {{ d.transport_company.name }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label for="export_hs_code">HS Code</label>
+    <input type="text" id="export_hs_code" name="hs_code" placeholder="e.g. 4707.90">
+
+    <label for="export_mode">Mode</label>
+    <select id="export_mode" name="mode">
+      {% for key,label in mode_choices %}
+        <option value="{{ key }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="export_status">Status</label>
+    <select id="export_status" name="status">
+      {% for key,label in status_choices %}
+        <option value="{{ key }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="export_price">Export Price</label>
+    <input type="number" step="0.01" id="export_price" name="export_price" placeholder="0.00">
+
+    <label for="export_currency">Currency</label>
+    <select id="export_currency" name="export_currency">
+      <option value="USD" selected>USD</option>
+      <option value="CAD">CAD</option>
+    </select>
+
+    <label for="export_container">Container #</label>
+    <input type="text" id="export_container" name="container_number">
+
+    <label for="export_seal">Seal #</label>
+    <input type="text" id="export_seal" name="seal_number">
+
+    <label for="export_etd">ETD</label>
+    <input type="date" id="export_etd" name="etd">
+
+    <label for="export_eta">ETA</label>
+    <input type="date" id="export_eta" name="eta">
+
+    <button type="submit" class="submit-btn">Submit Export</button>
+  </form>
+</div>
+
+<!-- Sidebar: View / Edit Export Shipment -->
+<div id="viewExportSidebar" class="sidebar-form">
+  <div class="glass-panel">
+    <div class="glass-bg"></div>
+    <div class="glass-tint"></div>
+    <div class="glass-shine"></div>
+    <div class="glass-content">
+
+      <div class="sidebar-header">
+        <h3><span id="exportTitle"></span></h3>
+        <button id="closeViewExportSidebarBtn" class="close-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <div id="exportDetailsContent">
+        <p><strong>Date:</strong> <span id="exportDate"></span></p>
+        <p><strong>Lane:</strong> <span id="exportLane"></span></p>
+
+        <p><strong>Supplier:</strong> <span id="exportSupplier"></span></p>
+        <p><strong>Grade:</strong> <span id="exportGrade"></span></p>
+        <p><strong>Carrier:</strong> <span id="exportCarrier"></span></p>
+
+        <p><strong>HS Code:</strong> <span id="exportHS"></span></p>
+        <p><strong>Mode:</strong> <span id="exportMode"></span></p>
+
+        <p><strong>BKG:</strong> <span id="exportBkg"></span></p>
+        <p><strong>Vessel:</strong> <span id="exportVessel"></span></p>
+
+        <p><strong>DOC C/O:</strong> <span id="exportDocCO"></span></p>
+        <p><strong>ERD:</strong> <span id="exportERD"></span></p>
+        <p><strong>Cargo C/O:</strong> <span id="exportCargoCO"></span></p>
+
+        <p><strong>Status:</strong> <span id="exportStatus"></span></p>
+        <p><strong>Export Price:</strong> <span id="exportPrice"></span></p>
+      </div>
+
+      <!-- Documents panel (like Scale Tickets concept) -->
+      <div class="deal-analytics-card">
+        <h4 class="da-title">Documents</h4>
+        <div id="exportDocsList">
+          {# JS will render documents list with View/Download/Delete buttons #}
+        </div>
+
+        <div class="da-section">
+          <button id="openUploadDocBtn" type="button" class="submit-btn">Upload Document</button>
+        </div>
+      </div>
+
+      <!-- Edit form (hidden by default) -->
+      <form id="editExportForm" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" id="editExportId">
+
+        <div class="form-field">
+          <label for="editExportDate">Date</label>
+          <input type="date" id="editExportDate">
+        </div>
+
+        <div class="form-field">
+          <label for="editExportLane">Lane</label>
+          <select id="editExportLane">
+            <option value="">—</option>
+            {% for lane in lanes %}
+              <option value="{{ lane.id }}">{{ lane.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="editExportSchedule">Schedule</label>
+          <select id="editExportSchedule">
+            <option value="">—</option>
+            {% for s in schedules %}
+              <option value="{{ s.id }}">{{ s.lane.name }} | {{ s.bkg_number }} | {{ s.vessel }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="editExportDeal">Deal</label>
+          <select id="editExportDeal">
+            <option value="">—</option>
+            {% for d in deals %}
+              <option value="{{ d.id }}">{{ d.date|date:"Y-m-d" }} | {{ d.supplier.name }} | {{ d.grade }} | {{ d.transport_company.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="editExportHS">HS Code</label>
+          <input type="text" id="editExportHS">
+        </div>
+
+        <div class="form-field">
+          <label for="editExportMode">Mode</label>
+          <select id="editExportMode">
+            {% for key,label in mode_choices %}
+              <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="editExportStatus">Status</label>
+          <select id="editExportStatus">
+            {% for key,label in status_choices %}
+              <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="editExportPrice">Export Price</label>
+          <input type="number" step="0.01" id="editExportPrice">
+        </div>
+
+        <div class="form-field">
+          <label for="editExportCurrency">Currency</label>
+          <select id="editExportCurrency">
+            <option value="USD">USD</option>
+            <option value="CAD">CAD</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="editExportContainer">Container #</label>
+          <input type="text" id="editExportContainer">
+        </div>
+
+        <div class="form-field">
+          <label for="editExportSeal">Seal #</label>
+          <input type="text" id="editExportSeal">
+        </div>
+
+        <div class="action-buttons">
+          <button type="submit" class="save-btn">Save</button>
+          <button type="button" id="cancelExportEditBtn" class="cancel-btn">Cancel</button>
+        </div>
+      </form>
+
+      <div class="sidebar-buttons-container">
+        <button id="editExportBtn" class="edit-btn">
+          <img src="{% static 'crm/images/icons/edit.png' %}" alt="Edit">
+        </button>
+        <button id="deleteExportBtn" class="delete-btn">
+          <img src="{% static 'crm/images/icons/trash.png' %}" alt="Delete">
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Export Shipments table -->
+<table id="exportshipmentTable" class="exportshipment-table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Lane</th>
+
+      <th>Supplier</th>
+      <th>Grade</th>
+      <th>HS Code</th>
+
+      <th>Mode</th>
+      <th>Carrier</th>
+
+      <th>BKG Number</th>
+      <th>Vessel</th>
+
+      <th>DOC C/O</th>
+      <th>ERD</th>
+      <th>Cargo C/O</th>
+
+      <th>Docs</th>
+      <th>Status</th>
+      <th>Export Price</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for export in exports %}
+      <tr class="export-row" data-id="{{ export.id }}">
+        <td>{% if export.date %}{{ export.date|date:"m.d.y" }}{% else %}—{% endif %}</td>
+        <td>{% if export.lane %}{{ export.lane.name }}{% else %}—{% endif %}</td>
+
+        <td>{% if export.deal and export.deal.supplier %}{{ export.deal.supplier.name }}{% else %}—{% endif %}</td>
+        <td>{% if export.deal %}{{ export.deal.grade }}{% else %}—{% endif %}</td>
+        <td>{% if export.hs_code %}{{ export.hs_code }}{% else %}—{% endif %}</td>
+
+        <td>{{ export.get_mode_display }}</td>
+        <td>{% if export.deal and export.deal.transport_company %}{{ export.deal.transport_company.name }}{% else %}—{% endif %}</td>
+
+        <td>{% if export.schedule %}{{ export.schedule.bkg_number }}{% else %}—{% endif %}</td>
+        <td>{% if export.schedule %}{{ export.schedule.vessel }}{% else %}—{% endif %}</td>
+
+        <td>
+          {% if export.schedule and export.schedule.doc_cutoff_at %}
+            {{ export.schedule.doc_cutoff_at|date:"m.d.y H:i" }}
+          {% else %}
+            Not yet out
+          {% endif %}
+        </td>
+
+        <td>
+          {% if export.schedule and export.schedule.erd_at %}
+            {{ export.schedule.erd_at|date:"m.d.y H:i" }}
+          {% else %}
+            Not yet out
+          {% endif %}
+        </td>
+
+        <td>
+          {% if export.schedule and export.schedule.cargo_cutoff_at %}
+            {{ export.schedule.cargo_cutoff_at|date:"m.d.y H:i" }}
+          {% else %}
+            Not yet out
+          {% endif %}
+        </td>
+
+        <td>
+          <span class="docs-pill" title="Uploaded documents">{{ export.documents.count }}</span>
+        </td>
+
+        <td>
+          <span class="status-pill status-{{ export.status }}">{{ export.get_status_display }}</span>
+        </td>
+
+        <td>
+          {% if export.export_price %}
+            {{ export.export_price|floatformat:2 }} {{ export.export_currency }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+
+        <td class="actions-cell">
+          <button type="button" class="btn btn-sm btn-view view-export-btn" data-id="{{ export.id }}">View</button>
+          <button type="button" class="btn btn-sm btn-upload upload-export-btn" data-id="{{ export.id }}">Upload</button>
+        </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="16" style="text-align:center; padding:16px;">No export shipments found.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script src="{% static 'crm/js/export_shipments.js' %}"></script>
+<link rel="stylesheet" href="{% static 'crm/export_shipments.css' %}">
+<link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+
+{% endblock %}

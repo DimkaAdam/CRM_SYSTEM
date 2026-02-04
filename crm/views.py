@@ -1,7 +1,8 @@
 from django.core.serializers import serialize
 import os
 from .models import (Client, Deals, Task, PipeLine, CompanyPallets, Company, Contact, Employee, ContactMaterial,
-                     ScheduledShipment,SCaleTicketStatus,TruckProfile,EmailRecipientPreference)
+                     ScheduledShipment,SCaleTicketStatus,TruckProfile,EmailRecipientPreference,ExportShipment, ExportLane,
+                     VesselSchedule, Deals)
 
 
 from datetime import datetime, date, time, timedelta
@@ -58,8 +59,6 @@ import glob
 from django.utils.timezone import make_aware
 from django.db.models import Sum, Count, F
 from urllib.parse import unquote
-
-
 
 from .models import Event
 
@@ -3223,3 +3222,158 @@ def api_send_report_email(request):
     status_obj.save()
 
     return JsonResponse({"ok": True, "sent_to": to_emails})
+
+
+
+
+
+
+def export_shipments_list(request):
+    """
+    List page for Export Shipments:
+    - table rows
+    - filters: lane / status / mode / schedule / deal
+    """
+    # --- base queryset (fast) ---
+    exports_qs = (
+        ExportShipment.objects
+        .select_related(
+            "lane",
+            "schedule",
+            "created_by",
+        )
+        .prefetch_related("documents")
+        .order_by("-created_at")
+    )
+
+    # --- filters ---
+    lane_id = request.GET.get("lane", "").strip()
+    status = request.GET.get("status", "").strip()
+    mode = request.GET.get("mode", "").strip()
+    schedule_id = request.GET.get("schedule", "").strip()
+    deal_id = request.GET.get("deal", "").strip()
+
+    if lane_id:
+        exports_qs = exports_qs.filter(lane_id=lane_id)
+
+    if status:
+        exports_qs = exports_qs.filter(status=status)
+
+    if mode:
+        exports_qs = exports_qs.filter(mode=mode)
+
+    if schedule_id:
+        exports_qs = exports_qs.filter(schedule_id=schedule_id)
+
+    if deal_id:
+        exports_qs = exports_qs.filter(deal_id=deal_id)
+
+    # --- dropdown data for filters + create sidebar ---
+    lanes = ExportLane.objects.filter(is_active=True).order_by("name")
+
+    schedules = (
+        VesselSchedule.objects
+        .select_related("lane")
+        .filter(is_active=True)
+        .order_by("lane__name", "doc_cutoff_at", "erd_at", "cargo_cutoff_at")
+    )
+
+    # deals for dropdown (you can limit to last N if too many)
+    deals = (
+        Deals.objects
+        .select_related("supplier", "transport_company")
+        .order_by("-date")[:500]
+    )
+
+    context = {
+        "exports": exports_qs,
+
+        "lanes": lanes,
+        "schedules": schedules,
+        "deals": deals,
+
+        "mode_choices": ExportShipment.MODE_CHOICES,
+        "status_choices": ExportShipment.STATUS_CHOICES,
+
+        # keep selected values for UI
+        "selected_lane_id": int(lane_id) if lane_id.isdigit() else "",
+        "selected_status": status,
+        "selected_mode": mode,
+        "selected_schedule_id": int(schedule_id) if schedule_id.isdigit() else "",
+        "selected_deal_id": int(deal_id) if deal_id.isdigit() else "",
+    }
+
+    return render(request, "crm/export_shipments.html", context)
+
+
+
+def export_shipment_detail_json(request, pk):
+    """
+    Optional: if you want "View" button to open sidebar and load details via fetch.
+    Returns JSON for one ExportShipment (no HTML).
+    """
+    export = get_object_or_404(
+        ExportShipment.objects.select_related(
+            "lane",
+            "schedule",
+            "deal__supplier",
+            "deal__transport_company",
+        ).prefetch_related("documents"),
+        pk=pk,
+    )
+
+    # basic fields
+    data = {
+        "id": export.id,
+        "date": export.date.isoformat() if export.date else None,
+
+        "lane": export.lane.name if export.lane else None,
+        "lane_id": export.lane_id,
+
+        "hs_code": export.hs_code or "",
+        "mode": export.mode,
+        "mode_label": export.get_mode_display(),
+        "status": export.status,
+        "status_label": export.get_status_display(),
+
+        "export_price": str(export.export_price) if export.export_price is not None else None,
+        "export_currency": export.export_currency,
+
+        "container_number": export.container_number,
+        "seal_number": export.seal_number,
+
+        "etd": export.etd.isoformat() if export.etd else None,
+        "eta": export.eta.isoformat() if export.eta else None,
+
+        # deal derived
+        "supplier": export.deal.supplier.name if export.deal and export.deal.supplier else None,
+        "grade": export.deal.grade if export.deal else None,
+        "carrier": export.deal.transport_company.name if export.deal and export.deal.transport_company else None,
+
+        # schedule derived
+        "bkg_number": export.schedule.bkg_number if export.schedule else None,
+        "vessel": export.schedule.vessel if export.schedule else None,
+        "doc_cutoff_at": export.schedule.doc_cutoff_at.isoformat() if export.schedule and export.schedule.doc_cutoff_at else None,
+        "erd_at": export.schedule.erd_at.isoformat() if export.schedule and export.schedule.erd_at else None,
+        "cargo_cutoff_at": export.schedule.cargo_cutoff_at.isoformat() if export.schedule and export.schedule.cargo_cutoff_at else None,
+
+        # docs
+        "docs_count": export.documents.count(),
+        "documents": [
+            {
+                "id": d.id,
+                "doc_type": d.doc_type,
+                "doc_type_label": d.get_doc_type_display(),
+                "file_name": d.file.name.split("/")[-1] if d.file else "",
+                "file_url": d.file.url if d.file else "",
+                "uploaded_at": d.uploaded_at.isoformat() if d.uploaded_at else None,
+            }
+            for d in export.documents.all()
+        ],
+    }
+
+    from django.http import JsonResponse
+    return JsonResponse(data)
+
+def export_shipments_to_excel(request):
+    return HttpResponse("Not implemented yet", content_type="text/plain")
