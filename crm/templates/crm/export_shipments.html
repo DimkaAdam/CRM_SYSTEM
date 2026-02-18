@@ -5,416 +5,1028 @@
 {% block page_title %}Export Shipments{% endblock %}
 {% block content %}
 
-<!-- Control buttons -->
-<div class="buttons-container">
-  <button id="addNewExportBtn" class="add-new-deal-btn" title="Add Export Shipment">
-    <img src="{% static 'crm/images/icons/plus.png' %}" alt="Add" class="icon">
-  </button>
+<link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+<link rel="stylesheet" href="{% static 'crm/export_shipments.css' %}">
 
-  {# optional: export to excel button (add url later) #}
-  {# <a href="{% url 'export_shipments_to_excel' %}" class="export-btn">
-      <img src="{% static 'crm/images/icons/excel.png' %}" alt="Export" class="icon">
-     </a> #}
+<style>
+/* ============================================================
+   ES = Export Shipments — LIGHT THEME (works in any CRM layout)
+   ============================================================ */
+:root {
+  --es-accent:    #3b82f6;
+  --es-accent2:   #6d4dff;
+  --es-green:     #16a34a;
+  --es-amber:     #d97706;
+  --es-red:       #dc2626;
+  --es-blue:      #2563eb;
+
+  --es-bg:        #f1f4f9;
+  --es-surface:   #ffffff;
+  --es-surface2:  #f8fafc;
+  --es-border:    #e2e8f0;
+  --es-border2:   #edf2f7;
+
+  --es-text:      #0f172a;
+  --es-muted:     #64748b;
+  --es-muted2:    #94a3b8;
+
+  --es-sidebar-w: 490px;
+  --es-r:         10px;
+  --es-shadow-sm: 0 4px 16px rgba(15,23,42,.08);
+}
+
+/* ── PAGE HEADER ── */
+.es-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.es-header h1 {
+  font-size: 26px; font-weight: 800; letter-spacing: -.03em;
+  color: var(--es-text); margin: 0;
+}
+.es-header h1 em {
+  font-style: normal;
+  background: linear-gradient(90deg,var(--es-accent),var(--es-accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.es-header p { margin: 5px 0 0; color: var(--es-muted); font-size: 13px; }
+.es-header-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── BUTTONS ── */
+.es-btn {
+  height: 36px; padding: 0 16px; border-radius: 999px;
+  border: 1px solid var(--es-border);
+  background: var(--es-surface); color: var(--es-text);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .15s; font-family: inherit;
+  text-decoration: none;
+}
+.es-btn:hover { background: var(--es-surface2); border-color: #cbd5e1; }
+.es-btn-primary {
+  border: none;
+  background: linear-gradient(135deg,var(--es-accent),var(--es-accent2));
+  color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,.28);
+}
+.es-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(59,130,246,.36); }
+.es-btn-danger { background: #fff1f1; border-color: #fecaca; color: var(--es-red); }
+.es-btn-danger:hover { background: #fee2e2; }
+.es-btn-sm {
+  height: 28px; padding: 0 10px; border-radius: 7px;
+  border: 1px solid var(--es-border); background: var(--es-surface2);
+  color: var(--es-text); font-size: 12px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; font-family: inherit;
+  transition: all .13s; text-decoration: none;
+}
+.es-btn-sm:hover { background: #e2e8f0; }
+
+/* ── FILTERS ── */
+.es-filters {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.es-filter-select, .es-search-input {
+  height: 34px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--es-border); background: var(--es-surface);
+  color: var(--es-text); font-size: 13px; outline: none;
+  cursor: pointer; transition: border-color .15s; font-family: inherit;
+}
+.es-filter-select:focus, .es-search-input:focus { border-color: var(--es-accent); }
+.es-search-wrap { position: relative; }
+.es-search-wrap .es-search-input { padding-left: 34px; width: 220px; }
+.es-search-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--es-muted2); font-size: 14px; pointer-events: none;
+}
+
+/* ── TABLE ── */
+.es-table-wrap {
+  border: 1px solid var(--es-border); border-radius: 14px;
+  background: var(--es-surface); overflow: hidden;
+  box-shadow: var(--es-shadow-sm);
+}
+.es-tbl { width: 100%; border-collapse: collapse; }
+.es-tbl thead th {
+  padding: 11px 16px; font-size: 10px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--es-muted); background: var(--es-surface2);
+  border-bottom: 1px solid var(--es-border);
+  white-space: nowrap; text-align: left;
+}
+.es-tbl thead th:last-child { text-align: right; }
+.es-tbl tbody tr {
+  border-bottom: 1px solid var(--es-border2);
+  cursor: pointer; transition: background .12s;
+}
+.es-tbl tbody tr:last-child { border-bottom: none; }
+.es-tbl tbody tr:hover { background: #f8fafc; }
+.es-tbl tbody td { padding: 13px 16px; font-size: 13px; color: var(--es-text); vertical-align: middle; }
+.es-tbl tbody td:last-child { text-align: right; }
+
+.td-mono { font-family: ui-monospace,Menlo,monospace; font-weight: 700; font-size: 12px; color: var(--es-accent); }
+.td-lane { display: flex; align-items: center; gap: 10px; }
+.lane-pin {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: #eff6ff; border: 1px solid #bfdbfe;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0;
+}
+.lane-name { font-weight: 600; font-size: 13px; color: var(--es-text); }
+.lane-sub  { font-size: 11px; color: var(--es-muted); margin-top: 1px; }
+.td-vessel { font-size: 12px; color: var(--es-muted); }
+.td-nil    { color: var(--es-muted2); }
+
+/* Pills */
+.es-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; border: 1px solid transparent; white-space: nowrap;
+}
+.es-pill::before { content:''; width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.pill-intransit  { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+.pill-intransit::before  { background:#3b82f6; }
+.pill-pending    { background:#fffbeb; color:#92400e; border-color:#fde68a; }
+.pill-pending::before    { background:#f59e0b; }
+.pill-cleared, .pill-completed { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+.pill-cleared::before, .pill-completed::before { background:#22c55e; }
+.pill-draft      { background:#f8fafc; color:var(--es-muted); border-color:var(--es-border); }
+.pill-draft::before      { background:var(--es-muted2); }
+.pill-cancelled  { background:#fff1f2; color:#b91c1c; border-color:#fecdd3; }
+.pill-cancelled::before  { background:#ef4444; }
+
+/* Doc dots */
+.docs-cell { display:flex; align-items:center; gap:5px; }
+.doc-dot {
+  width:24px; height:24px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--es-border); background:var(--es-surface2);
+  font-size:11px; color:var(--es-muted2);
+}
+.doc-dot.ok { background:#f0fdf4; border-color:#bbf7d0; color:#16a34a; }
+
+/* Row actions */
+.row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+.es-icon-btn {
+  width:30px; height:30px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--es-border); background:var(--es-surface2);
+  color:var(--es-muted); cursor:pointer; font-size:13px; transition:all .13s;
+}
+.es-icon-btn:hover { border-color:#cbd5e1; background:#e2e8f0; color:var(--es-text); }
+.es-icon-btn.view-btn   { background:#f0fdf4; border-color:#bbf7d0; color:#16a34a; }
+.es-icon-btn.view-btn:hover   { background:#dcfce7; }
+.es-icon-btn.upload-btn { background:#eff6ff; border-color:#bfdbfe; color:#2563eb; }
+.es-icon-btn.upload-btn:hover { background:#dbeafe; }
+.es-icon-btn.del-btn    { background:#fff1f2; border-color:#fecdd3; color:#dc2626; }
+.es-icon-btn.del-btn:hover    { background:#fee2e2; }
+
+/* Status bar */
+.es-status-bar { margin-top:12px; display:flex; align-items:center; gap:10px; font-size:12px; color:var(--es-muted); }
+.live-dot-wrap  { display:flex; align-items:center; gap:7px; }
+.live-dot {
+  width:7px; height:7px; border-radius:50%; background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.15); animation:esPulse 2s infinite;
+}
+@keyframes esPulse {
+  0%,100% { box-shadow:0 0 0 3px rgba(34,197,94,.15); }
+  50%      { box-shadow:0 0 0 7px rgba(34,197,94,.05); }
+}
+
+/* ── OVERLAY ── */
+.es-overlay {
+  position:fixed; inset:0;
+  background:rgba(15,23,42,.38); backdrop-filter:blur(3px);
+  z-index:200; opacity:0; pointer-events:none; transition:opacity .25s;
+}
+.es-overlay.active { opacity:1; pointer-events:all; }
+
+/* ── SIDEBAR ── */
+.es-sidebar {
+  position:fixed; right:0; top:0; bottom:0;
+  width:var(--es-sidebar-w);
+  background:var(--es-surface);
+  border-left:1px solid var(--es-border);
+  box-shadow:-12px 0 40px rgba(15,23,42,.10);
+  z-index:201; display:flex; flex-direction:column;
+  transform:translateX(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+}
+.es-sidebar.open { transform:translateX(0); }
+.es-sidebar.es-add-sidebar { width:420px; }
+
+.es-sb-head {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  padding:18px 20px 14px; border-bottom:1px solid var(--es-border); flex-shrink:0;
+}
+.es-sb-head h2 { font-size:17px; font-weight:800; letter-spacing:-.02em; color:var(--es-text); margin:0; }
+.es-sb-head p  { margin:3px 0 0; font-size:12px; color:var(--es-muted); }
+.es-close-btn {
+  width:32px; height:32px; border-radius:8px;
+  border:1px solid var(--es-border); background:var(--es-surface2);
+  color:var(--es-muted); cursor:pointer; font-size:16px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .13s; flex-shrink:0;
+}
+.es-close-btn:hover { background:#e2e8f0; color:var(--es-text); }
+
+.es-sb-body {
+  flex:1; overflow-y:auto; padding:18px 20px;
+  scrollbar-width:thin; scrollbar-color:#e2e8f0 transparent;
+}
+
+/* Sections */
+.es-sec-label {
+  font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--es-accent); margin:18px 0 10px;
+  padding-bottom:6px; border-bottom:1px solid var(--es-border2);
+}
+.es-sec-label:first-child { margin-top:0; }
+
+/* Grid */
+.es-grid  { display:grid; gap:11px; }
+.es-g2    { grid-template-columns:1fr 1fr; }
+.es-g3    { grid-template-columns:1fr 1fr 1fr; }
+
+/* Fields */
+.es-field { display:flex; flex-direction:column; gap:4px; }
+.es-field label { font-size:11px; font-weight:600; color:var(--es-muted); }
+.es-field input,
+.es-field select,
+.es-field textarea {
+  height:36px; border-radius:var(--es-r);
+  border:1px solid var(--es-border);
+  background:var(--es-surface2); color:var(--es-text);
+  padding:0 11px; font-family:inherit; font-size:13px;
+  outline:none; transition:border-color .15s,box-shadow .15s; width:100%;
+}
+.es-field textarea { height:auto; padding:9px 11px; resize:vertical; }
+.es-field input:focus,
+.es-field select:focus,
+.es-field textarea:focus {
+  border-color:var(--es-accent); box-shadow:0 0 0 3px rgba(59,130,246,.09); background:#fff;
+}
+.es-field input::placeholder,
+.es-field textarea::placeholder { color:var(--es-muted2); }
+
+.es-price-row { display:flex; gap:8px; }
+.es-price-row input  { flex:1; }
+.es-price-row select { width:80px; flex-shrink:0; }
+
+/* Save status */
+.es-save-status { font-size:11px; color:var(--es-muted2); margin-top:8px; min-height:15px; }
+.es-save-status.saving { color:var(--es-amber); }
+.es-save-status.saved  { color:var(--es-green); }
+.es-save-status.error  { color:var(--es-red); }
+
+/* Divider */
+.es-divider { height:1px; background:var(--es-border); margin:16px 0; }
+
+/* Documents */
+.es-docs-list { display:flex; flex-direction:column; gap:7px; margin-bottom:12px; }
+.es-doc-row {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 12px; border-radius:10px;
+  border:1px solid var(--es-border); background:var(--es-surface2);
+}
+.doc-type-lbl { font-size:12px; font-weight:600; color:var(--es-text); }
+.doc-file-nm  { font-size:11px; color:var(--es-muted); margin-top:1px; }
+.es-doc-btns  { display:flex; gap:6px; flex-shrink:0; }
+
+.es-upload-area {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:10px 12px; border-radius:10px;
+  border:1px dashed #cbd5e1; background:#f8fafc;
+}
+.es-upload-area select {
+  flex:1; min-width:130px; height:32px; border-radius:8px;
+  border:1px solid var(--es-border); background:#fff;
+  color:var(--es-text); font-size:12px; padding:0 10px;
+  outline:none; font-family:inherit;
+}
+
+/* Sidebar footer */
+.es-sb-foot {
+  padding:14px 20px; border-top:1px solid var(--es-border);
+  flex-shrink:0; display:flex; gap:8px; background:var(--es-surface2);
+}
+.es-btn-full { flex:1; height:40px; border-radius:12px; justify-content:center; font-size:13px; }
+.es-btn-sq   { width:40px; padding:0; justify-content:center; flex-shrink:0; }
+
+/* ── TOAST ── */
+.es-toast {
+  position:fixed; bottom:24px; left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:#1e293b; color:#f1f5f9;
+  border-radius:999px; padding:10px 20px;
+  font-size:13px; font-weight:600;
+  box-shadow:0 16px 48px rgba(15,23,42,.2);
+  z-index:300; transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s;
+  opacity:0; white-space:nowrap;
+}
+.es-toast.show    { transform:translateX(-50%) translateY(0); opacity:1; }
+.es-toast.success { background:#14532d; color:#bbf7d0; }
+.es-toast.error   { background:#7f1d1d; color:#fecaca; }
+
+/* Empty state */
+.es-empty td { text-align:center; padding:48px; color:var(--es-muted); }
+</style>
+
+<!-- ── PAGE HEADER ── -->
+<div class="es-header">
+  <div>
+    <h1>Export <em>Shipments</em></h1>
+    <p>Manage and monitor real-time global logistics workflows.</p>
+  </div>
+  <div class="es-header-actions">
+    <button class="es-btn" type="button" id="esExportCsv">↓ CSV</button>
+    <button class="es-btn es-btn-primary" type="button" id="esAddNew">+ New Shipment</button>
+  </div>
 </div>
 
-<!-- Filters -->
-<form method="get" action="{% url 'export_shipments_list' %}" class="filter-form">
-  <div class="filter-container">
-
-    <div class="filter-item">
-      <select name="lane" id="lane">
-        <option value="">All Lanes</option>
-        {% for lane in lanes %}
-          <option value="{{ lane.id }}" {% if selected_lane_id == lane.id %}selected{% endif %}>
-            {{ lane.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <select name="status" id="status">
-        <option value="">All Statuses</option>
-        {% for key,label in status_choices %}
-          <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <select name="mode" id="mode">
-        <option value="">All Modes</option>
-        {% for key,label in mode_choices %}
-          <option value="{{ key }}" {% if selected_mode == key %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <select name="schedule" id="schedule">
-        <option value="">All Schedules</option>
-        {% for s in schedules %}
-          <option value="{{ s.id }}" {% if selected_schedule_id == s.id %}selected{% endif %}>
-            {{ s.lane.name }} | {{ s.bkg_number }} | {{ s.vessel }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <select name="deal" id="deal">
-        <option value="">All Deals</option>
-        {% for d in deals %}
-          <option value="{{ d.id }}" {% if selected_deal_id == d.id %}selected{% endif %}>
-            {{ d.date|date:"Y-m-d" }} | {{ d.supplier.name }} | {{ d.grade }} | {{ d.transport_company.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="filter-item">
-      <button type="submit" class="filter-btn">
-        <img src="{% static 'crm/images/icons/filter.png' %}" alt="Filter" class="icon">
-      </button>
-    </div>
-
+<!-- ── FILTERS ── -->
+<div class="es-filters">
+  <div class="es-search-wrap">
+    <span class="es-search-icon">⌕</span>
+    <input class="es-search-input" type="text" placeholder="Search..." id="esSearch">
   </div>
-</form>
+  <select class="es-filter-select" id="esFilterLane">
+    <option value="">All Lanes</option>
+    {% for l in lanes %}
+      <option value="{{ l.id }}" {% if selected_lane_id == l.id %}selected{% endif %}>{{ l.name }}</option>
+    {% endfor %}
+  </select>
+  <select class="es-filter-select" id="esFilterStatus">
+    <option value="">All Statuses</option>
+    {% for key,label in status_choices %}
+      <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select class="es-filter-select" id="esFilterMode">
+    <option value="">All Modes</option>
+    {% for key,label in mode_choices %}
+      <option value="{{ key }}" {% if selected_mode == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</div>
 
-<!-- Sidebar: Add Export Shipment -->
-<div id="exportFormSidebar" class="sidebar-form">
-  <div class="sidebar-header">
-    <h3>Add Export Shipment</h3>
-    <button id="closeExportSidebarBtn" class="close-btn">&times;</button>
+<!-- ── TABLE ── -->
+<div class="es-table-wrap">
+  <table class="es-tbl">
+    <thead>
+      <tr>
+        <th>BKG Number</th>
+        <th>Lane / Destination</th>
+        <th>Mode</th>
+        <th>Status</th>
+        <th>Vessel</th>
+        <th>Docs</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="esTableBody">
+      {% for shipment in shipments %}
+      <tr data-id="{{ shipment.id }}"
+          data-lane="{{ shipment.schedule.lane.name|default:'' }}"
+          data-status="{{ shipment.status }}"
+          data-mode="{{ shipment.mode }}"
+          data-vessel="{{ shipment.schedule.vessel|default:'' }}"
+          data-bkg="{{ shipment.schedule.bkg_number|default:'' }}">
+
+        <td class="td-mono">{{ shipment.schedule.bkg_number|default:"—" }}</td>
+
+        <td>
+          <div class="td-lane">
+            <div class="lane-pin">📍</div>
+            <div>
+              <div class="lane-name">{{ shipment.schedule.lane.name|default:"—" }}</div>
+
+            </div>
+          </div>
+        </td>
+
+
+
+        <td>
+          {% if shipment.mode == "ocean" %}🚢 Ocean
+          {% elif shipment.mode == "air" %}✈️ Air
+          {% elif shipment.mode == "road" %}🚛 Road
+          {% elif shipment.mode == "rail" %}🚂 Rail
+          {% else %}📦 {{ shipment.mode }}{% endif %}
+        </td>
+
+        <td><span class="es-pill pill-{{ shipment.status }}">{{ shipment.get_status_display }}</span></td>
+
+        <td class="td-vessel">
+          {% if shipment.schedule.vessel %}{{ shipment.schedule.vessel }}{% else %}<span class="td-nil">—</span>{% endif %}
+        </td>
+
+        <td>
+          <div class="docs-cell">
+            {% if shipment.documents.count %}
+              {% for doc in shipment.documents.all|slice:":3" %}
+                <div class="doc-dot ok" title="{{ doc.get_doc_type_display }}">✓</div>
+              {% endfor %}
+              {% if shipment.documents.count > 3 %}
+                <div class="doc-dot" title="{{ shipment.documents.count }} docs">+{{ shipment.documents.count|add:"-3" }}</div>
+              {% endif %}
+            {% else %}
+              <span class="td-nil" style="font-size:12px;">—</span>
+            {% endif %}
+          </div>
+        </td>
+
+        <td>
+          <div class="row-actions">
+            <button class="es-icon-btn view-btn   js-view"   data-id="{{ shipment.id }}" title="View / Edit">👁</button>
+            <button class="es-icon-btn upload-btn  js-upload" data-id="{{ shipment.id }}" title="Upload doc">⤴</button>
+            <button class="es-icon-btn del-btn     js-delete" data-id="{{ shipment.id }}" title="Delete">🗑</button>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr class="es-empty"><td colspan="8">
+        <div style="font-size:32px;margin-bottom:10px;">📦</div>
+        <div>No shipments found</div>
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- STATUS BAR -->
+<div class="es-status-bar">
+  <div class="live-dot-wrap">
+    <div class="live-dot"></div>
+    <span>All ports operational</span>
+  </div>
+  <span>·</span>
+  <span id="esRowCount">{{ shipments|length }} shipment{{ shipments|pluralize }}</span>
+</div>
+
+<!-- ── OVERLAY ── -->
+<div class="es-overlay" id="esOverlay"></div>
+
+<!-- ════════════════════════════════════════════════
+     SIDEBAR: VIEW / EDIT
+     All fields matching original export_shipments.js:
+     vessel, hs_code, doc_cutoff_at, erd_at, cargo_cutoff_at,
+     status, export_price, export_currency,
+     container_number, seal_number, etd, eta, notes, documents
+     ════════════════════════════════════════════════ -->
+<div class="es-sidebar" id="esViewSidebar">
+  <div class="es-sb-head">
+    <div>
+      <h2 id="esSbTitle">Shipment Details</h2>
+      <p id="esSbSub">—</p>
+    </div>
+    <button class="es-close-btn" id="esCloseView">✕</button>
   </div>
 
-  <form id="exportForm">
+  <div class="es-sb-body">
     {% csrf_token %}
+    <input type="hidden" id="esSbId">
 
-    <label for="export_date">Date</label>
-    <input type="date" id="export_date" name="date">
+    <div class="es-sec-label">Vessel & Classification</div>
+    <div class="es-grid">
+      <div class="es-field">
+        <label>Vessel</label>
+        <input id="sb_vessel" type="text" placeholder="e.g. ONE Innovation">
 
-    <label for="export_lane">Lane</label>
-    <select id="export_lane" name="lane">
-      <option value="" selected>—</option>
-      {% for lane in lanes %}
-        <option value="{{ lane.id }}">{{ lane.name }}</option>
-      {% endfor %}
-    </select>
-
-    <label for="export_schedule">Schedule (BKG / Vessel)</label>
-    <select id="export_schedule" name="schedule">
-      <option value="" selected>—</option>
-      {% for s in schedules %}
-        <option value="{{ s.id }}">
-          {{ s.lane.name }} | {{ s.bkg_number }} | {{ s.vessel }}
-        </option>
-      {% endfor %}
-    </select>
-
-    <label for="export_deal">Deal (Supplier / Grade / Carrier)</label>
-    <select id="export_deal" name="deal">
-      <option value="" selected>—</option>
-      {% for d in deals %}
-        <option value="{{ d.id }}">
-          {{ d.date|date:"Y-m-d" }} | {{ d.supplier.name }} | {{ d.grade }} | {{ d.transport_company.name }}
-        </option>
-      {% endfor %}
-    </select>
-
-    <label for="export_hs_code">HS Code</label>
-    <input type="text" id="export_hs_code" name="hs_code" placeholder="e.g. 4707.90">
-
-    <label for="export_mode">Mode</label>
-    <select id="export_mode" name="mode">
-      {% for key,label in mode_choices %}
-        <option value="{{ key }}">{{ label }}</option>
-      {% endfor %}
-    </select>
-
-    <label for="export_status">Status</label>
-    <select id="export_status" name="status">
-      {% for key,label in status_choices %}
-        <option value="{{ key }}">{{ label }}</option>
-      {% endfor %}
-    </select>
-
-    <label for="export_price">Export Price</label>
-    <input type="number" step="0.01" id="export_price" name="export_price" placeholder="0.00">
-
-    <label for="export_currency">Currency</label>
-    <select id="export_currency" name="export_currency">
-      <option value="USD" selected>USD</option>
-      <option value="CAD">CAD</option>
-    </select>
-
-    <label for="export_container">Container #</label>
-    <input type="text" id="export_container" name="container_number">
-
-    <label for="export_seal">Seal #</label>
-    <input type="text" id="export_seal" name="seal_number">
-
-    <label for="export_etd">ETD</label>
-    <input type="date" id="export_etd" name="etd">
-
-    <label for="export_eta">ETA</label>
-    <input type="date" id="export_eta" name="eta">
-
-    <button type="submit" class="submit-btn">Submit Export</button>
-  </form>
-</div>
-
-<!-- Sidebar: View / Edit Export Shipment -->
-<div id="viewExportSidebar" class="sidebar-form">
-  <div class="glass-panel">
-    <div class="glass-bg"></div>
-    <div class="glass-tint"></div>
-    <div class="glass-shine"></div>
-    <div class="glass-content">
-
-      <div class="sidebar-header">
-        <h3><span id="exportTitle"></span></h3>
-        <button id="closeViewExportSidebarBtn" class="close-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="es-field">
+        <label>HS Code</label>
+        <input id="sb_hs_code" type="text" placeholder="e.g. 4707.90">
       </div>
 
-      <div id="exportDetailsContent">
-        <p><strong>Date:</strong> <span id="exportDate"></span></p>
-        <p><strong>Lane:</strong> <span id="exportLane"></span></p>
-
-        <p><strong>Supplier:</strong> <span id="exportSupplier"></span></p>
-        <p><strong>Grade:</strong> <span id="exportGrade"></span></p>
-        <p><strong>Carrier:</strong> <span id="exportCarrier"></span></p>
-
-        <p><strong>HS Code:</strong> <span id="exportHS"></span></p>
-        <p><strong>Mode:</strong> <span id="exportMode"></span></p>
-
-        <p><strong>BKG:</strong> <span id="exportBkg"></span></p>
-        <p><strong>Vessel:</strong> <span id="exportVessel"></span></p>
-
-        <p><strong>DOC C/O:</strong> <span id="exportDocCO"></span></p>
-        <p><strong>ERD:</strong> <span id="exportERD"></span></p>
-        <p><strong>Cargo C/O:</strong> <span id="exportCargoCO"></span></p>
-
-        <p><strong>Status:</strong> <span id="exportStatus"></span></p>
-        <p><strong>Export Price:</strong> <span id="exportPrice"></span></p>
+      <div class="es-field">
+        <label>ERD</label>
+        <input id="sb_erd_at" type="date">
       </div>
 
-      <!-- Documents panel (like Scale Tickets concept) -->
-      <div class="deal-analytics-card">
-        <h4 class="da-title">Documents</h4>
-        <div id="exportDocsList">
-          {# JS will render documents list with View/Download/Delete buttons #}
-        </div>
+    </div>
 
-        <div class="da-section">
-          <button id="openUploadDocBtn" type="button" class="submit-btn">Upload Document</button>
-        </div>
+    <div class="es-sec-label">Container Details</div>
+    <div class="es-grid">
+      <div class="es-field">
+        <label>Container #</label>
+        <input id="sb_container_number" type="text" placeholder="e.g. MSCU1234567">
+      </div>
+      <div class="es-field">
+        <label>Seal #</label>
+        <input id="sb_seal_number" type="text" placeholder="e.g. SL-001234">
       </div>
 
-      <!-- Edit form (hidden by default) -->
-      <form id="editExportForm" style="display:none;">
-        {% csrf_token %}
-        <input type="hidden" id="editExportId">
+      <div class="es-field">
+        <label>CERS #</label>
+        <input id="sb_cers_number" type="text" placeholder="e.g. SL-001234">
+      </div>
+    </div>
 
-        <div class="form-field">
-          <label for="editExportDate">Date</label>
-          <input type="date" id="editExportDate">
-        </div>
 
-        <div class="form-field">
-          <label for="editExportLane">Lane</label>
-          <select id="editExportLane">
-            <option value="">—</option>
-            {% for lane in lanes %}
-              <option value="{{ lane.id }}">{{ lane.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
 
-        <div class="form-field">
-          <label for="editExportSchedule">Schedule</label>
-          <select id="editExportSchedule">
-            <option value="">—</option>
-            {% for s in schedules %}
-              <option value="{{ s.id }}">{{ s.lane.name }} | {{ s.bkg_number }} | {{ s.vessel }}</option>
-            {% endfor %}
-          </select>
-        </div>
+    <div class="es-sec-label">Cutoff Dates</div>
+    <div class="es-grid">
 
-        <div class="form-field">
-          <label for="editExportDeal">Deal</label>
-          <select id="editExportDeal">
-            <option value="">—</option>
-            {% for d in deals %}
-              <option value="{{ d.id }}">{{ d.date|date:"Y-m-d" }} | {{ d.supplier.name }} | {{ d.grade }} | {{ d.transport_company.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
+      <div class="es-field">
+        <label>Cargo C/O</label>
+        <input id="sb_cargo_cutoff_at" type="date">
+      </div>
 
-        <div class="form-field">
-          <label for="editExportHS">HS Code</label>
-          <input type="text" id="editExportHS">
-        </div>
+      <div class="es-field">
+        <label>Cargo Cut-Off (Gate-in)</label>
+        <input id="sb_cargo_cutoff_gate_in" type="date">
+      </div>
 
-        <div class="form-field">
-          <label for="editExportMode">Mode</label>
-          <select id="editExportMode">
-            {% for key,label in mode_choices %}
-              <option value="{{ key }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
+      <div class="es-field">
+        <label>DOC C/O</label>
+        <input id="sb_doc_cutoff_at" type="datetime-local">
+      </div>
+    </div>
 
-        <div class="form-field">
-          <label for="editExportStatus">Status</label>
-          <select id="editExportStatus">
-            {% for key,label in status_choices %}
-              <option value="{{ key }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
+    <div class="es-sec-label">Schedule (ETD / ETA)</div>
+    <div class="es-grid">
+      <div class="es-field">
+        <label>ETD</label>
+        <input id="sb_etd" type="date">
+      </div>
+      <div class="es-field">
+        <label>ETA</label>
+        <input id="sb_eta" type="date">
+      </div>
+    </div>
 
-        <div class="form-field">
-          <label for="editExportPrice">Export Price</label>
-          <input type="number" step="0.01" id="editExportPrice">
-        </div>
-
-        <div class="form-field">
-          <label for="editExportCurrency">Currency</label>
-          <select id="editExportCurrency">
+    <div class="es-sec-label">Status & Pricing</div>
+    <div class="es-grid">
+      <div class="es-field">
+        <label>Status</label>
+        <select id="sb_status">
+          {% for key,label in status_choices %}
+            <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="es-field">
+        <label>Export Price</label>
+        <div class="es-price-row">
+          <input id="sb_export_price" type="number" step="0.01" placeholder="0.00">
+          <select id="sb_export_currency">
             <option value="USD">USD</option>
             <option value="CAD">CAD</option>
           </select>
         </div>
-
-        <div class="form-field">
-          <label for="editExportContainer">Container #</label>
-          <input type="text" id="editExportContainer">
-        </div>
-
-        <div class="form-field">
-          <label for="editExportSeal">Seal #</label>
-          <input type="text" id="editExportSeal">
-        </div>
-
-        <div class="action-buttons">
-          <button type="submit" class="save-btn">Save</button>
-          <button type="button" id="cancelExportEditBtn" class="cancel-btn">Cancel</button>
-        </div>
-      </form>
-
-      <div class="sidebar-buttons-container">
-        <button id="editExportBtn" class="edit-btn">
-          <img src="{% static 'crm/images/icons/edit.png' %}" alt="Edit">
-        </button>
-        <button id="deleteExportBtn" class="delete-btn">
-          <img src="{% static 'crm/images/icons/trash.png' %}" alt="Delete">
-        </button>
       </div>
-
     </div>
+
+    <div class="es-sec-label">Notes</div>
+    <div class="es-field">
+      <textarea id="sb_notes" rows="3" placeholder="Optional notes..."></textarea>
+    </div>
+
+    <div class="es-save-status" id="sb_save_status"></div>
+
+    <div class="es-divider"></div>
+
+    <div class="es-sec-label">Documents</div>
+    <div class="es-docs-list" id="esDocsList">
+      <div style="font-size:12px;color:var(--es-muted2);">Loading...</div>
+    </div>
+    <div class="es-upload-area">
+      <select id="esUploadType">
+        {% for key,label in doc_type_choices %}
+          <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="es-btn es-btn-primary" type="button" id="esUploadBtn"
+              style="height:32px;border-radius:8px;font-size:12px;padding:0 12px;">
+        ⤴ Upload
+      </button>
+      <input type="file" id="esFileInput" style="display:none;">
+    </div>
+  </div>
+
+  <div class="es-sb-foot">
+    <button class="es-btn es-btn-primary es-btn-full" type="button" id="esSaveBtn">Save Changes</button>
+    <button class="es-btn es-btn-danger  es-btn-sq"   type="button" id="esDeleteBtn" title="Delete shipment">🗑</button>
   </div>
 </div>
 
-<!-- Export Shipments table -->
-<table id="exportshipmentTable" class="exportshipment-table">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Lane</th>
+<!-- ════════════════════════════════════════════════
+     SIDEBAR: ADD NEW
+     ════════════════════════════════════════════════ -->
+<div class="es-sidebar es-add-sidebar" id="esAddSidebar">
+  <div class="es-sb-head">
+    <div>
+      <h2>New Shipment</h2>
+      <p>Create a new export record</p>
+    </div>
+    <button class="es-close-btn" id="esCloseAdd">✕</button>
+  </div>
 
-      <th>Supplier</th>
-      <th>Grade</th>
-      <th>HS Code</th>
+  <div class="es-sb-body">
+    <div class="es-sec-label">Shipment Info</div>
+    <div class="es-grid">
+      <div class="es-field"><label>Date</label><input type="date" id="add_date"></div>
+      <div class="es-field"><label>Lane</label><input type="text" id="add_lane" placeholder="e.g. Rotterdam, NL"></div>
+      <div class="es-field"><label>BKG Number</label><input type="text" id="add_bkg_number" placeholder="e.g. 2319405900"></div>
+      <div class="es-field"><label>Vessel</label><input type="text" id="add_vessel" placeholder="e.g. ONE Innovation"></div>
+    </div>
 
-      <th>Mode</th>
-      <th>Carrier</th>
+    <div class="es-sec-label">Mode & Status</div>
+    <div class="es-grid es-g2">
+      <div class="es-field">
+        <label>Mode</label>
+        <select id="add_mode">
+          {% for key,label in mode_choices %}
+            <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="es-field">
+        <label>Status</label>
+        <select id="add_status">
+          {% for key,label in status_choices %}
+            <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
 
-      <th>BKG Number</th>
-      <th>Vessel</th>
+    <div class="es-sec-label">Pricing</div>
+    <div class="es-field">
+      <label>Export Price</label>
+      <div class="es-price-row">
+        <input type="number" step="0.01" id="add_price" placeholder="0.00">
+        <select id="add_currency">
+          <option value="USD">USD</option>
+          <option value="CAD">CAD</option>
+        </select>
+      </div>
+    </div>
+  </div>
 
-      <th>DOC C/O</th>
-      <th>ERD</th>
-      <th>Cargo C/O</th>
+  <div class="es-sb-foot">
+    <button class="es-btn es-btn-primary es-btn-full" type="button" id="esSubmitAdd">Create Shipment</button>
+  </div>
+</div>
 
-      <th>Docs</th>
-      <th>Status</th>
-      <th>Export Price</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
+<!-- TOAST -->
+<div class="es-toast" id="esT"></div>
 
-  <tbody>
-    {% for export in exports %}
-      <tr class="export-row" data-id="{{ export.id }}">
-        <td>{% if export.date %}{{ export.date|date:"m.d.y" }}{% else %}—{% endif %}</td>
-        <td>{% if export.lane %}{{ export.lane.name }}{% else %}—{% endif %}</td>
+<script>
+(function () {
+  "use strict";
 
-        <td>{% if export.deal and export.deal.supplier %}{{ export.deal.supplier.name }}{% else %}—{% endif %}</td>
-        <td>{% if export.deal %}{{ export.deal.grade }}{% else %}—{% endif %}</td>
-        <td>{% if export.hs_code %}{{ export.hs_code }}{% else %}—{% endif %}</td>
+  const BASE = "/crm";
+  const $  = (sel, ctx) => (ctx || document).querySelector(sel);
+  const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
 
-        <td>{{ export.get_mode_display }}</td>
-        <td>{% if export.deal and export.deal.transport_company %}{{ export.deal.transport_company.name }}{% else %}—{% endif %}</td>
+  /* ── CSRF ── */
+  function csrf() {
+    const c = document.cookie.split("; ").find(r => r.startsWith("csrftoken="));
+    if (c) return decodeURIComponent(c.split("=")[1]);
+    const el = $("[name=csrfmiddlewaretoken]");
+    return el ? el.value : "";
+  }
 
-        <td>{% if export.schedule %}{{ export.schedule.bkg_number }}{% else %}—{% endif %}</td>
-        <td>{% if export.schedule %}{{ export.schedule.vessel }}{% else %}—{% endif %}</td>
+  /* ── API ── */
+  async function api(url, method, body) {
+    const opts = { method: method || "GET", headers: { "X-CSRFToken": csrf() } };
+    if (body) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    const r = await fetch(url, opts);
+    if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error(`HTTP ${r.status}: ${t}`); }
+    return r.json();
+  }
 
-        <td>
-          {% if export.schedule and export.schedule.doc_cutoff_at %}
-            {{ export.schedule.doc_cutoff_at|date:"m.d.y H:i" }}
-          {% else %}
-            Not yet out
-          {% endif %}
-        </td>
+  /* ── TOAST ── */
+  function toast(msg, type) {
+    const el = $("#esT");
+    el.textContent = msg;
+    el.className = "es-toast " + (type || "success") + " show";
+    setTimeout(() => el.classList.remove("show"), 2800);
+  }
 
-        <td>
-          {% if export.schedule and export.schedule.erd_at %}
-            {{ export.schedule.erd_at|date:"m.d.y H:i" }}
-          {% else %}
-            Not yet out
-          {% endif %}
-        </td>
+  /* ── OVERLAY / SIDEBAR helpers ── */
+  function openSidebar(id) {
+    $("#" + id).classList.add("open");
+    $("#esOverlay").classList.add("active");
+  }
+  function closeSidebar(id) {
+    $("#" + id).classList.remove("open");
+    if (!$(".es-sidebar.open")) $("#esOverlay").classList.remove("active");
+  }
 
-        <td>
-          {% if export.schedule and export.schedule.cargo_cutoff_at %}
-            {{ export.schedule.cargo_cutoff_at|date:"m.d.y H:i" }}
-          {% else %}
-            Not yet out
-          {% endif %}
-        </td>
+  $("#esOverlay").addEventListener("click", () => {
+    $$(".es-sidebar.open").forEach(s => s.classList.remove("open"));
+    $("#esOverlay").classList.remove("active");
+  });
+  $("#esCloseView").addEventListener("click", () => closeSidebar("esViewSidebar"));
+  $("#esCloseAdd").addEventListener("click",  () => closeSidebar("esAddSidebar"));
 
-        <td>
-          <span class="docs-pill" title="Uploaded documents">{{ export.documents.count }}</span>
-        </td>
+  /* ── UTILS ── */
+  function isoToLocal(iso) {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      if (isNaN(d)) return String(iso).slice(0, 16);
+      const p = n => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    } catch(e) { return ""; }
+  }
+  function set(id, v) { const el = $(id); if (el) el.value = (v == null) ? "" : String(v); }
+  function setSaveStatus(cls, msg) {
+    const el = $("#sb_save_status");
+    if (!el) return;
+    el.textContent = msg;
+    el.className = "es-save-status" + (cls ? " " + cls : "");
+  }
 
-        <td>
-          <span class="status-pill status-{{ export.status }}">{{ export.get_status_display }}</span>
-        </td>
+  /* ── DOCUMENTS ── */
+  function renderDocs(docs) {
+    const list = $("#esDocsList");
+    if (!list) return;
+    if (!docs || !docs.length) {
+      list.innerHTML = `<div style="font-size:12px;color:var(--es-muted2);padding:4px 0 8px;">No documents uploaded yet.</div>`;
+      return;
+    }
+    list.innerHTML = docs.map(d => `
+      <div class="es-doc-row">
+        <div>
+          <div class="doc-type-lbl">${d.doc_type_label || d.doc_type || "Document"}</div>
+          <div class="doc-file-nm">${d.file_name || ""}</div>
+        </div>
+        <div class="es-doc-btns">
+          <a class="es-btn-sm" href="${d.file_url || "#"}" target="_blank" rel="noopener">View</a>
+          <a class="es-btn-sm" href="${d.file_url || "#"}" download>↓</a>
+        </div>
+      </div>`).join("");
+  }
 
-        <td>
-          {% if export.export_price %}
-            {{ export.export_price|floatformat:2 }} {{ export.export_currency }}
-          {% else %}
-            —
-          {% endif %}
-        </td>
+  /* ── OPEN / LOAD VIEW SIDEBAR ── */
+  let currentId  = null;
+  let saveTimer  = null;
 
-        <td class="actions-cell">
-          <button type="button" class="btn btn-sm btn-view view-export-btn" data-id="{{ export.id }}">View</button>
-          <button type="button" class="btn btn-sm btn-upload upload-export-btn" data-id="{{ export.id }}">Upload</button>
-        </td>
-      </tr>
-    {% empty %}
-      <tr>
-        <td colspan="16" style="text-align:center; padding:16px;">No export shipments found.</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+  async function openViewSidebar(id, scrollToUpload) {
+    currentId = id;
+    setSaveStatus("", "");
+    $("#esSbTitle").textContent = "Loading...";
+    $("#esSbSub").textContent   = "";
+    openSidebar("esViewSidebar");
 
-<script src="{% static 'crm/js/export_shipments.js' %}"></script>
-<link rel="stylesheet" href="{% static 'crm/export_shipments.css' %}">
-<link rel="stylesheet" href="{% static 'crm/styles.css' %}">
+    try {
+      const data = await api(`${BASE}/exports/${id}/json/`);
+      populateSidebar(data);
+      if (scrollToUpload) setTimeout(() => $("#esUploadBtn").scrollIntoView({ behavior: "smooth" }), 360);
+    } catch (err) {
+      console.error(err);
+      setSaveStatus("error", "Failed to load");
+      toast("Could not load shipment", "error");
+    }
+  }
+
+  function populateSidebar(data) {
+    // Header
+    const sup   = data.supplier || "";
+    const grade = data.grade    || "";
+    $("#esSbTitle").textContent = (sup || grade)
+      ? `${sup}${sup && grade ? " · " : ""}${grade}`
+      : `Export #${data.id}`;
+    $("#esSbSub").textContent = `#${data.id}${data.bkg_number ? " · " + data.bkg_number : ""}`;
+
+    // Hidden id
+    set("#esSbId", data.id);
+
+    // ── All fields from original export_shipments.js ──
+    set("#sb_vessel",           data.vessel);
+    set("#sb_hs_code",          data.hs_code);
+    set("#sb_doc_cutoff_at",    isoToLocal(data.doc_cutoff_at));
+    set("#sb_doc_cutoff_gate_in",    isoToLocal(data.doc_cutoff_at));
+    set("#sb_erd_at",           isoToLocal(data.erd_at));
+    set("#sb_cargo_cutoff_at",  isoToLocal(data.cargo_cutoff_at));
+    set("#sb_status",           data.status);
+    set("#sb_export_price",     data.export_price);
+    set("#sb_export_currency",  data.export_currency || "USD");
+    set("#sb_container_number", data.container_number);
+    set("#sb_seal_number",      data.seal_number);
+    set("#sb_cers_number",      data.cers_number);
+    set("#sb_etd",              data.etd);
+    set("#sb_eta",              data.eta);
+    set("#sb_notes",            data.notes);
+
+    renderDocs(data.documents || []);
+    setSaveStatus("", "Loaded");
+    setTimeout(() => setSaveStatus("", ""), 1200);
+  }
+
+  /* ── COLLECT PAYLOAD ── */
+  function collectPayload() {
+    const g  = id => { const el = $(id); return el ? el.value : null; };
+    const gn = id => { const v = g(id); return (v !== null && v !== "") ? (parseFloat(v) || null) : null; };
+    return {
+      vessel:           g("#sb_vessel"),
+      hs_code:          g("#sb_hs_code"),
+      doc_cutoff_at:    g("#sb_doc_cutoff_at")   || null,
+      doc_cutoff_gate_in:    g("#sb_doc_cutoff_gate_in")   || null,
+      erd_at:           g("#sb_erd_at")          || null,
+      cargo_cutoff_at:  g("#sb_cargo_cutoff_at") || null,
+      status:           g("#sb_status"),
+      export_price:     gn("#sb_export_price"),
+      export_currency:  g("#sb_export_currency") || "USD",
+      container_number: g("#sb_container_number"),
+      seal_number:      g("#sb_seal_number"),
+      cers_number:      g("#sb_cers_number"),
+      etd:              g("#sb_etd")  || null,
+      eta:              g("#sb_eta")  || null,
+      notes:            g("#sb_notes"),
+    };
+  }
+
+  /* ── AUTO-SAVE ── */
+  async function saveSidebar() {
+    if (!currentId) return;
+    setSaveStatus("saving", "Saving...");
+    try {
+      await api(`${BASE}/api/exports/${currentId}/update/`, "POST", collectPayload());
+      setSaveStatus("saved", "✓ Saved");
+    } catch (err) {
+      console.error(err);
+      setSaveStatus("error", "Save failed");
+    }
+  }
+  function scheduleAutoSave() {
+    setSaveStatus("saving", "Saving...");
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveSidebar, 600);
+  }
+
+  [
+    "#sb_vessel", "#sb_hs_code",
+    "#sb_doc_cutoff_at", "#sb_erd_at", "#sb_cargo_cutoff_at",
+    "#sb_status", "#sb_export_price", "#sb_export_currency",
+    "#sb_container_number", "#sb_seal_number",
+    "#sb_etd", "#sb_eta", "#sb_notes"
+  ].forEach(id => {
+    const el = $(id);
+    if (el) { el.addEventListener("input", scheduleAutoSave); el.addEventListener("change", scheduleAutoSave); }
+  });
+
+  $("#esSaveBtn").addEventListener("click", saveSidebar);
+
+  /* ── DELETE FROM SIDEBAR ── */
+  $("#esDeleteBtn").addEventListener("click", async () => {
+    if (!currentId || !confirm("Delete this shipment? This cannot be undone.")) return;
+    try {
+      await api(`${BASE}/api/exports/${currentId}/delete/`, "POST", {});
+      closeSidebar("esViewSidebar");
+      const row = $(`tr[data-id="${currentId}"]`);
+      if (row) row.remove();
+      adjustCount(-1);
+      toast("Shipment deleted");
+    } catch (err) {
+      console.error(err);
+      toast("Delete failed", "error");
+    }
+  });
+
+  /* ── DOCUMENT UPLOAD ── */
+  $("#esUploadBtn").addEventListener("click", () => $("#esFileInput").click());
+  $("#esFileInput").addEventListener("change", async function () {
+    const file = this.files[0];
+    if (!file || !currentId) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("doc_type", $("#esUploadType").value);
+    fd.append("csrfmiddlewaretoken", csrf());
+    try {
+      const r = await fetch(`${BASE}/api/exports/${currentId}/documents/upload/`, { method: "POST", body: fd });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      renderDocs(data.documents || []);
+      toast("Document uploaded ✓");
+    } catch (err) {
+      console.error(err);
+      toast("Upload failed", "error");
+    }
+    this.value = "";
+  });
+
+  /* ── TABLE ROW BUTTONS ── */
+  $$(".js-view").forEach(btn =>
+    btn.addEventListener("click", e => { e.stopPropagation(); openViewSidebar(btn.dataset.id); })
+  );
+  $$(".js-upload").forEach(btn =>
+    btn.addEventListener("click", e => { e.stopPropagation(); openViewSidebar(btn.dataset.id, true); })
+  );
+  $$(".js-delete").forEach(btn =>
+    btn.addEventListener("click", async e => {
+      e.stopPropagation();
+      if (!confirm("Delete this shipment?")) return;
+      try {
+        await api(`${BASE}/api/exports/${btn.dataset.id}/delete/`, "POST", {});
+        const row = $(`tr[data-id="${btn.dataset.id}"]`);
+        if (row) row.remove();
+        adjustCount(-1);
+        toast("Shipment deleted");
+      } catch (err) {
+        console.error(err);
+        toast("Delete failed", "error");
+      }
+    })
+  );
+
+  // Row click → open view sidebar
+  $$("tr[data-id]", $("#esTableBody")).forEach(row =>
+    row.addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      openViewSidebar(row.dataset.id);
+    })
+  );
+
+  /* ── ADD NEW ── */
+  $("#esAddNew").addEventListener("click", () => {
+    $("#add_date").value = new Date().toISOString().split("T")[0];
+    ["add_lane","add_bkg_number","add_vessel","add_price"].forEach(id => {
+      const el = $("#" + id); if (el) el.value = "";
+    });
+    openSidebar("esAddSidebar");
+  });
+
+  $("#esSubmitAdd").addEventListener("click", async () => {
+    const bkg = ($("#add_bkg_number").value || "").trim();
+    if (!bkg) { toast("BKG Number is required", "error"); return; }
+    const payload = {
+      date:            $("#add_date").value   || null,
+      lane:            $("#add_lane").value   || null,
+      bkg_number:      bkg,
+      vessel:          $("#add_vessel").value || "",
+      mode:            $("#add_mode").value,
+      status:          $("#add_status").value,
+      export_price:    $("#add_price").value ? parseFloat($("#add_price").value) : null,
+      export_currency: $("#add_currency").value,
+    };
+    try {
+      await api(`${BASE}/api/exports/create/`, "POST", payload);
+      closeSidebar("esAddSidebar");
+      toast("Shipment created ✓");
+      setTimeout(() => location.reload(), 700);
+    } catch (err) {
+      console.error(err);
+      toast("Create failed", "error");
+    }
+  });
+
+  /* ── CLIENT-SIDE SEARCH & FILTER ── */
+  function applyFilters() {
+    const q  = ($("#esSearch").value        || "").toLowerCase();
+    const st = ($("#esFilterStatus").value  || "").toLowerCase();
+    const md = ($("#esFilterMode").value    || "").toLowerCase();
+    const ln = ($("#esFilterLane").value    || "").toLowerCase();
+    let visible = 0;
+    $$("tr[data-id]").forEach(row => {
+      const ok =
+        (!st || row.dataset.status === st) &&
+        (!md || row.dataset.mode   === md) &&
+        (!ln || String(row.dataset.lane || "").toLowerCase().includes(ln)) &&
+        (!q  || [row.dataset.lane, row.dataset.supplier, row.dataset.vessel, row.dataset.bkg]
+                  .some(v => (v || "").toLowerCase().includes(q)));
+      row.style.display = ok ? "" : "none";
+      if (ok) visible++;
+    });
+    const rc = $("#esRowCount");
+    if (rc) rc.textContent = `${visible} shipment${visible !== 1 ? "s" : ""}`;
+  }
+  ["esSearch","esFilterLane","esFilterStatus","esFilterMode"].forEach(id => {
+    const el = $("#" + id);
+    if (el) el.addEventListener("input", applyFilters);
+  });
+
+  /* ── EXPORT CSV ── */
+  $("#esExportCsv").addEventListener("click", () => {
+    const rows = [["BKG Number","Lane","Mode","Status","Vessel"]];
+    $$("tr[data-id]").forEach(row => {
+      if (row.style.display === "none") return;
+      rows.push([row.dataset.bkg||"", row.dataset.lane||"",
+                 row.dataset.mode||"", row.dataset.status||"", row.dataset.vessel||""]);
+    });
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    a.download = "export_shipments.csv";
+    a.click();
+    toast("CSV exported");
+  });
+
+  /* ── MISC ── */
+  function adjustCount(delta) {
+    const el = $("#esRowCount");
+    if (!el) return;
+    const n = Math.max(0, (parseInt(el.textContent) || 0) + delta);
+    el.textContent = `${n} shipment${n !== 1 ? "s" : ""}`;
+  }
+
+})();
+</script>
 
 {% endblock %}

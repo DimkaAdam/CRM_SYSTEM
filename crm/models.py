@@ -299,3 +299,4 @@ class CompanyEmail(models.Model):
         who = f"{self.name} " if self.name else ""
         return f"{who}<{self.email}> @ {self.company.name}"
 
+

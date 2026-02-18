@@ -171,12 +171,20 @@ urlpatterns = [
     path("api/deals/create/", DealCreateAPIView.as_view(), name="deal-create"),
     path("api/", include(router.urls)),
 
+    # EXPORT SHIPMENTS
     path("exports/", views.export_shipments_list, name="export_shipments_list"),
     path("exports/<int:pk>/json/", views.export_shipment_detail_json, name="export_shipment_detail_json"),
 
     path("exports/export-excel/", views.export_shipments_to_excel, name="export_shipments_to_excel"),
 
+    # API
+    path("api/exports/create/", views.export_shipment_create, name="export_shipment_create"),
+    path("api/exports/<int:pk>/update/", views.export_shipment_update, name="export_shipment_update"),
+    path("api/exports/<int:pk>/update-field/", views.export_shipment_update_field, name="export_shipment_update_field"),
 
+    # ✅ NEW UI calls these:
+    path("api/exports/<int:pk>/delete/", views.export_shipment_delete, name="export_shipment_delete"),
+    path("api/exports/<int:pk>/documents/upload/", views.export_document_upload, name="export_document_upload"),
 
 ]
 

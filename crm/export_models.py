@@ -1,7 +1,7 @@
 # -----------------------------
 # EXPORT MODELS (standalone)
 # -----------------------------
-
+import os
 from django.db import models  # ORM
 from django.conf import settings  # AUTH_USER_MODEL / settings
 from django.utils.text import slugify  # safe folder names
@@ -192,3 +192,21 @@ class ExportDocRequirement(models.Model):
 
     def __str__(self):
         return f"{self.mode}: {self.doc_type} required={self.is_required}"  # label
+
+
+def export_doc_path(instance, filename):
+    export = instance.export
+    lane = slugify(export.lane.name) if export.lane else "no-lane"
+    bkg = slugify(export.bkg_number) if getattr(export, "bkg_number", "") else f"export-{export.id}"
+    return os.path.join("exports", lane, bkg, filename)
+
+
+class ExportShipmentDocument(models.Model):
+    export = models.ForeignKey(
+        "ExportShipment",
+        related_name="shipment_documents",
+        on_delete=models.CASCADE,
+    )
+    file = models.FileField(upload_to=export_doc_path)
+    doc_type = models.CharField(max_length=50, blank=True, default="other")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
