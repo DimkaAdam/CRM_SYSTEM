@@ -6,6 +6,7 @@ from django.db import models  # ORM
 from django.conf import settings  # AUTH_USER_MODEL / settings
 from django.utils.text import slugify  # safe folder names
 import uuid  # stable folder id
+from django.utils import timezone
 
 
 class ExportLane(models.Model):
@@ -131,6 +132,75 @@ class ExportShipment(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)  # audit
     updated_at = models.DateTimeField(auto_now=True)  # audit
+
+    def auto_status(self):
+        # Берём текущее локальное время (datetime) в таймзоне проекта
+        now_dt = timezone.localtime()
+
+        # Берём текущую локальную дату (date) — удобно для сравнения с ETD/ETA
+        today = now_dt.date()
+
+        # ETD (дата выхода судна) — обычно хранится как date
+        etd = self.etd
+
+        # ETA (дата прибытия) — обычно хранится как date
+        eta = self.eta
+
+        # Пытаемся безопасно достать schedule (может быть None)
+        schedule = getattr(self, "schedule", None)
+
+        # Берём дедлайны из schedule, если schedule существует (иначе None)
+        doc_cutoff = schedule.doc_cutoff_at if schedule else None
+        erd = schedule.erd_at if schedule else None
+        cargo_cutoff = schedule.cargo_cutoff_at if schedule else None
+
+        # Берём номер контейнера (если поле существует)
+        container_no = getattr(self, "container_number", None) or getattr(self, "container_no", None) or getattr(self,
+                                                                                                                 "container",
+                                                                                                                 None)
+
+        # Берём seal (если поле существует)
+        seal_no = getattr(self, "seal_number", None) or getattr(self, "seal_no", None) or getattr(self, "seal", None)
+
+        # Определяем “CERS filed” (поддержка разных вариантов поля)
+        cers_filed = bool(getattr(self, "cers_filed", False)) or bool(getattr(self, "cers", None)) or bool(
+            getattr(self, "cers_reference", None))
+
+        # 1) DELIVERED: если ETA наступила или прошла — считаем доставлено
+        if eta and eta <= today:
+            return self.STATUS_DELIVERED
+
+        # 2) SHIPPED: если ETD наступила или прошла — считаем отправлено (ушло судно)
+        if etd and etd <= today:
+            return self.STATUS_SHIPPED
+
+        # 3) READY: груз реально подготовлен к отправке, когда есть фактические данные по контейнеру
+        #    Минимальный факт: container + seal (обычно появляется после загрузки)
+        if container_no and seal_no:
+            return self.STATUS_READY
+
+        # 4) IN_PROGRESS: есть подтверждённое бронирование (BKG) или назначено судно
+        bkg_number = None
+        vessel = None
+
+        # Достаём BKG и vessel безопасно (у тебя это может быть в schedule)
+        if schedule:
+            bkg_number = getattr(schedule, "bkg_number", None)
+            vessel = getattr(schedule, "vessel", None)
+
+        # Если есть booking/vessel — работа началась, но ещё нет фактов (container/seal)
+        if bkg_number or vessel:
+            return self.STATUS_IN_PROGRESS
+
+        # 5) DRAFT: если нет ни booking/vessel, ни контейнерных фактов
+        return self.STATUS_DRAFT
+
+    def save(self, *args, **kwargs):
+        # Автоматически пересчитываем статус перед сохранением
+        self.status = self.auto_status()
+
+        # Сохраняем объект стандартным способом
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["-created_at"]  # newest first

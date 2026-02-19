@@ -3574,7 +3574,7 @@ def export_shipment_update(request, pk):
         export.deal = _deal_from_payload(payload.get("deal"))
 
     # simple strings
-    for field in ["hs_code", "mode", "status", "container_number", "seal_number", "export_currency"]:
+    for field in ["hs_code", "mode", "container_number", "seal_number", "export_currency"]:
         if field in payload:
             setattr(export, field, _clean_str(payload.get(field)))
 
@@ -3635,7 +3635,6 @@ def export_shipment_update_field(request, pk):
         "schedule",
         "hs_code",
         "mode",
-        "status",
         "export_price",
         "export_currency",
         "container_number",
