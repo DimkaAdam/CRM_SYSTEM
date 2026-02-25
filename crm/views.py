@@ -3437,6 +3437,7 @@ def export_shipment_detail_json(request, pk):
 
         "container_number": export.container_number or "",
         "seal_number": export.seal_number or "",
+        "cers_number": export.cers_number or "",
 
         "etd": export.etd.isoformat() if export.etd else None,
         "eta": export.eta.isoformat() if export.eta else None,
@@ -3538,6 +3539,7 @@ def export_shipment_create(request):
 
         container_number=clean(payload.get("container_number")),
         seal_number=clean(payload.get("seal_number")),
+        cers_number=clean(payload.get("cers_number")),
 
         etd=parse_date(payload.get("etd")) if payload.get("etd") else None,
         eta=parse_date(payload.get("eta")) if payload.get("eta") else None,
@@ -3574,7 +3576,7 @@ def export_shipment_update(request, pk):
         export.deal = _deal_from_payload(payload.get("deal"))
 
     # simple strings
-    for field in ["hs_code", "mode", "container_number", "seal_number", "export_currency"]:
+    for field in ["hs_code", "mode", "container_number", "seal_number","cers_number", "export_currency"]:
         if field in payload:
             setattr(export, field, _clean_str(payload.get(field)))
 
@@ -3639,6 +3641,7 @@ def export_shipment_update_field(request, pk):
         "export_currency",
         "container_number",
         "seal_number",
+        "cers_number"
         "etd",
         "eta",
     }

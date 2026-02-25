@@ -831,7 +831,6 @@
       doc_cutoff_gate_in:    g("#sb_doc_cutoff_gate_in")   || null,
       erd_at:           g("#sb_erd_at")          || null,
       cargo_cutoff_at:  g("#sb_cargo_cutoff_at") || null,
-      status:           g("#sb_status"),
       export_price:     gn("#sb_export_price"),
       export_currency:  g("#sb_export_currency") || "USD",
       container_number: g("#sb_container_number"),
@@ -865,7 +864,7 @@
     "#sb_vessel", "#sb_hs_code",
     "#sb_doc_cutoff_at", "#sb_erd_at", "#sb_cargo_cutoff_at",
     "#sb_status", "#sb_export_price", "#sb_export_currency",
-    "#sb_container_number", "#sb_seal_number",
+    "#sb_container_number", "#sb_seal_number","#sb_cers_number",
     "#sb_etd", "#sb_eta", "#sb_notes"
   ].forEach(id => {
     const el = $(id);

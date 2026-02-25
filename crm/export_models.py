@@ -122,6 +122,7 @@ class ExportShipment(models.Model):
 
     container_number = models.CharField(max_length=32, blank=True, default="")  # optional
     seal_number = models.CharField(max_length=32, blank=True, default="")  # optional
+    cers_number = models.CharField(max_length=32, blank=True, default="")
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
