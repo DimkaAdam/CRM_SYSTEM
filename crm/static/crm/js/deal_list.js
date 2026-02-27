@@ -269,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const dealId = row.dataset.id;
       if (!dealId) return;
 
-      fetchJSON(u('deals/${dealId}/`))
+      fetchJSON(u("deals/" + dealId + "/"))
         .then((data) => {
           byId("dealDate") && (byId("dealDate").innerText = data.date ?? "");
           byId("dealSupplier") &&
