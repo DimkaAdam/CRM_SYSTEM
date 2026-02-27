@@ -179,65 +179,63 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       fetchJSON(u("api/deals/"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrftoken,
-        },
-        body: JSON.stringify(data),
-      })
-        .then((dealData) => {
-          console.log("Deal created:", dealData);
-
-          const tbody = byId("dealTable")?.getElementsByTagName("tbody")?.[0];
-          if (tbody) {
-            const tr = tbody.insertRow();
-            tr.classList.add("deal-row");
-            tr.dataset.id = dealData.id ?? "";
-            tr.innerHTML = `
-              <td>${dealData.date ?? ""}</td>
-              <td>${dealData.supplier_name ?? ""}</td>
-              <td>${dealData.buyer ?? ""}</td>
-              <td>${dealData.grade ?? ""}</td>
-              <td>${dealData.shipped_quantity ?? ""} / ${dealData.shipped_pallets ?? ""}</td>
-              <td>${dealData.received_quantity ?? ""} / ${dealData.received_pallets ?? ""}</td>
-              <td>${dealData.supplier_price ?? ""}</td>
-              <td>${dealData.supplier_total ?? ""}</td>
-              <td>${dealData.buyer_price ?? ""}</td>
-              <td>${dealData.total_amount ?? ""}</td>
-              <td>${dealData.transport_cost ?? ""}</td>
-              <td>${dealData.transport_company?.name ?? dealData.transport_company ?? ""}</td>
-              <td>${dealData.total_income_loss ?? ""}</td>
-              <td>${dealData.scale_ticket ?? ""}</td>
-              <td>
-                ${
-                  dealData.scale_ticket
-                    ? `<button class="scale-ticket-status-btn ${dealData.scale_ticket_sent ? "sent" : "not-sent"}"
-                               data-path="${dealData.scale_ticket_relative_path || ""}">
-                         ${dealData.scale_ticket_sent ? "Sent" : "Send"}
-                       </button>`
-                    : `<span class="no-scale-ticket">N/A</span>`
-                }
-              </td>
-              <td>${dealData.total_income_loss ?? ""}</td>
-            `;
-            attachDealRowHandler(tr);
-            attachScaleTicketHandlers(tr);
-          }
-
-          const sidebar = byId("dealFormSidebar");
-          if (sidebar) sidebar.style.width = "0";
-          dealForm.reset();
-
-          // Увеличиваем счётчик Scale Ticket
-          return fetch(u("api/scale-ticket-counters/increment/"), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrftoken
-            },
-          });
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken,
+          },
+          body: JSON.stringify(data),
         })
+          .then((dealData) => {
+            console.log("Deal created:", dealData);
+
+            const tbody = byId("dealTable")?.getElementsByTagName("tbody")?.[0];
+            if (tbody) {
+              const tr = tbody.insertRow();
+              tr.classList.add("deal-row");
+              tr.dataset.id = dealData.id ?? "";
+              tr.innerHTML = `
+                <td>${dealData.date ?? ""}</td>
+                <td>${dealData.supplier_name ?? ""}</td>
+                <td>${dealData.buyer ?? ""}</td>
+                <td>${dealData.grade ?? ""}</td>
+                <td>${dealData.shipped_quantity ?? ""} / ${dealData.shipped_pallets ?? ""}</td>
+                <td>${dealData.received_quantity ?? ""} / ${dealData.received_pallets ?? ""}</td>
+                <td>${dealData.supplier_price ?? ""}</td>
+                <td>${dealData.supplier_total ?? ""}</td>
+                <td>${dealData.buyer_price ?? ""}</td>
+                <td>${dealData.total_amount ?? ""}</td>
+                <td>${dealData.transport_cost ?? ""}</td>
+                <td>${dealData.transport_company?.name ?? dealData.transport_company ?? ""}</td>
+                <td>${dealData.scale_ticket ?? "N/A"}</td>
+                <td>${dealData.total_income_loss ?? ""}</td>
+                <td>
+                  ${
+                    dealData.scale_ticket
+                      ? `<button class="scale-ticket-status-btn ${dealData.scale_ticket_sent ? "sent" : "not-sent"}"
+                                 data-path="${dealData.scale_ticket_relative_path || ""}">
+                           ${dealData.scale_ticket_sent ? "Sent" : "Send"}
+                         </button>`
+                      : `<span class="no-scale-ticket">N/A</span>`
+                  }
+                </td>
+              `;
+              attachDealRowHandler(tr);
+              attachScaleTicketHandlers(tr);
+            }
+
+            const sidebar = byId("dealFormSidebar");
+            if (sidebar) sidebar.style.width = "0";
+            dealForm.reset();
+
+            return fetch(u("api/scale-ticket-counters/increment/"), {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
+              },
+            });
+          })
         .then((response) => {
           if (response && response.ok) {
             console.log("✅ Scale ticket counter incremented");
