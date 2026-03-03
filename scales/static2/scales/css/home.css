@@ -439,3 +439,34 @@ tr:hover td{
   font-size:11px;
   padding:2px 7px;
 }
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.month-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #cbd5e1;
+  min-width: 140px;
+  text-align: center;
+}
+
+.nav-arrow {
+  padding: 4px 12px !important;
+  border-radius: 8px !important;
+  font-size: 16px;
+  line-height: 1;
+  background: rgba(8,102,110,0.2) !important;
+  border: 1px solid rgba(8,102,110,0.4) !important;
+  color: #cfe9eb !important;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nav-arrow:hover {
+  background: rgba(8,102,110,0.45) !important;
+  transform: none;
+}

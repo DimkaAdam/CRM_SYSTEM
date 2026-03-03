@@ -97,6 +97,20 @@ function toBusinessDay(iso) {
   return `${y}-${m}-${day}`;
 }
 
+/* ======================
+   2.3) Month Navigation State
+   ====================== */
+
+let _navYear  = new Date().getFullYear();
+let _navMonth = new Date().getMonth(); // 0-11
+
+function shiftMonth(delta) {
+  _navMonth += delta;
+  if (_navMonth > 11) { _navMonth = 0;  _navYear++; }
+  if (_navMonth < 0)  { _navMonth = 11; _navYear--; }
+  renderAllDaysDebounced();
+}
+
 /**
  * Gets current business day "now"
  */
@@ -732,31 +746,53 @@ function humanDate(iso) {
 }
 
 function renderAllDays() {
-  const body = document.getElementById('history-body');
+  const body    = document.getElementById('history-body');
   const statsEl = document.getElementById('history-stats');
-
   if (!body || !statsEl) return;
 
-  const store = getStore();
+  // --- обновить заголовок и стрелки ---
+  const labelEl   = document.getElementById('month-label');
+  const btnPrev   = document.getElementById('btn-prev-month');
+  const btnNext   = document.getElementById('btn-next-month');
+
+  const now       = new Date();
+  const curYear   = now.getFullYear();
+  const curMonth  = now.getMonth();
+  const isCurrentMonth = (_navYear === curYear && _navMonth === curMonth);
+
+  if (labelEl) {
+    labelEl.textContent = new Date(_navYear, _navMonth, 1)
+      .toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  }
+  if (btnNext) btnNext.style.visibility = isCurrentMonth ? 'hidden' : 'visible';
+  if (btnPrev) btnPrev.style.visibility = 'visible'; // всегда показываем назад
+
+  // --- фильтр store по выбранному месяцу ---
+  const store  = getStore();
+  const prefix = `${_navYear}-${String(_navMonth + 1).padStart(2, '0')}`;
+
+  const days = Object.keys(store)
+    .filter(d => d.startsWith(prefix))
+    .sort((a, b) => b.localeCompare(a));
 
   body.innerHTML = '';
 
-  let totalNet = 0;
-  let totalCount = 0;
-
-  for (const d of Object.keys(store)) {
-    totalNet += Number(store[d].totals.net || 0);
+  // --- stats только за этот месяц ---
+  let totalNet = 0, totalCount = 0;
+  days.forEach(d => {
+    totalNet   += Number(store[d].totals.net   || 0);
     totalCount += store[d].totals.count || 0;
+  });
+  statsEl.textContent = `Total net: ${totalNet.toFixed(1)} kg • records: ${totalCount}`;
+
+  if (days.length === 0) {
+    body.innerHTML = '<div style="color:#6b7280;padding:12px 0;">No records for this month.</div>';
+    return;
   }
 
-  statsEl.textContent = `Total net: ${Number(totalNet).toFixed(1)} kg • records: ${totalCount}`;
-
-  const days = Object.keys(store).sort((a, b) => b.localeCompare(a));
-
+  // --- рендер карточек (логика без изменений) ---
   for (const d of days) {
     const day = store[d];
-
-    // === агрегаты по материалам и по поставщику ===
     const byMaterial = {};
     const bySupplierMaterial = {};
 
@@ -764,133 +800,68 @@ function renderAllDays() {
       const mat = r.material || 'Unknown';
       const sup = r.supplier || 'Unknown';
       const net = Number(r.net || 0);
-
-      // по материалам
       byMaterial[mat] = (byMaterial[mat] || 0) + net;
-
-      // по поставщику + материал
-      if (!bySupplierMaterial[sup]) {
-        bySupplierMaterial[sup] = {};
-      }
-      bySupplierMaterial[sup][mat] =
-        (bySupplierMaterial[sup][mat] || 0) + net;
+      if (!bySupplierMaterial[sup]) bySupplierMaterial[sup] = {};
+      bySupplierMaterial[sup][mat] = (bySupplierMaterial[sup][mat] || 0) + net;
     }
 
-    // === карточка дня ===
     const card = document.createElement('div');
     card.className = 'day-card';
 
-    const top = document.createElement('div');
-    top.className = 'day-row';
-
-    const left = document.createElement('div');
-    left.className = 'day-date';
+    const top   = document.createElement('div'); top.className = 'day-row';
+    const left  = document.createElement('div'); left.className  = 'day-date';
     left.textContent = humanDate(d);
-
-    const right = document.createElement('div');
-    right.className = 'badges';
-
-    const b1 = document.createElement('div');
-    b1.className = 'badge';
+    const right = document.createElement('div'); right.className = 'badges';
+    const b1 = document.createElement('div'); b1.className = 'badge';
     b1.textContent = `Net: ${fmt(day.totals.net)} kg`;
-
-    const b2 = document.createElement('div');
-    b2.className = 'badge';
+    const b2 = document.createElement('div'); b2.className = 'badge';
     b2.textContent = `Items: ${day.totals.count}`;
+    right.append(b1, b2); top.append(left, right); card.appendChild(top);
 
-    right.appendChild(b1);
-    right.appendChild(b2);
-    top.appendChild(left);
-    top.appendChild(right);
-    card.appendChild(top);
-
-    const divider = document.createElement('div');
-    divider.className = 'divider';
+    const divider = document.createElement('div'); divider.className = 'divider';
     card.appendChild(divider);
 
-    // === основная «таблица» записей ===
     const grid = document.createElement('div');
     grid.className = 'day-list';
-    grid.innerHTML = `
-      <div class="h">Material</div>
-      <div class="h">Net</div>
-      <div class="h">Supplier</div>
-      <div class="h">Tag</div>
-    `;
-
+    grid.innerHTML = `<div class="h">Material</div><div class="h">Net</div><div class="h">Supplier</div><div class="h">Tag</div>`;
     for (const r of day.items) {
-      const cells = [
-        escapeHtml(r.material),
-        `${fmt(r.net)} kg`,
-        escapeHtml(r.supplier),
-        `#${escapeHtml(String(r.tag))}`
-      ];
-
-      cells.forEach(text => {
-        const cell = document.createElement('div');
-        cell.className = 'c';
-        cell.textContent = text.replace(/<[^>]*>/g, '');
-        grid.appendChild(cell);
-      });
+      [escapeHtml(r.material), `${fmt(r.net)} kg`, escapeHtml(r.supplier), `#${escapeHtml(String(r.tag))}`]
+        .forEach(text => {
+          const cell = document.createElement('div');
+          cell.className = 'c';
+          cell.textContent = text.replace(/<[^>]*>/g, '');
+          grid.appendChild(cell);
+        });
     }
-
     card.appendChild(grid);
 
-    // === блок: ИТОГИ ПО МАТЕРИАЛАМ ===
-    const summary = document.createElement('div');
-    summary.className = 'day-summary';
-
-    const matTitle = document.createElement('div');
-    matTitle.className = 'summary-title';
-    matTitle.textContent = 'By material:';
-    summary.appendChild(matTitle);
-
-    const matRow = document.createElement('div');
-    matRow.className = 'summary-materials';
-
+    const summary = document.createElement('div'); summary.className = 'day-summary';
+    const matTitle = document.createElement('div'); matTitle.className = 'summary-title';
+    matTitle.textContent = 'By material:'; summary.appendChild(matTitle);
+    const matRow = document.createElement('div'); matRow.className = 'summary-materials';
     Object.keys(byMaterial).sort().forEach(mat => {
-      const chip = document.createElement('div');
-      chip.className = 'summary-chip';
-      chip.textContent = `${mat}: ${fmt(byMaterial[mat])} kg`;
-      matRow.appendChild(chip);
+      const chip = document.createElement('div'); chip.className = 'summary-chip';
+      chip.textContent = `${mat}: ${fmt(byMaterial[mat])} kg`; matRow.appendChild(chip);
     });
-
     summary.appendChild(matRow);
 
-    // === блок: ИТОГИ ПО ПОСТАВЩИКУ/МАТЕРИАЛУ ===
-    const supTitle = document.createElement('div');
-    supTitle.className = 'summary-title';
-    supTitle.textContent = 'By supplier:';
-    summary.appendChild(supTitle);
-
-    const supList = document.createElement('div');
-    supList.className = 'summary-suppliers';
-
+    const supTitle = document.createElement('div'); supTitle.className = 'summary-title';
+    supTitle.textContent = 'By supplier:'; summary.appendChild(supTitle);
+    const supList = document.createElement('div'); supList.className = 'summary-suppliers';
     Object.keys(bySupplierMaterial).sort().forEach(sup => {
-      const supRow = document.createElement('div');
-      supRow.className = 'summary-supplier-row';
-
-      const supName = document.createElement('div');
-      supName.className = 'summary-supplier-name';
-      supName.textContent = `${sup}:`;
-      supRow.appendChild(supName);
-
-      const supMats = document.createElement('div');
-      supMats.className = 'summary-supplier-mats';
-
+      const supRow  = document.createElement('div'); supRow.className  = 'summary-supplier-row';
+      const supName = document.createElement('div'); supName.className = 'summary-supplier-name';
+      supName.textContent = `${sup}:`; supRow.appendChild(supName);
+      const supMats = document.createElement('div'); supMats.className = 'summary-supplier-mats';
       Object.keys(bySupplierMaterial[sup]).sort().forEach(mat => {
         const chip = document.createElement('div');
         chip.className = 'summary-chip summary-chip-small';
         chip.textContent = `${mat} – ${fmt(bySupplierMaterial[sup][mat])} kg`;
         supMats.appendChild(chip);
       });
-
-      supRow.appendChild(supMats);
-      supList.appendChild(supRow);
+      supRow.appendChild(supMats); supList.appendChild(supRow);
     });
-
     summary.appendChild(supList);
-
     card.appendChild(summary);
     body.appendChild(card);
   }
@@ -975,7 +946,8 @@ Object.assign(window, {
   startEdit,
   saveEdit,
   cancelEdit,
-  deleteRow
+  deleteRow,
+  shiftMonth,
 });
 
 

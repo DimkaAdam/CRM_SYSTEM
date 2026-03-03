@@ -105,8 +105,13 @@
 {% if is_manager %}
   <div class="history-card">
     <div class="history-head">
-      <div class="history-title">History by day</div>
-      <div id="history-stats" class="history-stats"></div>
+        <div class="history-title">History by day</div>
+        <div class="month-nav">
+            <button id="btn-prev-month" class="nav-arrow" onclick="shiftMonth(-1)">&#8592;</button>
+            <span id="month-label" class="month-label"></span>
+            <button id="btn-next-month" class="nav-arrow" onclick="shiftMonth(1)">&#8594;</button>
+        </div>
+    <div id="history-stats" class="history-stats"></div>
     </div>
     <div id="history-body" class="history-body"></div>
       <!-- Хранилище и вывод по дням -->
