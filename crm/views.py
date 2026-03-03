@@ -350,7 +350,7 @@ def deal_list(request):
     current_year = today_date.year
 
     # Получаем базовый набор данных
-    deals = Deals.objects.all()
+    deals = Deals.objects.all().order_by('date')
 
     # Фильтруем компании по типу через связанные контакты
     suppliers = Company.objects.filter(contacts__company_type="suppliers").distinct()  # Только поставщики
@@ -3314,43 +3314,27 @@ def _deal_from_payload(v):
 # -----------------------------
 
 def export_shipments_list(request):
-    """
-    List page for Export Shipments:
-    - table rows
-    - filters: lane / status / mode / schedule / deal (deal only if exists in model)
-    """
-    print("EXPORTS COUNT:", ExportShipment.objects.count())
-    print("EXPORTS LAST5:", list(ExportShipment.objects.order_by("-id").values_list("id", "status", "date")[:5]))
-    qs = ExportShipment.objects.select_related("schedule", "lane").order_by("-id")
-    print("QS COUNT:", qs.count())
-
     exports_qs = (
         ExportShipment.objects
-        .select_related("lane", "schedule", "created_by")
+        .select_related("lane", "schedule", "schedule__lane", "created_by")
         .prefetch_related("documents")
         .order_by("-created_at")
     )
 
-    lane_id = _clean_str(request.GET.get("lane"))
-    status = _clean_str(request.GET.get("status"))
-    mode = _clean_str(request.GET.get("mode"))
+    lane_id     = _clean_str(request.GET.get("lane"))
+    status      = _clean_str(request.GET.get("status"))
+    mode        = _clean_str(request.GET.get("mode"))
     schedule_id = _clean_str(request.GET.get("schedule"))
-    deal_id = _clean_str(request.GET.get("deal"))
+    deal_id     = _clean_str(request.GET.get("deal"))  # ← вернул
 
     if lane_id:
         exports_qs = exports_qs.filter(lane_id=lane_id)
-
     if status:
         exports_qs = exports_qs.filter(status=status)
-
     if mode:
         exports_qs = exports_qs.filter(mode=mode)
-
     if schedule_id:
         exports_qs = exports_qs.filter(schedule_id=schedule_id)
-
-    # IMPORTANT:
-    # Only enable this filter if ExportShipment has `deal = ForeignKey(...)`.
     if hasattr(ExportShipment, "deal") and deal_id:
         exports_qs = exports_qs.filter(deal_id=deal_id)
 
@@ -3370,24 +3354,21 @@ def export_shipments_list(request):
     )
 
     context = {
-        "shipments": exports_qs,
-        "lanes": lanes,
-        "schedules": schedules,
-        "deals": deals,
+        "shipments":      exports_qs,
+        "lanes":          lanes,
+        "schedules":      schedules,
+        "deals":          deals,
 
-        "mode_choices": ExportShipment.MODE_CHOICES,
+        "mode_choices":   ExportShipment.MODE_CHOICES,
         "status_choices": ExportShipment.STATUS_CHOICES,
-
         "doc_type_choices": ExportDocument.DOC_TYPE_CHOICES,
 
-        "selected_lane_id": _as_int(lane_id) or "",
-        "selected_status": status,
-        "selected_mode": mode,
+        "selected_lane_id":     _as_int(lane_id) or "",
+        "selected_status":      status,
+        "selected_mode":        mode,
         "selected_schedule_id": _as_int(schedule_id) or "",
-        "selected_deal_id": _as_int(deal_id) or "",
-
+        "selected_deal_id":     _as_int(deal_id) or "",  # ← вернул
     }
-
 
     return render(request, "crm/export_shipments.html", context)
 
@@ -3567,7 +3548,7 @@ def export_shipment_update(request, pk):
     if "lane" in payload:
         export.lane = _lane_from_payload(payload.get("lane"))
 
-    # schedule
+    # schedule FK
     if "schedule" in payload:
         export.schedule = _schedule_from_payload(payload.get("schedule"))
 
@@ -3575,42 +3556,69 @@ def export_shipment_update(request, pk):
     if hasattr(ExportShipment, "deal") and "deal" in payload:
         export.deal = _deal_from_payload(payload.get("deal"))
 
-    # simple strings
-    for field in ["hs_code", "mode", "container_number", "seal_number","cers_number", "export_currency"]:
+    # простые строки на самом ExportShipment
+    for field in ["hs_code", "mode", "container_number", "seal_number", "cers_number", "export_currency"]:
         if field in payload:
             setattr(export, field, _clean_str(payload.get(field)))
 
-    # export_price
     if "export_price" in payload:
         val = payload.get("export_price")
         export.export_price = None if val in ("", None) else val
 
-    # dates
     for field in ["date", "etd", "eta"]:
         if field in payload:
             setattr(export, field, _parse_date_or_none(payload.get(field)))
 
     export.save()
 
+    # ── ОБНОВЛЯЕМ VesselSchedule ──────────────────────────────────────────────
+    schedule_fields = {"vessel", "bkg_number", "doc_cutoff_at", "erd_at", "cargo_cutoff_at"}
+    schedule_payload = {k: payload[k] for k in schedule_fields if k in payload}
+
+    if schedule_payload:
+        if export.schedule_id:
+            # schedule уже привязан — обновляем его
+            sch = export.schedule
+        else:
+            # schedule нет — создаём новый и привязываем
+            sch = VesselSchedule(
+                lane=export.lane or ExportLane.objects.first(),
+                bkg_number="-",
+                vessel="-",
+                is_active=True,
+            )
+            # сохраним после заполнения ниже
+
+        for field in ["vessel", "bkg_number"]:
+            if field in schedule_payload:
+                setattr(sch, field, _clean_str(schedule_payload[field]) or "-")
+
+        for field in ["doc_cutoff_at", "erd_at", "cargo_cutoff_at"]:
+            if field in schedule_payload:
+                setattr(sch, field, _parse_dt_or_none(schedule_payload[field]))
+
+        sch.save()
+
+        if not export.schedule_id:
+            export.schedule = sch
+            export.save(update_fields=["schedule"])
+    # ─────────────────────────────────────────────────────────────────────────
+
     return JsonResponse({
         "ok": True,
         "id": export.id,
-
-        "lane": export.lane.name if export.lane else "",
-        "lane_id": export.lane_id or "",
-
-        "schedule_id": export.schedule_id or "",
-        "bkg_number": export.schedule.bkg_number if export.schedule else "",
-        "vessel": export.schedule.vessel if export.schedule else "",
-        "doc_cutoff_at": export.schedule.doc_cutoff_at.isoformat() if export.schedule and export.schedule.doc_cutoff_at else "",
-        "erd_at": export.schedule.erd_at.isoformat() if export.schedule and export.schedule.erd_at else "",
+        "lane":            export.lane.name if export.lane else "",
+        "lane_id":         export.lane_id or "",
+        "schedule_id":     export.schedule_id or "",
+        "bkg_number":      export.schedule.bkg_number if export.schedule else "",
+        "vessel":          export.schedule.vessel if export.schedule else "",
+        "doc_cutoff_at":   export.schedule.doc_cutoff_at.isoformat() if export.schedule and export.schedule.doc_cutoff_at else "",
+        "erd_at":          export.schedule.erd_at.isoformat() if export.schedule and export.schedule.erd_at else "",
         "cargo_cutoff_at": export.schedule.cargo_cutoff_at.isoformat() if export.schedule and export.schedule.cargo_cutoff_at else "",
-
-        "status": export.status,
-        "mode": export.mode,
-        "hs_code": export.hs_code,
-
-        "export_price": str(export.export_price) if export.export_price is not None else "",
+        "status":          export.status,
+        "mode":            export.mode,
+        "hs_code":         export.hs_code,
+        "export_price":    str(export.export_price) if export.export_price is not None else "",
         "export_currency": export.export_currency,
     })
 

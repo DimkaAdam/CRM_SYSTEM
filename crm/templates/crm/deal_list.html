@@ -5,7 +5,6 @@
 {% block page_title %}Deals{% endblock %}
 {% block content %}
 
-
     <!-- Кнопки управления -->
     <div class="buttons-container">
         <button id="addNewDealBtn" class="add-new-deal-btn">
@@ -18,8 +17,6 @@
             <img src="{% static 'crm/images/icons/scale_ticket.png' %}" alt="Add Icon" class="icon">
         </button>
     </div>
-
-
 
     <!-- Фильтры для месяца и года -->
     <form method="get" action="{% url 'deal_list' %}" class="filter-form">
@@ -34,7 +31,6 @@
                     {% endfor %}
                 </select>
             </div>
-
             <div class="filter-item">
                 <select name="company" id="company">
                     <option value="">All Companies</option>
@@ -55,7 +51,6 @@
                     {% endfor %}
                 </select>
             </div>
-
             <div class="filter-item">
                 <button type="submit" class="filter-btn">
                     <img src="{% static 'crm/images/icons/filter.png' %}" alt="Filter Icon" class="icon">
@@ -70,49 +65,32 @@
             <h3>Add Scale Ticket</h3>
             <button onclick="closeScaleTicketSidebar()" class="close-btn">&times;</button>
         </div>
-
         <form id="scaleTicketForm">
             <label for="ticket_number">Ticket Number:</label>
             <input type="text" id="ticket_number" name="ticket_number" required oninput="fetchDealData()">
-
-            <!-- Поля для авто-заполнения -->
             <input type="hidden" id="selectedDealId" name="selectedDealId">
-
             <label for="date">Date:</label>
             <input type="date" id="scaleticket_date" name="date" required>
-
             <label for="deal_time">Time:</label>
             <input type="time" id="deal_time" name="time">
-
             <label for="licence_plate">Licence Plate:</label>
             <select id="licence_plate" name="licence_plate">
-            <option value="">-- Select Licence Plate --</option>
+                <option value="">-- Select Licence Plate --</option>
             </select>
-
             <label for="gross_weight">Gross Weight:</label>
             <input type="number" id="gross_weight" name="gross_weight" step="0.01" required>
-
             <label for="tare_weight">Tare Weight:</label>
             <input type="number" id="tare_weight" name="tare_weight" step="0.01" required>
-
             <label for="received_quantity">Net Weight:</label>
             <input type="number" id="scaleticket_received_quantity" name="received_quantity" step="0.01" readonly>
-
             <label for="pallets">Pallets:</label>
             <input type="number" id="pallets" name="pallets" readonly>
-
             <label for="supplier_name">Supplier:</label>
             <input type="text" id="supplier_name" name="supplier_name" readonly>
-
             <label for="grade">Material:</label>
             <input type="text" id="scaleticket_grade" name="grade" readonly>
-            <!-- Кнопка для экспорта в PDF -->
             <button id="exportScaleTicketBtn" type="button">Export to PDF</button>
-
-
         </form>
-
-
     </div>
 
     <!-- Сайдбар для добавления новой сделки -->
@@ -128,14 +106,12 @@
                     <option value="{{ supplier.id }}">{{ supplier.name }}</option>
                 {% endfor %}
             </select>
-
             <select id="buyer" name="buyer" required>
                 <option value="" disabled selected>Select a Buyer</option>
                 {% for buyer in buyers %}
                     <option value="{{ buyer.id }}">{{ buyer.name }}</option>
                 {% endfor %}
             </select>
-
             <input type="date" id="date" required>
             <select id="grade" name="grade" required>
                 <option value="" disabled selected>Select a Grade</option>
@@ -143,7 +119,6 @@
                     <option value="{{ key }}">{{ key }}</option>
                 {% endfor %}
             </select>
-
             <input type="number" id="shipped_quantity" step="any" placeholder="Shipped Quantity" required>
             <input type="number" id="shipped_pallets" placeholder="Shipped Pallets" required>
             <input type="number" id="received_quantity" step="any" placeholder="Received Quantity" required>
@@ -151,36 +126,27 @@
             <input type="number" id="supplier_price" step="0.01" placeholder="Supplier Price">
             <input type="number" id="buyer_price" step="0.01" placeholder="Buyer Price" required>
             <input type="number" id="transport_cost" step="0.01" placeholder="Transport Cost" required>
-
-
             <select id="transport_company" name="Hauler" required>
                 <option value="" disabled selected>Select a Hauler</option>
                 {% for transport_company in hauler %}
                     <option value="{{ transport_company.id }}">{{ transport_company.name }}</option>
                 {% endfor %}
             </select>
-
             <input type="text" id="scale_ticket" placeholder="Scale Ticket" required>
             <button type="submit" class="submit-btn">Submit Deal</button>
         </form>
     </div>
 
-    <!-- Сайдбар для редактирования и просмотра сделки -->
-    <div id="viewDealSidebar" class="sidebar-form"><!-- шириной управляем классом .open -->
+    <!-- Сайдбар для просмотра/редактирования сделки -->
+    <div id="viewDealSidebar" class="sidebar-form">
       <div class="glass-panel">
-
-        <!-- фон со смещением (искажение только здесь) -->
         <div class="glass-bg"></div>
-        <!-- лёгкий белый оттенок -->
         <div class="glass-tint"></div>
-        <!-- внутренний блик -->
         <div class="glass-shine"></div>
-        <!-- цветные мягкие блики -->
         <div class="glass-rgb glass-r"></div>
         <div class="glass-rgb glass-g"></div>
         <div class="glass-rgb glass-b"></div>
 
-        <!-- весь контент сайдбара поверх эффектов, без искажений -->
         <div class="glass-content">
 
           <div class="sidebar-header">
@@ -189,56 +155,124 @@
           </div>
 
           <div id="dealDetailsContent">
-            <p><strong>Date:</strong> <span id="dealDate"></span></p>
-            <p><strong>Buyer:</strong> <span id="dealBuyer"></span></p>
-            <p><strong>Grade:</strong> <span id="dealGrade"></span></p>
-            <p><strong>Total Amount:</strong> <span id="dealTotalAmount"></span></p>
-            <p><strong>Scale Ticket:</strong> <span id="dealScaleTicket"></span></p>
+            <p><strong>Date:</strong>         <span id="dealDate"></span></p>
+            <p><strong>Buyer:</strong>         <span id="dealBuyer"></span></p>
+            <p><strong>Grade:</strong>         <span id="dealGrade"></span></p>
+            <p><strong>Total Amount:</strong>  <span id="dealTotalAmount"></span></p>
+            <p><strong>Scale Ticket:</strong>  <span id="dealScaleTicket"></span></p>
           </div>
 
-          <!-- Аналитика сделки -->
+          <!-- ═══════════════════════════════════════════
+               НОВАЯ КАРТОЧКА АНАЛИТИКИ
+               ═══════════════════════════════════════════ -->
           <div class="deal-analytics-card">
-            <h4 class="da-title">Deal analytics</h4>
 
-            <div class="da-section">
-              <div class="da-row">
-                <span class="da-label">Profit:</span>
-                <span id="daProfit" class="da-value da-profit"></span>
+            <!-- SVG-градиент для spark-графика -->
+            <svg width="0" height="0" style="position:absolute;pointer-events:none">
+              <defs>
+                <linearGradient id="daSparkGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stop-color="#f87171" stop-opacity="0.28"/>
+                  <stop offset="100%" stop-color="#f87171" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="daSparkGradGreen" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stop-color="#2dd4bf" stop-opacity="0.28"/>
+                  <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+            </svg>
+
+            <!-- Хедер карточки -->
+            <div class="da-header">
+              <span class="da-title">Deal Analytics</span>
+              <span id="daProfitChip" class="da-status-chip da-chip-loss">Loss</span>
+            </div>
+
+            <!-- Profit Hero -->
+            <div class="da-profit-hero">
+              <div>
+                <div class="da-hero-label">Net Profit</div>
+                <div id="daProfit" class="da-hero-value da-profit da-neg">–</div>
               </div>
-              <div class="da-row">
-                <span class="da-label">Profit per ton:</span>
-                <span id="daProfitPerTon" class="da-value"></span>
+              <span id="daProfitPerTon" class="da-hero-badge">–</span>
+            </div>
+
+            <!-- Spark-линия -->
+            <div class="da-spark-wrap">
+              <svg id="daSparkSvg" viewBox="0 0 300 42" preserveAspectRatio="none">
+                <path id="daSparkArea" class="da-spark-area" d="M0,36 L300,36 L300,42 L0,42 Z" fill="url(#daSparkGrad)"/>
+                <path id="daSparkLine" class="da-spark-line da-spark-loss"
+                      d="M0,36 C60,34 100,28 150,28 C200,28 240,32 300,36"/>
+              </svg>
+            </div>
+
+            <div class="da-divider"></div>
+
+            <!-- 4 метрики -->
+            <div class="da-metrics-grid">
+              <div class="da-metric">
+                <div class="da-metric-label">Spread</div>
+                <div id="daSpreadPerTon" class="da-metric-val da-pos">–</div>
+                <div class="da-metric-sub">buyer − supplier / MT</div>
               </div>
-              <div class="da-row">
-                <span class="da-label">Spread (buyer - supplier):</span>
-                <span id="daSpreadPerTon" class="da-value"></span>
+              <div class="da-metric">
+                <div class="da-metric-label">Transport / MT</div>
+                <div id="daTransportPerTon" class="da-metric-val da-neg">–</div>
+                <div class="da-metric-sub">per metric ton</div>
+              </div>
+              <div class="da-metric">
+                <div class="da-metric-label">Weight Variance</div>
+                <div id="daVariance" class="da-metric-val">–</div>
+                <div class="da-metric-sub">metric tons</div>
+              </div>
+              <div class="da-metric">
+                <div class="da-metric-label">Avg Pallet</div>
+                <div id="daAvgPalletWeight" class="da-metric-val">–</div>
+                <div class="da-metric-sub">per pallet</div>
               </div>
             </div>
 
-            <div class="da-section">
-              <div class="da-row">
-                <span class="da-label">Transport per ton:</span>
-                <span id="daTransportPerTon" class="da-value"></span>
-              </div>
-              <div class="da-row">
-                <span class="da-label">Transport share:</span>
-                <span id="daTransportShare" class="da-value">
+            <!-- Transport share bar -->
+            <div class="da-transport-wrap">
+              <div class="da-transport-header">
+                <span class="da-transport-label">Transport Share of Spread</span>
+                <span id="daTransportShare">
                   <span id="daTransportShareChip" class="da-chip">–</span>
                 </span>
               </div>
+              <div class="da-bar-track">
+                <div id="daTransportBarFill" class="da-bar-fill" style="width:0%"></div>
+              </div>
             </div>
 
-            <div class="da-section">
-              <div class="da-row">
-                <span class="da-label">Weight variance:</span>
-                <span id="daVariance" class="da-value"></span>
+            <!-- Variance segments + Donut -->
+            <div class="da-bottom-row">
+              <div class="da-var-item">
+                <span class="da-var-label">Weight variance</span>
+                <div id="daVarianceSegs" class="da-var-segs">
+                  <div class="da-seg"></div><div class="da-seg"></div><div class="da-seg"></div>
+                  <div class="da-seg"></div><div class="da-seg"></div><div class="da-seg"></div>
+                  <div class="da-seg"></div><div class="da-seg"></div>
+                </div>
               </div>
-              <div class="da-row">
-                <span class="da-label">Avg pallet weight:</span>
-                <span id="daAvgPalletWeight" class="da-value"></span>
+              <div class="da-donut-item">
+                <span class="da-var-label">Spread efficiency</span>
+                <div class="da-donut-wrap">
+                  <svg class="da-donut-svg" width="36" height="36" viewBox="0 0 36 36">
+                    <circle class="da-donut-track" cx="18" cy="18" r="13" fill="none" stroke-width="3.5"/>
+                    <circle id="daDonutFill" class="da-donut-fill" cx="18" cy="18" r="13" fill="none" stroke-width="3.5"
+                            stroke-linecap="round" pathLength="100"
+                            style="stroke-dasharray:0 100; transform:rotate(-90deg); transform-origin:center"/>
+                  </svg>
+                  <div>
+                    <div id="daEfficiencyPct" class="da-donut-val">–</div>
+                    <div class="da-donut-sub">utilized</div>
+                  </div>
+                </div>
               </div>
             </div>
+
           </div>
+          <!-- /deal-analytics-card -->
 
           <!-- Форма редактирования -->
           <form id="editDealForm" style="display:none;">
@@ -246,7 +280,6 @@
               <label for="editDate">Date</label>
               <input type="date" id="editDate" required>
             </div>
-
             <div class="form-field">
               <label for="editSupplier">Supplier</label>
               <select id="editSupplier" required>
@@ -256,7 +289,6 @@
                 {% endfor %}
               </select>
             </div>
-
             <div class="form-field">
               <label for="editBuyer">Buyer</label>
               <select id="editBuyer" required>
@@ -266,57 +298,46 @@
                 {% endfor %}
               </select>
             </div>
-
             <div class="form-field">
               <label for="editGrade">Grade</label>
               <input type="text" id="editGrade" required>
             </div>
-
             <div class="form-field">
               <label for="editShippedQuantity">Shipped Quantity</label>
               <input type="number" id="editShippedQuantity" step="any" required>
             </div>
-
             <div class="form-field">
               <label for="editShippedPallets">Shipped Pallets</label>
               <input type="number" id="editShippedPallets" required>
             </div>
-
             <div class="form-field">
               <label for="editReceivedQuantity">Received Quantity</label>
               <input type="number" id="editReceivedQuantity" step="any" required>
             </div>
-
             <div class="form-field">
               <label for="editReceivedPallets">Received Pallets</label>
               <input type="number" id="editReceivedPallets" required>
             </div>
-
             <div class="form-field">
               <label for="editSupplierPrice">Supplier Price</label>
               <input type="number" id="editSupplierPrice" step="0.01" required>
             </div>
-
             <div class="form-field">
               <label for="editBuyerPrice">Buyer Price</label>
               <input type="number" id="editBuyerPrice" step="0.01" required>
             </div>
-
             <div class="form-field">
               <label for="editTransportCost">Transport Cost</label>
               <input type="number" id="editTransportCost" step="0.01" required>
             </div>
-
             <div class="form-field">
               <label for="editTransportCompany">Transport Company</label>
               <input type="text" id="editTransportCompany" required>
             </div>
-
             <div class="form-field">
               <label for="editScaleTicket">Scale Ticket</label>
               <input type="text" id="editScaleTicket" required>
             </div>
-
             <div class="action-buttons">
               <button type="submit" class="save-btn">Save</button>
               <button type="button" id="cancelEditBtn" class="cancel-btn">Cancel</button>
@@ -331,12 +352,11 @@
               <img src="{% static 'crm/images/icons/trash.png' %}" alt="Delete">
             </button>
             <button onclick="openScaleTicketSidebarFromDeal()" class="scale-btn">
-              <img src="{% static 'crm/images/icons/scale_ticket.png' %}" alt="Add Icon" class="icon">
+              <img src="{% static 'crm/images/icons/scale_ticket.png' %}" alt="Scale" class="icon">
             </button>
           </div>
 
         </div><!-- /glass-content -->
-
       </div><!-- /glass-panel -->
     </div>
 
@@ -359,7 +379,6 @@
                 <th>Scale Ticket</th>
                 <th>Income/Loss</th>
                 <th>ST Email</th>
-
             </tr>
         </thead>
         <tbody>
@@ -369,8 +388,8 @@
                 <td>{{ deal.supplier.name }}</td>
                 <td>{{ deal.buyer.name }}</td>
                 <td>{{ deal.grade }}</td>
-                <td>{{ deal.shipped_quantity | floatformat:3}} / {{ deal.shipped_pallets }}</td>
-                <td>{{ deal.received_quantity | floatformat:3}} / {{ deal.received_pallets }}</td>
+                <td>{{ deal.shipped_quantity|floatformat:3 }} / {{ deal.shipped_pallets }}</td>
+                <td>{{ deal.received_quantity|floatformat:3 }} / {{ deal.received_pallets }}</td>
                 <td>{{ deal.supplier_price }}</td>
                 <td>{{ deal.supplier_total }}</td>
                 <td>{{ deal.buyer_price }}</td>
@@ -385,8 +404,7 @@
                       {% if rel_path %}
                         <button
                           class="scale-ticket-status-btn {% if deal.scale_ticket_sent %}sent{% else %}not-sent{% endif %}"
-                          data-path="{{ deal.get_scale_ticket_relative_path }}"
-                        >
+                          data-path="{{ deal.get_scale_ticket_relative_path }}">
                           {% if deal.scale_ticket_sent %}Sent{% else %}Send{% endif %}
                         </button>
                       {% else %}
@@ -397,10 +415,9 @@
                     <span class="no-scale-ticket">N/A</span>
                   {% endif %}
                 </td>
-
             </tr>
             {% empty %}
-            <tr><td colspan="14">No deals available.</td></tr>
+            <tr><td colspan="15">No deals available.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -426,7 +443,7 @@
               </tr>
             {% endif %}
           {% empty %}
-            <tr><td colspan="3" style="text-align:center; color:#888;">No data</td></tr>
+            <tr><td colspan="3" style="text-align:center;color:#888;">No data</td></tr>
           {% endfor %}
         </tbody>
         <tfoot>
@@ -441,6 +458,7 @@
         </tfoot>
       </table>
     </div>
+
 
 
 <script src="{% static 'crm/js/deal_list.js' %}"></script>

@@ -1,4 +1,3 @@
-
 // ===== Префикс для /crm/ =====
 function basePrefix() {
   return window.location.pathname.includes("/crm/") ? "/crm/" : "/";
@@ -56,7 +55,7 @@ function attachScaleTicketHandlers(root) {
     btn.dataset.bound = "1";
 
     btn.addEventListener("click", (e) => {
-      e.stopPropagation(); // Предотвращаем открытие sidebar сделки
+      e.stopPropagation();
 
       if (btn.classList.contains("sent")) return;
 
@@ -80,9 +79,7 @@ function attachScaleTicketHandlers(root) {
       })
         .then(assertJSON)
         .then((data) => {
-          if (!data.success) {
-            throw new Error(data.error || "Send failed");
-          }
+          if (!data.success) throw new Error(data.error || "Send failed");
           btn.classList.remove("not-sent");
           btn.classList.add("sent");
           btn.textContent = "Sent";
@@ -103,7 +100,6 @@ function attachScaleTicketHandlers(root) {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Scale URL ->", u("api/scale-ticket-counters/"));
 
-  // Инициализация Scale Ticket handlers для существующих строк
   attachScaleTicketHandlers(document);
 
   // --- Открыть сайдбар "Новая сделка"
@@ -146,12 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const supplierPriceElement = byId("supplier_price");
       const transportCostElement = byId("transport_cost");
 
-      if (
-        !receivedQuantityElement ||
-        !buyerPriceElement ||
-        !supplierPriceElement ||
-        !transportCostElement
-      ) {
+      if (!receivedQuantityElement || !buyerPriceElement || !supplierPriceElement || !transportCostElement) {
         console.error("Элементы формы не найдены!");
         return;
       }
@@ -167,75 +158,67 @@ document.addEventListener("DOMContentLoaded", () => {
         supplier: toInt(byId("supplier")?.value),
         buyer: toInt(byId("buyer")?.value),
         grade: byId("grade")?.value,
-        shipped_quantity: shipped_quantity,
+        shipped_quantity,
         shipped_pallets: toInt(byId("shipped_pallets")?.value),
-        received_quantity: received_quantity,
+        received_quantity,
         received_pallets: toInt(byId("received_pallets")?.value),
-        supplier_price: supplier_price,
-        buyer_price: buyer_price,
-        transport_cost: transport_cost,
+        supplier_price,
+        buyer_price,
+        transport_cost,
         transport_company: toInt(byId("transport_company")?.value),
         scale_ticket: byId("scale_ticket")?.value,
       };
 
       fetchJSON(u("api/deals/"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrftoken,
-          },
-          body: JSON.stringify(data),
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+        body: JSON.stringify(data),
+      })
+        .then((dealData) => {
+          console.log("Deal created:", dealData);
+
+          const tbody = byId("dealTable")?.getElementsByTagName("tbody")?.[0];
+          if (tbody) {
+            const tr = tbody.insertRow();
+            tr.classList.add("deal-row");
+            tr.dataset.id = dealData.id ?? "";
+            tr.innerHTML = `
+              <td>${dealData.date ?? ""}</td>
+              <td>${dealData.supplier_name ?? ""}</td>
+              <td>${dealData.buyer ?? ""}</td>
+              <td>${dealData.grade ?? ""}</td>
+              <td>${dealData.shipped_quantity ?? ""} / ${dealData.shipped_pallets ?? ""}</td>
+              <td>${dealData.received_quantity ?? ""} / ${dealData.received_pallets ?? ""}</td>
+              <td>${dealData.supplier_price ?? ""}</td>
+              <td>${dealData.supplier_total ?? ""}</td>
+              <td>${dealData.buyer_price ?? ""}</td>
+              <td>${dealData.total_amount ?? ""}</td>
+              <td>${dealData.transport_cost ?? ""}</td>
+              <td>${dealData.transport_company?.name ?? dealData.transport_company ?? ""}</td>
+              <td>${dealData.scale_ticket ?? "N/A"}</td>
+              <td>${dealData.total_income_loss ?? ""}</td>
+              <td>
+                ${dealData.scale_ticket
+                  ? `<button class="scale-ticket-status-btn ${dealData.scale_ticket_sent ? "sent" : "not-sent"}"
+                             data-path="${dealData.scale_ticket_relative_path || ""}">
+                       ${dealData.scale_ticket_sent ? "Sent" : "Send"}
+                     </button>`
+                  : `<span class="no-scale-ticket">N/A</span>`}
+              </td>
+            `;
+            attachDealRowHandler(tr);
+            attachScaleTicketHandlers(tr);
+          }
+
+          const sidebar = byId("dealFormSidebar");
+          if (sidebar) sidebar.style.width = "0";
+          dealForm.reset();
+
+          return fetch(u("api/scale-ticket-counters/increment/"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+          });
         })
-          .then((dealData) => {
-            console.log("Deal created:", dealData);
-
-            const tbody = byId("dealTable")?.getElementsByTagName("tbody")?.[0];
-            if (tbody) {
-              const tr = tbody.insertRow();
-              tr.classList.add("deal-row");
-              tr.dataset.id = dealData.id ?? "";
-              tr.innerHTML = `
-                <td>${dealData.date ?? ""}</td>
-                <td>${dealData.supplier_name ?? ""}</td>
-                <td>${dealData.buyer ?? ""}</td>
-                <td>${dealData.grade ?? ""}</td>
-                <td>${dealData.shipped_quantity ?? ""} / ${dealData.shipped_pallets ?? ""}</td>
-                <td>${dealData.received_quantity ?? ""} / ${dealData.received_pallets ?? ""}</td>
-                <td>${dealData.supplier_price ?? ""}</td>
-                <td>${dealData.supplier_total ?? ""}</td>
-                <td>${dealData.buyer_price ?? ""}</td>
-                <td>${dealData.total_amount ?? ""}</td>
-                <td>${dealData.transport_cost ?? ""}</td>
-                <td>${dealData.transport_company?.name ?? dealData.transport_company ?? ""}</td>
-                <td>${dealData.scale_ticket ?? "N/A"}</td>
-                <td>${dealData.total_income_loss ?? ""}</td>
-                <td>
-                  ${
-                    dealData.scale_ticket
-                      ? `<button class="scale-ticket-status-btn ${dealData.scale_ticket_sent ? "sent" : "not-sent"}"
-                                 data-path="${dealData.scale_ticket_relative_path || ""}">
-                           ${dealData.scale_ticket_sent ? "Sent" : "Send"}
-                         </button>`
-                      : `<span class="no-scale-ticket">N/A</span>`
-                  }
-                </td>
-              `;
-              attachDealRowHandler(tr);
-              attachScaleTicketHandlers(tr);
-            }
-
-            const sidebar = byId("dealFormSidebar");
-            if (sidebar) sidebar.style.width = "0";
-            dealForm.reset();
-
-            return fetch(u("api/scale-ticket-counters/increment/"), {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrftoken
-              },
-            });
-          })
         .then((response) => {
           if (response && response.ok) {
             console.log("✅ Scale ticket counter incremented");
@@ -245,9 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         })
         .then((counterData) => {
-          if (counterData) {
-            console.log("New counter value:", counterData);
-          }
+          if (counterData) console.log("New counter value:", counterData);
         })
         .catch((err) => {
           console.error("Error (create deal or increment):", err);
@@ -259,87 +240,32 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Открыть сайдбар деталей по клику на строку
   function attachDealRowHandler(row) {
     row.addEventListener("click", (e) => {
-      // Игнорируем клик, если кликнули на кнопку
-      if (e.target.closest(".scale-ticket-status-btn")) {
-        return;
-      }
+      if (e.target.closest(".scale-ticket-status-btn")) return;
 
       const dealId = row.dataset.id;
       if (!dealId) return;
 
       fetchJSON(u(`deals/${dealId}/`))
         .then((data) => {
-          byId("dealDate") && (byId("dealDate").innerText = data.date ?? "");
-          byId("dealSupplier") &&
-            (byId("dealSupplier").innerText = data.supplier_name ?? "");
-          byId("dealBuyer") &&
-            (byId("dealBuyer").innerText = data.buyer_name ?? "");
-          byId("dealGrade") && (byId("dealGrade").innerText = data.grade ?? "");
-          byId("dealTotalAmount") &&
-            (byId("dealTotalAmount").innerText = data.total_amount ?? "");
-          byId("dealScaleTicket") &&
-            (byId("dealScaleTicket").innerText = data.scale_ticket ?? "");
+          // ── Базовые поля ──────────────────────────────────────────
+          byId("dealDate")        && (byId("dealDate").innerText        = data.date          ?? "");
+          byId("dealSupplier")    && (byId("dealSupplier").innerText    = data.supplier_name ?? "");
+          byId("dealBuyer")       && (byId("dealBuyer").innerText       = data.buyer_name    ?? "");
+          byId("dealGrade")       && (byId("dealGrade").innerText       = data.grade         ?? "");
+          byId("dealTotalAmount") && (byId("dealTotalAmount").innerText = data.total_amount  ?? "");
+          byId("dealScaleTicket") && (byId("dealScaleTicket").innerText = data.scale_ticket  ?? "");
 
-          // KPI блок
-          const profit = Number(data.total_income_loss ?? 0);
-          const profitPerTon = data.profit_per_ton != null ? Number(data.profit_per_ton) : null;
-          const transportPerTon = data.transport_per_ton != null ? Number(data.transport_per_ton) : null;
-          const transportShare = data.transport_share != null ? Number(data.transport_share) : null;
-          const spreadPerTon = data.spread_per_ton != null ? Number(data.spread_per_ton) : null;
-          const varianceMt = data.variance_mt != null ? Number(data.variance_mt) : null;
-          const avgPalletKg = data.avg_pallet_weight_kg != null ? Number(data.avg_pallet_weight_kg) : null;
-
-          if (byId("daProfit")) {
-            const el = byId("daProfit");
-            el.classList.remove("da-profit-positive", "da-profit-negative");
-            el.innerText = `${profit >= 0 ? "+" : "-"}$${Math.abs(profit).toFixed(2)}`;
-            if (profit > 0) el.classList.add("da-profit-positive");
-            if (profit < 0) el.classList.add("da-profit-negative");
-          }
-
-          if (byId("daProfitPerTon")) {
-            byId("daProfitPerTon").innerText =
-              profitPerTon != null ? `$${profitPerTon.toFixed(2)} / MT` : "N/A";
-          }
-
-          if (byId("daSpreadPerTon")) {
-            byId("daSpreadPerTon").innerText =
-              spreadPerTon != null ? `$${spreadPerTon.toFixed(2)} / MT` : "N/A";
-          }
-
-          if (byId("daTransportPerTon")) {
-            byId("daTransportPerTon").innerText =
-              transportPerTon != null ? `$${transportPerTon.toFixed(2)} / MT` : "N/A";
-          }
-
-          if (byId("daTransportShareChip")) {
-            const chip = byId("daTransportShareChip");
-            chip.classList.remove("da-chip--green", "da-chip--yellow", "da-chip--red");
-
-            if (transportShare == null) {
-              chip.innerText = "N/A";
-            } else {
-              chip.innerText = `${transportShare.toFixed(1)} %`;
-
-              if (transportShare < 15) {
-                chip.classList.add("da-chip--green");
-              } else if (transportShare < 25) {
-                chip.classList.add("da-chip--yellow");
-              } else {
-                chip.classList.add("da-chip--red");
-              }
-            }
-          }
-
-          if (byId("daVariance")) {
-            byId("daVariance").innerText =
-              varianceMt != null ? `${varianceMt.toFixed(3)} MT` : "N/A";
-          }
-
-          if (byId("daAvgPalletWeight")) {
-            byId("daAvgPalletWeight").innerText =
-              avgPalletKg != null ? `${avgPalletKg.toFixed(0)} kg` : "N/A";
-          }
+          // ── ВОТ СЮДА: заменяем весь старый KPI-блок одним вызовом ──
+          renderDealAnalytics({
+            profit:          toFloat(data.total_income_loss),
+            profitPerTon:    toFloat(data.profit_per_ton),
+            spreadPerTon:    toFloat(data.spread_per_ton),
+            transportPerTon: toFloat(data.transport_per_ton),
+            transportShare:  toFloat(data.transport_share),
+            variance:        toFloat(data.variance_mt),
+            avgPalletWeight: toFloat(data.avg_pallet_weight_kg),
+          });
+          // ──────────────────────────────────────────────────────────
 
           const sidebar = byId("viewDealSidebar");
           if (sidebar) {
@@ -364,40 +290,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Glass panel config
   const glassProps = {
-    displace: 15,
-    distortionScale: -150,
-    redOffset: 5,
-    greenOffset: 15,
-    blueOffset: 25,
-    brightness: 0.60,
-    opacity: 0.80,
-    mixBlendMode: "screen"
+    displace: 15, distortionScale: -150,
+    redOffset: 5, greenOffset: 15, blueOffset: 25,
+    brightness: 0.60, opacity: 0.80, mixBlendMode: "screen",
   };
 
-  function applyGlassProps(el, props){
-    if(!el) return;
-    el.style.setProperty('--rgb-r', `${props.redOffset||0}px`);
-    el.style.setProperty('--rgb-g', `${props.greenOffset||0}px`);
-    el.style.setProperty('--rgb-b', `${props.blueOffset||0}px`);
-    el.style.setProperty('--brightness', String(props.brightness ?? 1));
-    el.style.setProperty('--glass-opacity', String(props.opacity ?? 0.85));
-    el.style.setProperty('--mix', props.mixBlendMode || 'screen');
+  function applyGlassProps(el, props) {
+    if (!el) return;
+    el.style.setProperty("--rgb-r",        `${props.redOffset   || 0}px`);
+    el.style.setProperty("--rgb-g",        `${props.greenOffset || 0}px`);
+    el.style.setProperty("--rgb-b",        `${props.blueOffset  || 0}px`);
+    el.style.setProperty("--brightness",   String(props.brightness ?? 1));
+    el.style.setProperty("--glass-opacity",String(props.opacity  ?? 0.85));
+    el.style.setProperty("--mix",           props.mixBlendMode || "screen");
 
-    const filter = document.querySelector('#glass-disp');
-    const turb = filter?.querySelector('feTurbulence');
-    const disp = filter?.querySelector('feDisplacementMap');
+    const filter = document.querySelector("#glass-disp");
+    const turb   = filter?.querySelector("feTurbulence");
+    const disp   = filter?.querySelector("feDisplacementMap");
 
-    if(turb){
-      const base = 0.004 + Math.min(Math.max((props.displace||0)/100, 0), 0.12);
-      turb.setAttribute('baseFrequency', base.toFixed(4));
+    if (turb) {
+      const base = 0.004 + Math.min(Math.max((props.displace || 0) / 100, 0), 0.12);
+      turb.setAttribute("baseFrequency", base.toFixed(4));
     }
-    if(disp){
-      const s = Math.abs(props.distortionScale ?? 10);
-      disp.setAttribute('scale', String(s));
-    }
+    if (disp) disp.setAttribute("scale", String(Math.abs(props.distortionScale ?? 10)));
   }
 
-  const glass = document.querySelector('#viewDealSidebar .glass-panel');
+  const glass = document.querySelector("#viewDealSidebar .glass-panel");
   applyGlassProps(glass, glassProps);
 
   // --- Включить режим редактирования
@@ -406,39 +324,27 @@ document.addEventListener("DOMContentLoaded", () => {
     editDealBtn.addEventListener("click", () => {
       const sidebar = byId("viewDealSidebar");
       sidebar && sidebar.classList.add("editing");
-      const details = byId("dealDetailsContent");
-      const form = byId("editDealForm");
-      details && (details.style.display = "none");
-      form && (form.style.display = "block");
+      byId("dealDetailsContent") && (byId("dealDetailsContent").style.display = "none");
+      byId("editDealForm")       && (byId("editDealForm").style.display       = "block");
 
       const dealId = byId("viewDealSidebar")?.dataset.dealId;
       if (!dealId) return;
 
       fetchJSON(u(`deals/${dealId}/`))
         .then((data) => {
-          byId("editDate") && (byId("editDate").value = data.date ?? "");
-          byId("editSupplier") &&
-            (byId("editSupplier").value = data.supplier_id ?? "");
-          byId("editBuyer") && (byId("editBuyer").value = data.buyer_id ?? "");
-          byId("editGrade") && (byId("editGrade").value = data.grade ?? "");
-          byId("editShippedQuantity") &&
-            (byId("editShippedQuantity").value = data.shipped_quantity ?? "");
-          byId("editShippedPallets") &&
-            (byId("editShippedPallets").value = data.shipped_pallets ?? "");
-          byId("editReceivedQuantity") &&
-            (byId("editReceivedQuantity").value = data.received_quantity ?? "");
-          byId("editReceivedPallets") &&
-            (byId("editReceivedPallets").value = data.received_pallets ?? "");
-          byId("editSupplierPrice") &&
-            (byId("editSupplierPrice").value = data.supplier_price ?? "");
-          byId("editBuyerPrice") &&
-            (byId("editBuyerPrice").value = data.buyer_price ?? "");
-          byId("editTransportCost") &&
-            (byId("editTransportCost").value = data.transport_cost ?? "");
-          byId("editTransportCompany") &&
-            (byId("editTransportCompany").value = data.transport_company_id ?? "");
-          byId("editScaleTicket") &&
-            (byId("editScaleTicket").value = data.scale_ticket ?? "");
+          byId("editDate")             && (byId("editDate").value             = data.date               ?? "");
+          byId("editSupplier")         && (byId("editSupplier").value         = data.supplier_id         ?? "");
+          byId("editBuyer")            && (byId("editBuyer").value            = data.buyer_id            ?? "");
+          byId("editGrade")            && (byId("editGrade").value            = data.grade               ?? "");
+          byId("editShippedQuantity")  && (byId("editShippedQuantity").value  = data.shipped_quantity    ?? "");
+          byId("editShippedPallets")   && (byId("editShippedPallets").value   = data.shipped_pallets     ?? "");
+          byId("editReceivedQuantity") && (byId("editReceivedQuantity").value = data.received_quantity   ?? "");
+          byId("editReceivedPallets")  && (byId("editReceivedPallets").value  = data.received_pallets    ?? "");
+          byId("editSupplierPrice")    && (byId("editSupplierPrice").value    = data.supplier_price      ?? "");
+          byId("editBuyerPrice")       && (byId("editBuyerPrice").value       = data.buyer_price         ?? "");
+          byId("editTransportCost")    && (byId("editTransportCost").value    = data.transport_cost      ?? "");
+          byId("editTransportCompany") && (byId("editTransportCompany").value = data.transport_company_id?? "");
+          byId("editScaleTicket")      && (byId("editScaleTicket").value      = data.scale_ticket        ?? "");
         })
         .catch((err) => console.error("Error fetching data for editing:", err));
     });
@@ -450,10 +356,8 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelEditBtn.addEventListener("click", () => {
       const sidebar = byId("viewDealSidebar");
       sidebar && sidebar.classList.remove("editing");
-      const details = byId("dealDetailsContent");
-      const form = byId("editDealForm");
-      details && (details.style.display = "block");
-      form && (form.style.display = "none");
+      byId("dealDetailsContent") && (byId("dealDetailsContent").style.display = "block");
+      byId("editDealForm")       && (byId("editDealForm").style.display       = "none");
     });
   }
 
@@ -466,47 +370,36 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!dealId) return;
 
       const payload = {
-        date: byId("editDate")?.value,
-        supplier: toInt(byId("editSupplier")?.value),
-        buyer: toInt(byId("editBuyer")?.value),
-        grade: byId("editGrade")?.value,
-        shipped_quantity: toFloat(byId("editShippedQuantity")?.value),
-        shipped_pallets: toInt(byId("editShippedPallets")?.value),
+        date:              byId("editDate")?.value,
+        supplier:          toInt(byId("editSupplier")?.value),
+        buyer:             toInt(byId("editBuyer")?.value),
+        grade:             byId("editGrade")?.value,
+        shipped_quantity:  toFloat(byId("editShippedQuantity")?.value),
+        shipped_pallets:   toInt(byId("editShippedPallets")?.value),
         received_quantity: toFloat(byId("editReceivedQuantity")?.value),
-        received_pallets: toInt(byId("editReceivedPallets")?.value),
-        supplier_price: toFloat(byId("editSupplierPrice")?.value),
-        buyer_price: toFloat(byId("editBuyerPrice")?.value),
-        transport_cost: toFloat(byId("editTransportCost")?.value),
+        received_pallets:  toInt(byId("editReceivedPallets")?.value),
+        supplier_price:    toFloat(byId("editSupplierPrice")?.value),
+        buyer_price:       toFloat(byId("editBuyerPrice")?.value),
+        transport_cost:    toFloat(byId("editTransportCost")?.value),
         transport_company: toInt(byId("editTransportCompany")?.value),
-        scale_ticket: byId("editScaleTicket")?.value,
+        scale_ticket:      byId("editScaleTicket")?.value,
       };
 
       fetchJSON(u(`deals/${dealId}/edit/`), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrftoken,
-        },
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
         body: JSON.stringify(payload),
       })
         .then((data) => {
-          const sidebar = byId("viewDealSidebar");
-          sidebar && sidebar.classList.remove("editing");
+          byId("viewDealSidebar")?.classList.remove("editing");
           alert("Changes saved successfully!");
-          byId("dealDate") && (byId("dealDate").innerText = data.date ?? "");
-          byId("dealSupplier") &&
-            (byId("dealSupplier").innerText = data.supplier ?? "");
-          byId("dealBuyer") &&
-            (byId("dealBuyer").innerText = data.buyer ?? "");
-          byId("dealGrade") &&
-            (byId("dealGrade").innerText = data.grade ?? "");
-          byId("dealTotalAmount") &&
-            (byId("dealTotalAmount").innerText = data.total_amount ?? "");
-
-          const details = byId("dealDetailsContent");
-          const form = byId("editDealForm");
-          details && (details.style.display = "block");
-          form && (form.style.display = "none");
+          byId("dealDate")        && (byId("dealDate").innerText        = data.date         ?? "");
+          byId("dealSupplier")    && (byId("dealSupplier").innerText    = data.supplier      ?? "");
+          byId("dealBuyer")       && (byId("dealBuyer").innerText       = data.buyer         ?? "");
+          byId("dealGrade")       && (byId("dealGrade").innerText       = data.grade         ?? "");
+          byId("dealTotalAmount") && (byId("dealTotalAmount").innerText = data.total_amount  ?? "");
+          byId("dealDetailsContent") && (byId("dealDetailsContent").style.display = "block");
+          byId("editDealForm")       && (byId("editDealForm").style.display       = "none");
         })
         .catch((err) => console.error("Error saving changes:", err));
     });
@@ -527,10 +420,8 @@ document.addEventListener("DOMContentLoaded", () => {
           .then((r) => {
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             alert("Deal deleted successfully!");
-            const sidebar = byId("viewDealSidebar");
-            if (sidebar) sidebar.style.width = "0";
-            const row = document.querySelector(`.deal-row[data-id="${dealId}"]`);
-            row && row.remove();
+            byId("viewDealSidebar") && (byId("viewDealSidebar").style.width = "0");
+            document.querySelector(`.deal-row[data-id="${dealId}"]`)?.remove();
           })
           .catch((err) => console.error("Error deleting deal:", err));
       }
@@ -547,10 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
     openScaleTicketSidebar();
     setTimeout(() => {
       const input = byId("ticket_number");
-      if (input) {
-        input.value = scaleTicket;
-        fetchDealData();
-      }
+      if (input) { input.value = scaleTicket; fetchDealData(); }
     }, 300);
   };
 
@@ -562,7 +450,6 @@ document.addEventListener("DOMContentLoaded", () => {
       sidebar.style.display = "block";
       setTimeout(() => sidebar.classList.add("open"), 10);
     };
-
     window.closeScaleTicketSidebar = function () {
       sidebar.classList.remove("open");
       setTimeout(() => (sidebar.style.display = "none"), 300);
@@ -576,9 +463,7 @@ document.addEventListener("DOMContentLoaded", () => {
   (function initScaleTicketExport() {
     function setCurrentTime() {
       const now = new Date();
-      const formattedTime = now
-        .toLocaleTimeString("en-US", { hour12: false })
-        .slice(0, 5);
+      const formattedTime = now.toLocaleTimeString("en-US", { hour12: false }).slice(0, 5);
       const timeInput = byId("deal_time");
       if (timeInput) timeInput.value = formattedTime;
     }
@@ -587,69 +472,43 @@ document.addEventListener("DOMContentLoaded", () => {
     window.fetchDealData = function () {
       const ticketNumberElement = byId("ticket_number");
       if (!ticketNumberElement) return;
-
       const ticketNumber = ticketNumberElement.value;
       if (!ticketNumber || ticketNumber.length < 3) return;
 
       fetchJSON(u(`get-deal-by-ticket/?ticket_number=${encodeURIComponent(ticketNumber)}`))
         .then((data) => {
-          if (!data.success) {
-            alert("Deal not found for this Scale Ticket.");
-            return;
-          }
-
+          if (!data.success) { alert("Deal not found for this Scale Ticket."); return; }
           const d = data.deal;
-          const setVal = (id, val) => {
-            const el = byId(id);
-            if (el) el.value = val;
-          };
+          const setVal = (id, val) => { const el = byId(id); if (el) el.value = val; };
 
-          setVal("selectedDealId", d.id);
-          setVal("scaleticket_date", d.date);
-          setVal("scaleticket_received_quantity", d.received_quantity);
-          setVal("pallets", d.received_pallets);
-          setVal("supplier_name", d.supplier_name);
-          setVal("scaleticket_grade", d.grade);
+          setVal("selectedDealId",                  d.id);
+          setVal("scaleticket_date",                d.date);
+          setVal("scaleticket_received_quantity",   d.received_quantity);
+          setVal("pallets",                         d.received_pallets);
+          setVal("supplier_name",                   d.supplier_name);
+          setVal("scaleticket_grade",               d.grade);
 
           const randomTareWeight = 5170 + Math.floor(Math.random() * 301);
           setVal("tare_weight", randomTareWeight);
 
           const netWeight = toFloat(d.net_weight_str || d.received_quantity * 1000 || 0);
-          setVal("net_weight", netWeight);
-
-          const grossWeight = randomTareWeight + netWeight;
-          setVal("gross_weight", grossWeight);
+          setVal("net_weight",   netWeight);
+          setVal("gross_weight", randomTareWeight + netWeight);
         })
         .catch((err) => console.error("Error fetching deal data:", err));
     };
 
     window.exportScaleTicket = function (event) {
       event.preventDefault();
-
-      const getVal = (id, def = "") => {
-        const el = byId(id);
-        if (!el) {
-          console.warn(`⚠️ Поле '${id}' не найдено в DOM.`);
-          return def;
-        }
-        return el.value || def;
-      };
-
+      const getVal = (id, def = "") => { const el = byId(id); if (!el) { console.warn(`⚠️ '${id}' not found`); return def; } return el.value || def; };
       const ticketNumber = getVal("ticket_number");
-      if (!ticketNumber) {
-        alert("⚠️ Please enter a scale ticket number before exporting.");
-        return;
-      }
+      if (!ticketNumber) { alert("⚠️ Please enter a scale ticket number before exporting."); return; }
 
-      const dealTime = getVal("deal_time", "N/A");
-      const licencePlate = getVal("licence_plate", "N/A");
-      const tareWeight = toFloat(getVal("tare_weight", "0"));
-      const netWeight = toFloat(getVal("net_weight", "0"));
+      const dealTime    = getVal("deal_time",    "N/A");
+      const licencePlate= getVal("licence_plate","N/A");
+      const tareWeight  = toFloat(getVal("tare_weight","0"));
+      const netWeight   = toFloat(getVal("net_weight",  "0"));
       const grossWeight = tareWeight + netWeight;
-
-      console.log(
-        `📂 Exporting Scale Ticket: ${ticketNumber}, Time: ${dealTime}, Licence: ${licencePlate}, Gross: ${grossWeight}, Tare: ${tareWeight}, Net: ${netWeight}`
-      );
 
       const url = u(
         `export-scale-ticket/?ticket_number=${encodeURIComponent(ticketNumber)}`
@@ -673,76 +532,156 @@ document.addEventListener("DOMContentLoaded", () => {
       exportBtn.addEventListener("click", exportScaleTicket);
       console.log("✅ Export button connected.");
     } else {
-      console.error("🚨 Export button NOT FOUND! Проверь ID: exportScaleTicketBtn");
+      console.error("🚨 exportScaleTicketBtn NOT FOUND!");
     }
 
     const licencePlates = ["SY1341", "WB3291", "153"];
     const licenceSelect = byId("licence_plate");
     if (licenceSelect) {
       const placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = "Select Licence Plate";
-      placeholder.disabled = true;
-      placeholder.selected = true;
+      placeholder.value = ""; placeholder.textContent = "Select Licence Plate";
+      placeholder.disabled = true; placeholder.selected = true;
       licenceSelect.appendChild(placeholder);
-
       licencePlates.forEach((plate) => {
         const opt = document.createElement("option");
-        opt.value = plate;
-        opt.textContent = plate;
+        opt.value = plate; opt.textContent = plate;
         licenceSelect.appendChild(opt);
       });
     } else {
-      console.error("🚨 Licence plate dropdown (licence_plate) NOT FOUND!");
+      console.error("🚨 licence_plate NOT FOUND!");
     }
   })();
 
   // ===== Автоподстановка цен =====
   const supplierEl = byId("supplier");
-  const buyerEl = byId("buyer");
-  const gradeEl = byId("grade");
+  const buyerEl    = byId("buyer");
+  const gradeEl    = byId("grade");
 
-  supplierEl &&
-    supplierEl.addEventListener("change", () => {
-      fetchSupplierPrice();
-      fetchBuyerPrice();
-    });
-  buyerEl && buyerEl.addEventListener("change", fetchBuyerPrice);
-  gradeEl &&
-    gradeEl.addEventListener("change", () => {
-      fetchSupplierPrice();
-      fetchBuyerPrice();
-    });
+  supplierEl && supplierEl.addEventListener("change", () => { fetchSupplierPrice(); fetchBuyerPrice(); });
+  buyerEl    && buyerEl.addEventListener("change", fetchBuyerPrice);
+  gradeEl    && gradeEl.addEventListener("change", () => { fetchSupplierPrice(); fetchBuyerPrice(); });
 
   function fetchSupplierPrice() {
     const supplierId = byId("supplier")?.value;
-    const grade = byId("grade")?.value;
+    const grade      = byId("grade")?.value;
     if (supplierId && grade) {
-      fetchJSON(
-        u(`api/get_price/?supplier_id=${encodeURIComponent(supplierId)}&grade=${encodeURIComponent(grade)}`)
-      )
-        .then((data) => {
-          const priceField = byId("supplier_price");
-          if (!priceField) return;
-          priceField.value = data.price ? data.price : "";
-        })
+      fetchJSON(u(`api/get_price/?supplier_id=${encodeURIComponent(supplierId)}&grade=${encodeURIComponent(grade)}`))
+        .then((data) => { const f = byId("supplier_price"); if (f) f.value = data.price || ""; })
         .catch((err) => console.error("Ошибка при получении цены:", err));
     }
   }
 
   function fetchBuyerPrice() {
     const buyerId = byId("buyer")?.value;
-    const grade = byId("grade")?.value;
+    const grade   = byId("grade")?.value;
     if (buyerId && grade) {
-      fetchJSON(
-        u(`api/get_buyer_price/?buyer_id=${encodeURIComponent(buyerId)}&grade=${encodeURIComponent(grade)}`)
-      )
-        .then((data) => {
-          const priceField = byId("buyer_price");
-          if (!priceField) return;
-          priceField.value = data.price || "";
-        })
+      fetchJSON(u(`api/get_buyer_price/?buyer_id=${encodeURIComponent(buyerId)}&grade=${encodeURIComponent(grade)}`))
+        .then((data) => { const f = byId("buyer_price"); if (f) f.value = data.price || ""; })
         .catch((err) => console.error("Ошибка при получении цены покупателя:", err));
     }
   }
 });
+
+// ==========================================================================
+//  renderDealAnalytics — заполняет и анимирует карточку аналитики
+// ==========================================================================
+function renderDealAnalytics(data) {
+  const isLoss = data.profit < 0;
+
+  // ── Profit hero ──────────────────────────────────────────────────────────
+  const profitEl = byId("daProfit");
+  if (profitEl) {
+    profitEl.textContent = (isLoss ? "−" : "+") + "$" + Math.abs(data.profit).toFixed(2);
+    profitEl.className   = "da-hero-value da-profit " + (isLoss ? "da-neg" : "da-pos");
+  }
+
+  const perTonEl = byId("daProfitPerTon");
+  if (perTonEl) {
+    perTonEl.textContent = (data.profitPerTon >= 0 ? "+" : "") + data.profitPerTon.toFixed(2) + " / MT";
+    perTonEl.className   = "da-hero-badge" + (isLoss ? "" : " da-badge-pos");
+  }
+
+  // ── Статус-чип ───────────────────────────────────────────────────────────
+  const chip = byId("daProfitChip");
+  if (chip) {
+    chip.textContent = isLoss ? "Loss" : "Profit";
+    chip.className   = "da-status-chip " + (isLoss ? "da-chip-loss" : "da-chip-profit");
+  }
+
+  // ── Метрики ──────────────────────────────────────────────────────────────
+  const spreadEl = byId("daSpreadPerTon");
+  if (spreadEl) {
+    spreadEl.textContent = "$" + data.spreadPerTon.toFixed(2);
+    spreadEl.className   = "da-metric-val da-pos";
+  }
+
+  const transEl = byId("daTransportPerTon");
+  if (transEl) {
+    transEl.textContent = "$" + data.transportPerTon.toFixed(2);
+    transEl.className   = "da-metric-val da-neg";
+  }
+
+  const varEl = byId("daVariance");
+  if (varEl) varEl.textContent = (data.variance >= 0 ? "+" : "") + data.variance.toFixed(3) + " MT";
+
+  const palletEl = byId("daAvgPalletWeight");
+  if (palletEl) palletEl.textContent = data.avgPalletWeight.toFixed(0) + " kg";
+
+  // ── Transport share chip ─────────────────────────────────────────────────
+  const tsChip = byId("daTransportShareChip");
+  if (tsChip) tsChip.textContent = data.transportShare.toFixed(1) + " %";
+
+  // ── Transport bar (анимация) ─────────────────────────────────────────────
+  const barFill = byId("daTransportBarFill");
+  if (barFill) {
+    barFill.style.width = "0%";                       // сброс
+    setTimeout(() => {
+      barFill.style.width = Math.min(data.transportShare, 100) + "%";
+    }, 120);
+  }
+
+  // ── Donut: spread efficiency ──────────────────────────────────────────────
+  const efficiency = data.spreadPerTon > 0
+    ? Math.max(0, ((data.spreadPerTon - data.transportPerTon) / data.spreadPerTon) * 100)
+    : 0;
+
+  const donutFill = byId("daDonutFill");
+  if (donutFill) {
+    donutFill.style.strokeDasharray = "0 100";        // сброс
+    donutFill.style.stroke = efficiency >= 50 ? "#2dd4bf" : "#fbbf24";
+    setTimeout(() => {
+      donutFill.style.strokeDasharray = efficiency.toFixed(1) + " 100";
+    }, 150);
+  }
+
+  const effPct = byId("daEfficiencyPct");
+  if (effPct) {
+    effPct.textContent = efficiency.toFixed(0) + "%";
+    effPct.style.color = efficiency >= 50 ? "#2dd4bf" : "#fbbf24";
+  }
+
+  // ── Variance segments ─────────────────────────────────────────────────────
+  const segs  = document.querySelectorAll("#daVarianceSegs .da-seg");
+  const ratio = Math.min(Math.abs(data.variance) / 2, 1);   // 2 MT = 100%
+  const count = Math.round(ratio * segs.length);
+  segs.forEach((s, i) => {
+    s.className = "da-seg" + (i < count ? " da-seg-active" : "");
+  });
+
+  // ── Spark-линия: цвет и сброс анимации ───────────────────────────────────
+  const sparkLine = byId("daSparkLine");
+  const sparkArea = byId("daSparkArea");
+
+  if (sparkLine) {
+    sparkLine.className = "da-spark-line " + (isLoss ? "da-spark-loss" : "da-spark-profit");
+    sparkLine.style.animation = "none";
+    void sparkLine.getBoundingClientRect();   // reflow
+    sparkLine.style.animation = "";
+  }
+  if (sparkArea) {
+    sparkArea.setAttribute("fill", isLoss ? "url(#daSparkGrad)" : "url(#daSparkGradGreen)");
+    sparkArea.style.animation = "none";
+    void sparkArea.getBoundingClientRect();
+    sparkArea.style.animation = "";
+  }
+}
