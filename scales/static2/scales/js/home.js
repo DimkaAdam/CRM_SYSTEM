@@ -104,10 +104,16 @@ function toBusinessDay(iso) {
 let _navYear  = new Date().getFullYear();
 let _navMonth = new Date().getMonth(); // 0-11
 
-function shiftMonth(delta) {
+async function shiftMonth(delta) {
   _navMonth += delta;
   if (_navMonth > 11) { _navMonth = 0;  _navYear++; }
   if (_navMonth < 0)  { _navMonth = 11; _navYear--; }
+
+  // Показываем спиннер пока грузим
+  const body = document.getElementById('history-body');
+  if (body) body.innerHTML = '<div style="color:#6b7280;padding:12px 0;">Loading…</div>';
+
+  await ensureMonthLoaded(_navYear, _navMonth);
   renderAllDaysDebounced();
 }
 
@@ -116,6 +122,58 @@ function shiftMonth(delta) {
  */
 function currentBusinessDay() {
   return toBusinessDay(new Date().toISOString());
+}
+
+/* ======================
+   2.4) Lazy Load Cache
+   ====================== */
+
+// Множество уже загруженных месяцев "YYYY-MM"
+const _loadedMonths = new Set();
+
+async function ensureMonthLoaded(year, month) {
+  const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+  if (_loadedMonths.has(key)) return; // уже есть — выходим
+
+  _loadedMonths.add(key); // помечаем сразу, чтобы не грузить дважды
+
+  const { from, to } = monthBounds(year, month);
+  const url = `/scales/api/received/?from=${from}&to=${to}`;
+
+  try {
+    const r = await fetch(url, { credentials: "same-origin" });
+    if (!r.ok) { _loadedMonths.delete(key); return; }
+
+    const j = await r.json();
+    const items = j.items || [];
+
+    const todayBD = currentBusinessDay();
+
+    // Мержим в store без дублей
+    const store = getStore();
+
+    for (const it of items) {
+      const bd = (it.report_day || toBusinessDay(it.date)).slice(0, 10);
+      if (bd === todayBD) continue; // сегодня — в верхней таблице
+
+      if (!store[bd]) {
+        store[bd] = { items: [], totals: { gross: 0, net: 0, count: 0 } };
+      }
+
+      // Проверка дублей по id
+      if (store[bd].items.some(x => x.id === it.id)) continue;
+
+      store[bd].items.push({ ...it, report_day: bd });
+      store[bd].totals.gross += Number(it.gross || 0);
+      store[bd].totals.net   += Number(it.net   || 0);
+      store[bd].totals.count += 1;
+    }
+
+    setStore(store);
+  } catch (e) {
+    console.error(`Failed to load month ${key}:`, e);
+    _loadedMonths.delete(key); // сбрасываем чтобы можно было повторить
+  }
 }
 
 /* ======================
@@ -305,18 +363,13 @@ async function loadFullHistory(maxMonths = 36, emptyBreak = 6) {
 
 async function reloadFromDB() {
   try {
-    // TOP: Current day's records
+    // Сегодняшние записи — верхняя таблица
     const topRes = await fetch("/scales/api/received/?period=today", {
       credentials: "same-origin"
     });
+    if (!topRes.ok) throw new Error(`Failed to load today's data: ${topRes.status}`);
 
-    if (!topRes.ok) {
-      throw new Error(`Failed to load today's data: ${topRes.status}`);
-    }
-
-    const topJson = await topRes.json();
-    const topItems = topJson.items || [];
-
+    const topItems = (await topRes.json()).items || [];
     const tbody = document.querySelector("#report-table tbody");
     if (tbody) {
       tbody.innerHTML = "";
@@ -324,10 +377,10 @@ async function reloadFromDB() {
       recalcTotalsDebounced();
     }
 
-    // BOTTOM: Full history
-    const allItems = await loadFullHistory(36, 6);
-    setStore(groupByDate(allItems));
+    // История — только текущий месяц
+    await ensureMonthLoaded(_navYear, _navMonth);
     renderAllDaysDebounced();
+
   } catch (e) {
     console.error("reloadFromDB failed:", e);
     alert("Failed to load data. Please refresh the page.");
