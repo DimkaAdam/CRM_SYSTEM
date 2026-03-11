@@ -1,0 +1,456 @@
+{% extends 'crm/index.html' %}
+{% load static %}
+{% block title %}Supplier Shipment Report Archive{% endblock %}
+{% block page_title %}Supplier Shipment Report Archive{% endblock %}
+
+{% block content %}
+<div class="ssra-page">
+
+  <div class="ssra-header">
+    <h2 class="ssra-title">Supplier Shipment Report Archive</h2>
+    <p class="ssra-subtitle">Generate monthly supplier shipment reports and browse archived PDF files.</p>
+  </div>
+
+  <div class="ssra-toolbar">
+
+    <select id="reportYear" class="ssra-select"></select>
+
+    <select id="reportMonth" class="ssra-select">
+      <option value="1">January</option>
+      <option value="2">February</option>
+      <option value="3">March</option>
+      <option value="4">April</option>
+      <option value="5">May</option>
+      <option value="6">June</option>
+      <option value="7">July</option>
+      <option value="8">August</option>
+      <option value="9">September</option>
+      <option value="10">October</option>
+      <option value="11">November</option>
+      <option value="12">December</option>
+    </select>
+
+    <button id="generateSupplierArchiveBtn" class="ssra-btn ssra-btn-primary">
+      Generate Reports
+    </button>
+
+    <button id="refreshSupplierArchiveBtn" class="ssra-btn ssra-btn-secondary">
+      Refresh Archive
+    </button>
+
+  </div>
+
+  <div id="supplierArchiveStatus" class="ssra-status" style="display:none;"></div>
+
+  <div class="ssra-grid">
+    <div class="ssra-card">
+      <div class="ssra-card-header">Years</div>
+      <div id="supplierArchiveYears" class="ssra-list">
+        <div class="ssra-empty">Loading...</div>
+      </div>
+    </div>
+
+    <div class="ssra-card">
+      <div class="ssra-card-header">Months</div>
+      <div id="supplierArchiveMonths" class="ssra-list">
+        <div class="ssra-empty">Select a year</div>
+      </div>
+    </div>
+
+    <div class="ssra-card">
+      <div class="ssra-card-header">PDF Files</div>
+      <div id="supplierArchiveFiles" class="ssra-files">
+        <div class="ssra-empty">Select a month</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ssra-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .ssra-header {
+    margin-bottom: 22px;
+  }
+
+  .ssra-title {
+    margin: 0 0 8px;
+    font-size: 30px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .ssra-subtitle {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .ssra-toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .ssra-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+
+  .ssra-btn-primary {
+    background: #08666e;
+    color: #ffffff;
+  }
+
+  .ssra-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(8, 102, 110, 0.18);
+  }
+
+  .ssra-btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+  }
+
+  .ssra-btn-secondary:hover {
+    background: #dbe0e6;
+  }
+
+  .ssra-status {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .ssra-status.success {
+    background: #ecfdf3;
+    color: #027a48;
+    border: 1px solid #abefc6;
+  }
+
+  .ssra-status.error {
+    background: #fef3f2;
+    color: #b42318;
+    border: 1px solid #fecdca;
+  }
+
+  .ssra-grid {
+    display: grid;
+    grid-template-columns: 220px 220px 1fr;
+    gap: 18px;
+  }
+
+  .ssra-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(16, 24, 40, 0.06);
+    overflow: hidden;
+    min-height: 460px;
+  }
+
+  .ssra-card-header {
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .ssra-list,
+  .ssra-files {
+    padding: 12px;
+  }
+
+  .ssra-item,
+  .ssra-file {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #111827;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  .ssra-item:hover,
+  .ssra-file:hover {
+    border-color: #08666e;
+    background: #f0f9fa;
+  }
+
+  .ssra-item.active {
+    background: #08666e;
+    color: #ffffff;
+    border-color: #08666e;
+  }
+
+  .ssra-file {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ssra-file-name {
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  .ssra-file-action {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #08666e;
+    font-weight: 700;
+  }
+
+  .ssra-empty {
+    color: #9ca3af;
+    font-size: 14px;
+    padding: 12px 4px;
+  }
+
+  @media (max-width: 900px) {
+    .ssra-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ssra-card {
+      min-height: auto;
+    }
+  }
+  .ssra-select{
+    padding:10px 14px;
+    border-radius:10px;
+    border:1px solid #d0d5dd;
+    font-size:14px;
+    background:white;
+}
+</style>
+
+<script>
+  const yearsBox = document.getElementById("supplierArchiveYears");
+  const monthsBox = document.getElementById("supplierArchiveMonths");
+  const filesBox = document.getElementById("supplierArchiveFiles");
+  const statusBox = document.getElementById("supplierArchiveStatus");
+  const generateBtn = document.getElementById("generateSupplierArchiveBtn");
+  const refreshBtn = document.getElementById("refreshSupplierArchiveBtn");
+
+  let selectedYear = null;
+  let selectedMonth = null;
+
+  function showStatus(message, type) {
+    statusBox.textContent = message;
+    statusBox.className = "ssra-status " + type;
+    statusBox.style.display = "block";
+  }
+
+  function clearStatus() {
+    statusBox.style.display = "none";
+    statusBox.textContent = "";
+    statusBox.className = "ssra-status";
+  }
+
+  function getCSRFToken() {
+    const cookieValue = document.cookie
+      .split("; ")
+      .find(row => row.startsWith("csrftoken="));
+    return cookieValue ? cookieValue.split("=")[1] : "";
+  }
+
+  async function loadYears() {
+    yearsBox.innerHTML = '<div class="ssra-empty">Loading...</div>';
+    monthsBox.innerHTML = '<div class="ssra-empty">Select a year</div>';
+    filesBox.innerHTML = '<div class="ssra-empty">Select a month</div>';
+
+    try {
+      const response = await fetch("/crm/supplier-shipment-report-archive/years/");
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to load years");
+      }
+
+      if (!data.years || data.years.length === 0) {
+        yearsBox.innerHTML = '<div class="ssra-empty">No archive years found</div>';
+        return;
+      }
+
+      yearsBox.innerHTML = "";
+      data.years.forEach(year => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ssra-item";
+        btn.textContent = year;
+
+        btn.addEventListener("click", function () {
+          document.querySelectorAll("#supplierArchiveYears .ssra-item").forEach(el => el.classList.remove("active"));
+          btn.classList.add("active");
+          selectedYear = year;
+          selectedMonth = null;
+          loadMonths(year);
+        });
+
+        yearsBox.appendChild(btn);
+      });
+    } catch (error) {
+      yearsBox.innerHTML = '<div class="ssra-empty">Failed to load years</div>';
+      showStatus(error.message, "error");
+    }
+  }
+
+  async function loadMonths(year) {
+    monthsBox.innerHTML = '<div class="ssra-empty">Loading...</div>';
+    filesBox.innerHTML = '<div class="ssra-empty">Select a month</div>';
+
+    try {
+      const response = await fetch(`/crm/supplier-shipment-report-archive/${year}/months/`);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to load months");
+      }
+
+      if (!data.months || data.months.length === 0) {
+        monthsBox.innerHTML = '<div class="ssra-empty">No months found</div>';
+        return;
+      }
+
+      monthsBox.innerHTML = "";
+      data.months.forEach(month => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ssra-item";
+        btn.textContent = month;
+
+        btn.addEventListener("click", function () {
+          document.querySelectorAll("#supplierArchiveMonths .ssra-item").forEach(el => el.classList.remove("active"));
+          btn.classList.add("active");
+          selectedMonth = month;
+          loadFiles(year, month);
+        });
+
+        monthsBox.appendChild(btn);
+      });
+    } catch (error) {
+      monthsBox.innerHTML = '<div class="ssra-empty">Failed to load months</div>';
+      showStatus(error.message, "error");
+    }
+  }
+
+  async function loadFiles(year, month) {
+    filesBox.innerHTML = '<div class="ssra-empty">Loading...</div>';
+
+    try {
+      const response = await fetch(`/crm/supplier-shipment-report-archive/${year}/${parseInt(month, 10)}/files/`);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to load files");
+      }
+
+      if (!data.files || data.files.length === 0) {
+        filesBox.innerHTML = '<div class="ssra-empty">No PDF files found</div>';
+        return;
+      }
+
+      filesBox.innerHTML = "";
+      data.files.forEach(file => {
+        const link = document.createElement("a");
+        link.href = file.url;
+        link.target = "_blank";
+        link.className = "ssra-file";
+
+        link.innerHTML = `
+          <span class="ssra-file-name">${file.name}</span>
+          <span class="ssra-file-action">Open PDF</span>
+        `;
+
+        filesBox.appendChild(link);
+      });
+    } catch (error) {
+      filesBox.innerHTML = '<div class="ssra-empty">Failed to load files</div>';
+      showStatus(error.message, "error");
+    }
+  }
+
+  const yearSelect = document.getElementById("reportYear");
+  const monthSelect = document.getElementById("reportMonth");
+
+  function fillYears(){
+
+    const currentYear = new Date().getFullYear();
+
+    for(let i = currentYear; i >= currentYear - 5; i--){
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = i;
+      yearSelect.appendChild(opt);
+    }
+
+  }
+
+  fillYears();
+
+  async function generateCurrentMonthReports() {
+    clearStatus();
+    generateBtn.disabled = true;
+    generateBtn.textContent = "Generating...";
+
+    const payload = {
+      month: parseInt(monthSelect.value),
+      year: parseInt(yearSelect.value)
+    };
+
+
+    try {
+      const response = await fetch("/crm/generate-current-month-supplier-shipment-report-archive/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCSRFToken()
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to generate reports");
+      }
+
+      showStatus(data.message || "Reports generated successfully", "success");
+      await loadYears();
+    } catch (error) {
+      showStatus(error.message, "error");
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.textContent = "Generate Current Month Reports";
+    }
+  }
+
+  generateBtn.addEventListener("click", generateCurrentMonthReports);
+  refreshBtn.addEventListener("click", loadYears);
+
+  loadYears();
+</script>
+{% endblock %}
