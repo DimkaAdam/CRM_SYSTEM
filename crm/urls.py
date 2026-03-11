@@ -186,6 +186,13 @@ urlpatterns = [
     path("api/exports/<int:pk>/delete/", views.export_shipment_delete, name="export_shipment_delete"),
     path("api/exports/<int:pk>/documents/upload/", views.export_document_upload, name="export_document_upload"),
 
+    path("/crm/api/generate-current-month-scale-tickets-archive/", views.generate_current_month_scale_tickets_archive),
+    path(
+            "generate-current-month-scale-tickets-archive/",
+            views.generate_current_month_scale_tickets_archive,
+            name="generate_current_month_scale_tickets_archive",
+        ),
+
 ]
 
 # Подключаем статику

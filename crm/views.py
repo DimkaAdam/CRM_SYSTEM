@@ -61,6 +61,7 @@ from django.db.models import Sum, Count, F
 from urllib.parse import unquote
 
 from .models import Event
+from django.test import RequestFactory
 
 import re
 
@@ -3737,4 +3738,130 @@ def export_shipment_delete(request, pk):
     export = get_object_or_404(ExportShipment, pk=pk)
     export.delete()
     return JsonResponse({"ok": True, "id": pk})
+
+@csrf_exempt
+@require_POST
+def generate_current_month_scale_tickets_archive(request):
+    try:
+        payload = json.loads(request.body or "{}")
+    except Exception:
+        payload = {}
+
+    month = payload.get("month")
+    year = payload.get("year")
+
+    today = t.localdate()
+
+    try:
+        month = int(month) if month else today.month
+        year = int(year) if year else today.year
+    except ValueError:
+        return JsonResponse({
+            "success": False,
+            "error": "Invalid month or year"
+        }, status=400)
+
+    deals = (
+        Deals.objects
+        .filter(date__year=year, date__month=month)
+        .exclude(scale_ticket__isnull=True)
+        .exclude(scale_ticket__exact="")
+        .select_related("supplier")
+        .order_by("scale_ticket", "date", "id")
+    )
+
+    unique_ticket_numbers = []
+    seen = set()
+
+    for deal in deals:
+        ticket_number = str(deal.scale_ticket).strip()
+        if not ticket_number or ticket_number in seen:
+            continue
+        seen.add(ticket_number)
+        unique_ticket_numbers.append(ticket_number)
+
+    created = 0
+    skipped = 0
+    errors = []
+
+    rf = RequestFactory()
+
+    for ticket_number in unique_ticket_numbers:
+        try:
+            ticket_deals = (
+                Deals.objects
+                .filter(scale_ticket=ticket_number, date__year=year, date__month=month)
+                .select_related("supplier")
+                .order_by("date", "id")
+            )
+
+            if not ticket_deals.exists():
+                continue
+
+            first_deal = ticket_deals.first()
+
+            if not first_deal.supplier:
+                errors.append(f"Ticket {ticket_number}: supplier not found")
+                continue
+
+            date_src = first_deal.date or today
+            file_year = date_src.strftime("%Y")
+            month_num = date_src.strftime("%m")
+            month_name = date_src.strftime("%B")
+            month_dir = f"{file_year}-{month_num}"
+
+            raw_supplier_name = first_deal.supplier.name if first_deal.supplier else "Unknown Supplier"
+            supplier_name = sanitize_filename(raw_supplier_name)
+
+            filename = f"Ticket {ticket_number}-{supplier_name}-{month_dir}.pdf"
+
+            directory = os.path.join(
+                settings.MEDIA_ROOT,
+                "reports",
+                "scale_tickets",
+                supplier_name,
+                file_year,
+                month_name
+            )
+
+            filepath = os.path.join(directory, filename)
+
+            if os.path.exists(filepath):
+                skipped += 1
+                continue
+
+            os.makedirs(directory, exist_ok=True)
+
+            internal_request = rf.get(
+                "/fake-export-scale-ticket/",
+                {
+                    "ticket_number": str(ticket_number),
+                    "licence_plate": "N/A",
+                    "tare_weight": "5170",
+                    "time": datetime.now().strftime("%H:%M"),
+                }
+            )
+
+            response = export_scale_ticket_pdf(internal_request)
+
+            if response.status_code != 200:
+                errors.append(f"Ticket {ticket_number}: PDF generation failed with status {response.status_code}")
+                continue
+
+            if os.path.exists(filepath):
+                created += 1
+            else:
+                errors.append(f"Ticket {ticket_number}: file was not created")
+
+        except Exception as e:
+            errors.append(f"Ticket {ticket_number}: {str(e)}")
+
+    return JsonResponse({
+        "success": True,
+        "created": created,
+        "skipped": skipped,
+        "errors": errors,
+        "month": month,
+        "year": year,
+    })
 

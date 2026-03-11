@@ -13,7 +13,7 @@
         <a href="{% url 'export_deals_to_excel' %}?month={{ month }}&year={{ year }}" class="export-btn">
             <img src="{% static 'crm/images/icons/excel.png' %}" alt="Export Icon" class="icon">
         </a>
-        <button onclick="openScaleTicketSidebar()" class="scale-btn">
+        <button id="generateMonthScaleTicketsBtn" class="scale-btn">
             <img src="{% static 'crm/images/icons/scale_ticket.png' %}" alt="Add Icon" class="icon">
         </button>
     </div>

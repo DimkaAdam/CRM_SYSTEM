@@ -459,6 +459,65 @@ document.addEventListener("DOMContentLoaded", () => {
     closeBtn && closeBtn.addEventListener("click", closeScaleTicketSidebar);
   })();
 
+  const generateMonthBtn = byId("generateMonthScaleTicketsBtn");
+
+  if (generateMonthBtn) {
+    generateMonthBtn.addEventListener("click", async function () {
+      try {
+        generateMonthBtn.disabled = true;
+
+        const params = new URLSearchParams(window.location.search);
+        const month = params.get("month");
+        const year = params.get("year");
+
+        const response = await fetch(u("generate-current-month-scale-tickets-archive/"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken,
+          },
+          body: JSON.stringify({
+            month: month,
+            year: year
+          })
+        });
+
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`HTTP ${response.status}: ${text.slice(0, 200)}`);
+        }
+
+        if (!contentType.includes("application/json")) {
+          const text = await response.text();
+          throw new Error(`Server returned non-JSON response: ${text.slice(0, 200)}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to generate archive");
+        }
+
+        let msg = `Done for ${data.month}/${data.year}\nCreated: ${data.created}\nSkipped: ${data.skipped}`;
+
+        if (data.errors && data.errors.length) {
+          msg += `\nErrors: ${data.errors.length}`;
+          console.error("Archive errors:", data.errors);
+        }
+
+        alert(msg);
+
+      } catch (error) {
+        console.error("Mass archive error:", error);
+        alert("Error: " + error.message);
+      } finally {
+        generateMonthBtn.disabled = false;
+      }
+    });
+  }
+
   // Scale ticket export
   (function initScaleTicketExport() {
     function setCurrentTime() {
