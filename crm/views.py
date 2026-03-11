@@ -46,6 +46,8 @@ from datetime import datetime,timezone,timedelta
 from django.utils import timezone as t
 from io import BytesIO
 
+from .supplier_shipment_report_archive import generate_supplier_shipment_reports_for_month
+
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
 from reportlab.lib.pagesizes import A4
@@ -3865,3 +3867,107 @@ def generate_current_month_scale_tickets_archive(request):
         "year": year,
     })
 
+def supplier_shipment_report_archive(request):
+    return render(request, "crm/supplier_shipment_report_archive.html")
+
+
+@csrf_exempt
+@require_POST
+def generate_current_month_supplier_shipment_report_archive(request):
+    try:
+        payload = json.loads(request.body or "{}")
+    except Exception:
+        payload = {}
+
+    month = payload.get("month")
+    year = payload.get("year")
+
+    today = t.localdate()
+
+    try:
+        month = int(month) if month else today.month
+        year = int(year) if year else today.year
+    except ValueError:
+        return JsonResponse({
+            "success": False,
+            "error": "Invalid month or year"
+        }, status=400)
+
+    try:
+        generated_files = generate_supplier_shipment_reports_for_month(year, month)
+
+        return JsonResponse({
+            "success": True,
+            "message": f"Generated {len(generated_files)} supplier shipment report files",
+            "count": len(generated_files),
+            "year": year,
+            "month": str(month).zfill(2),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "error": str(e)
+        }, status=500)
+
+
+def supplier_shipment_report_archive_years(request):
+    base_dir = os.path.join(settings.MEDIA_ROOT, "supplier_shipment_reports")
+    years = []
+
+    if os.path.exists(base_dir):
+        for name in os.listdir(base_dir):
+            path = os.path.join(base_dir, name)
+            if os.path.isdir(path) and name.isdigit():
+                years.append(name)
+
+    years.sort(reverse=True)
+
+    return JsonResponse({
+        "success": True,
+        "years": years
+    })
+
+
+def supplier_shipment_report_archive_months(request, year):
+    year_dir = os.path.join(settings.MEDIA_ROOT, "supplier_shipment_reports", str(year))
+    months = []
+
+    if os.path.exists(year_dir):
+        for name in os.listdir(year_dir):
+            path = os.path.join(year_dir, name)
+            if os.path.isdir(path):
+                months.append(name)
+
+    months.sort(reverse=True)
+
+    return JsonResponse({
+        "success": True,
+        "months": months
+    })
+
+
+def supplier_shipment_report_archive_files(request, year, month):
+    month_str = str(month).zfill(2)
+    month_dir = os.path.join(
+        settings.MEDIA_ROOT,
+        "supplier_shipment_reports",
+        str(year),
+        month_str
+    )
+
+    files = []
+
+    if os.path.exists(month_dir):
+        for name in os.listdir(month_dir):
+            if name.lower().endswith(".pdf"):
+                files.append({
+                    "name": name,
+                    "url": f"{settings.MEDIA_URL}supplier_shipment_reports/{year}/{month_str}/{name}"
+                })
+
+    files.sort(key=lambda x: x["name"].lower())
+
+    return JsonResponse({
+        "success": True,
+        "files": files
+    })

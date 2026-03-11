@@ -190,6 +190,35 @@ urlpatterns = [
     path("generate-current-month-scale-tickets-archive/",views.generate_current_month_scale_tickets_archive,
             name="generate_current_month_scale_tickets_archive",
         ),
+    path(
+        "supplier-shipment-report-archive/",
+        views.supplier_shipment_report_archive,
+        name="supplier_shipment_report_archive"
+    ),
+
+    path(
+        "generate-current-month-supplier-shipment-report-archive/",
+        views.generate_current_month_supplier_shipment_report_archive,
+        name="generate_current_month_supplier_shipment_report_archive"
+    ),
+
+    path(
+        "supplier-shipment-report-archive/years/",
+        views.supplier_shipment_report_archive_years,
+        name="supplier_shipment_report_archive_years"
+    ),
+
+    path(
+        "supplier-shipment-report-archive/<int:year>/months/",
+        views.supplier_shipment_report_archive_months,
+        name="supplier_shipment_report_archive_months"
+    ),
+
+    path(
+        "supplier-shipment-report-archive/<int:year>/<int:month>/files/",
+        views.supplier_shipment_report_archive_files,
+        name="supplier_shipment_report_archive_files"
+    ),
 
 ]
 
