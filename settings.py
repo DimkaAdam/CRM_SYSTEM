@@ -153,6 +153,7 @@ MATERIALS_LIST = {
     'Cardboard Stock Lots': None,
     'DLK': None,
     'Baled Kraft Paper': None,
+    'SOS Paper': None,
 
 
 
