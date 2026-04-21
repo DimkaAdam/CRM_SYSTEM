@@ -3741,6 +3741,11 @@ def export_shipment_delete(request, pk):
     export.delete()
     return JsonResponse({"ok": True, "id": pk})
 
+# -----------------------------
+# Scale tickets mass archive
+# -----------------------------
+
+
 @csrf_exempt
 @require_POST
 def generate_current_month_scale_tickets_archive(request):

@@ -131,6 +131,55 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+// Autocopping Shipped --> Received
+
+  const shippedQuantityEl = byId("shipped_quantity");
+  const shippedPalletsEl = byId("shipped_pallets");
+  const receivedQuantityEl = byId("received_quantity");
+  const receivedPalletsEl = byId("received_pallets");
+
+  function syncReceivedQuantity() {
+    if (!shippedQuantityEl || !receivedQuantityEl) return;
+
+    if (receivedQuantityEl.dataset.manual !== "1") {
+      receivedQuantityEl.value = shippedQuantityEl.value;
+    }
+  }
+
+  function syncReceivedPallets() {
+    if (!shippedPalletsEl || !receivedPalletsEl) return;
+
+    if (receivedPalletsEl.dataset.manual !== "1") {
+      receivedPalletsEl.value = shippedPalletsEl.value;
+    }
+  }
+
+  if (receivedQuantityEl) {
+    receivedQuantityEl.dataset.manual = "0";
+
+    receivedQuantityEl.addEventListener("input", function () {
+      receivedQuantityEl.dataset.manual =
+        receivedQuantityEl.value !== "" ? "1" : "0";
+    });
+  }
+
+  if (receivedPalletsEl) {
+    receivedPalletsEl.dataset.manual = "0";
+
+    receivedPalletsEl.addEventListener("input", function () {
+      receivedPalletsEl.dataset.manual =
+        receivedPalletsEl.value !== "" ? "1" : "0";
+    });
+  }
+
+  if (shippedQuantityEl) {
+    shippedQuantityEl.addEventListener("input", syncReceivedQuantity);
+  }
+
+  if (shippedPalletsEl) {
+    shippedPalletsEl.addEventListener("input", syncReceivedPallets);
+  }
+
   // --- Создать сделку
   const dealForm = byId("dealForm");
   if (dealForm) {
@@ -213,6 +262,10 @@ document.addEventListener("DOMContentLoaded", () => {
           const sidebar = byId("dealFormSidebar");
           if (sidebar) sidebar.style.width = "0";
           dealForm.reset();
+
+          if (receivedQuantityElement) receivedQuantityElement.dataset.manual = "0";
+          if (byId("received_pallets")) byId("received_pallets").dataset.manual = "0";
+
 
           return fetch(u("api/scale-ticket-counters/increment/"), {
             method: "POST",
