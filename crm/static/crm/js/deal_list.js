@@ -631,12 +631,14 @@ document.addEventListener("DOMContentLoaded", () => {
         + `&net_weight=${encodeURIComponent(netWeight)}`
       );
 
+
       const a = document.createElement("a");
       a.href = url;
       a.download = `Ticket #${ticketNumber}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      setTimeout(closeAllSidebars, 200);
     };
 
     const exportBtn = byId("exportScaleTicketBtn");
@@ -795,5 +797,17 @@ function renderDealAnalytics(data) {
     sparkArea.style.animation = "none";
     void sparkArea.getBoundingClientRect();
     sparkArea.style.animation = "";
+  }
+}
+
+// ===== Close all sidebars =====
+function closeAllSidebars() {
+  const deal = document.getElementById("viewDealSidebar");
+  if (deal) deal.style.width = "0";
+
+  const st = document.getElementById("scaleTicketSidebar");
+  if (st) {
+    st.classList.remove("open");
+    setTimeout(() => st.style.display = "none", 300);
   }
 }
