@@ -553,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
           throw new Error(data.error || "Failed to generate archive");
         }
 
-        let msg = `Done for ${data.month}/${data.year}\nCreated: ${data.created}\nSkipped: ${data.skipped}`;
+        let msg = `Done for ${data.month}/${data.year}\nCreated: ${data.created}\nUpdated: ${data.updated}`;
 
         if (data.errors && data.errors.length) {
           msg += `\nErrors: ${data.errors.length}`;

@@ -3788,7 +3788,7 @@ def generate_current_month_scale_tickets_archive(request):
         unique_ticket_numbers.append(ticket_number)
 
     created = 0
-    skipped = 0
+    updated = 0
     errors = []
 
     rf = RequestFactory()
@@ -3833,9 +3833,10 @@ def generate_current_month_scale_tickets_archive(request):
 
             filepath = os.path.join(directory, filename)
 
-            if os.path.exists(filepath):
-                skipped += 1
-                continue
+            file_existed = os.path.exists(filepath)
+
+            if file_existed:
+                os.remove(filepath)
 
             os.makedirs(directory, exist_ok=True)
 
@@ -3856,7 +3857,10 @@ def generate_current_month_scale_tickets_archive(request):
                 continue
 
             if os.path.exists(filepath):
-                created += 1
+                if file_existed:
+                    updated += 1
+                else:
+                    created += 1
             else:
                 errors.append(f"Ticket {ticket_number}: file was not created")
 
@@ -3866,7 +3870,7 @@ def generate_current_month_scale_tickets_archive(request):
     return JsonResponse({
         "success": True,
         "created": created,
-        "skipped": skipped,
+        "updated": updated,
         "errors": errors,
         "month": month,
         "year": year,
