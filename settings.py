@@ -142,6 +142,7 @@ MATERIALS_LIST = {
     'OCC 12': None,
     'OCC 12 Bale String': None,
     'Flexible Plastic': None,
+    'Baled Flexible Plastic': None,
     'Mixed Container': None,
     'Pallets': None,
     'Kraft Paper Bags': None,
@@ -154,6 +155,8 @@ MATERIALS_LIST = {
     'DLK': None,
     'Baled Kraft Paper': None,
     'SOS Paper': None,
+    'Preforms': None,
+    'Caps': None,
 
 
 
