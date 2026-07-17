@@ -1890,7 +1890,7 @@ def get_calendar_events():
 def task_list(request):
     suppliers = Company.objects.filter(contacts__company_type="suppliers")
     buyers = Company.objects.filter(contacts__company_type="buyers")
-    generate_recurring_shipments()
+    # generate_recurring_shipments()
 
     context = {
         'suppliers': suppliers,
