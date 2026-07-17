@@ -3,13 +3,100 @@
 {% block title %}Add New Company{% endblock %}
 
 {% block content %}
-<h1>Add New Company</h1>
+<style>
+    .company-page {
+        padding: 28px 16px;
+    }
 
-<form method="POST">
-    {% csrf_token %}
-    <label for="name">Company Name:</label>
-    <input type="text" id="name" name="name" required><br>
+    .company-card {
+        max-width: 620px;
+        margin: 0 auto;
+        padding: 28px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.10);
+    }
 
-    <button type="submit">Add Company</button>
-</form>
+    .company-card h1 {
+        margin: 0 0 24px;
+        color: #0f3b67;
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 7px;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .form-group input {
+        width: 100%;
+        height: 42px;
+        padding: 0 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #0f172a;
+        font-size: 14px;
+        box-sizing: border-box;
+        transition: 0.2s;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #2f91aa;
+        box-shadow: 0 0 0 3px rgba(47, 145, 170, 0.15);
+    }
+
+    .submit-btn {
+        padding: 11px 22px;
+        border: none;
+        border-radius: 10px;
+        background: #2f91aa;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 3px 8px rgba(47, 145, 170, 0.25);
+        transition: 0.2s;
+    }
+
+    .submit-btn:hover {
+        background: #247b91;
+        transform: translateY(-1px);
+    }
+</style>
+
+<div class="company-page">
+    <div class="company-card">
+        <h1>Add New Company</h1>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="name">Company Name</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Enter company name"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Add Company
+            </button>
+        </form>
+    </div>
+</div>
 {% endblock %}

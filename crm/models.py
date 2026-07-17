@@ -99,6 +99,16 @@ class Deals(models.Model):
     scale_ticket = models.CharField(max_length=50, blank=True, null=True)
     scale_ticket_sent = models.BooleanField(default=False)
 
+    # Deals model
+    company_group = models.CharField(
+        max_length=50,
+        choices=[
+            ("bottle_depot", "Bottle Depot"),
+            ("l2g", "Local to Global"),
+        ],
+        blank=True
+    )
+
     def get_scale_ticket_relative_path(self):
         """
         Возвращает относительный путь к PDF-инвойсу scale ticket
@@ -114,6 +124,8 @@ class Deals(models.Model):
 
         filename = f"Ticket {self.scale_ticket}-{supplier_name}-{month_dir}.pdf"
         return f"{supplier_name}/{year}/{month}/{filename}"
+
+
 
 
     def save(self, *args, **kwargs):
@@ -133,6 +145,11 @@ class Deals(models.Model):
 
         # Рассчитываем общий доход/убыток
         self.total_income_loss = self.total_amount - (self.transport_cost + self.supplier_total)
+
+        if self.buyer and self.buyer.name.lower().strip() == "bottle depot":
+            self.company_group = "bottle_depot"
+        else:
+            self.company_group = "l2g"
 
         super().save(*args, **kwargs)
 
@@ -156,6 +173,8 @@ class Deals(models.Model):
             )
             buyer_pallets.pallets_count += int(self.received_pallets)
             buyer_pallets.save()
+
+
 
     def __str__(self):
         return f"Deal: {self.date} - {self.supplier} to {self.buyer}"
@@ -298,5 +317,7 @@ class CompanyEmail(models.Model):
     def __str__(self):
         who = f"{self.name} " if self.name else ""
         return f"{who}<{self.email}> @ {self.company.name}"
+
+
 
 

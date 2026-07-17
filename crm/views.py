@@ -67,6 +67,8 @@ from django.test import RequestFactory
 
 import re
 
+from django.db.models.functions import Lower
+
 def sanitize_filename(name):
     name = name.strip()
     name = name.replace(' ', '_')
@@ -97,7 +99,7 @@ def client_list(request):
 
 
 def company_list(request):
-    companies = Company.objects.all()
+    companies = Company.objects.all().order_by('name')
     return render(request, 'crm/company_ main.html', {'companies': companies})
 
 
@@ -348,7 +350,7 @@ def deal_list(request):
     # Получаем текущий месяц и год
     print("DEBUG: datetime is", datetime)
     today_date = datetime.today()
-    companies = Company.objects.all()
+    companies = Company.objects.all().order_by('name')
     current_month = today_date.month
     current_year = today_date.year
 
@@ -356,9 +358,9 @@ def deal_list(request):
     deals = Deals.objects.all().order_by('date')
 
     # Фильтруем компании по типу через связанные контакты
-    suppliers = Company.objects.filter(contacts__company_type="suppliers").distinct()  # Только поставщики
-    buyers = Company.objects.filter(contacts__company_type="buyers").distinct()  # Только покупатели
-    hauler = Company.objects.filter(contacts__company_type="hauler").distinct() # Only Haulers
+    suppliers = Company.objects.filter(contacts__company_type="suppliers").distinct().order_by(Lower('name'))  # Только поставщики
+    buyers = Company.objects.filter(contacts__company_type="buyers").distinct().order_by(Lower('name'))  # Только покупатели
+    hauler = Company.objects.filter(contacts__company_type="hauler").distinct().order_by(Lower('name')) # Only Haulers
 
     # Получаем параметры фильтра из запроса
     month = request.GET.get('month', str(current_month).zfill(2))  # Текущий месяц по умолчанию
@@ -3979,4 +3981,33 @@ def supplier_shipment_report_archive_files(request, year, month):
     return JsonResponse({
         "success": True,
         "files": files
+    })
+
+from django.db.models.functions import TruncMonth
+
+def company_group_report(request):
+    return render(request, "crm/company_group_report.html")
+
+
+def company_group_report_detail(request, group):
+    deals = Deals.objects.filter(company_group=group)
+
+    monthly_summary = (
+        deals.annotate(month=TruncMonth("date"))
+        .values("month")
+        .annotate(
+            total_deals=Count("id"),
+            total_shipped=Sum("shipped_quantity"),
+            total_received=Sum("received_quantity"),
+            total_sales=Sum("total_amount"),
+            total_supplier_cost=Sum("supplier_total"),
+            total_transport=Sum("transport_cost"),
+            total_profit=Sum("total_income_loss"),
+        )
+        .order_by("-month")
+    )
+
+    return render(request, "crm/company_group_report_detail.html", {
+        "group": group,
+        "monthly_summary": monthly_summary,
     })

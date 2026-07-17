@@ -3,21 +3,121 @@
 {% block title %}Edit {{ company.name }}{% endblock %}
 
 {% block content %}
-    <div class="content" style="padding: 20px; max-width: 600px; margin: auto; background: white; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 8px;">
-        <h1 style="text-align: center; color: #333; margin-bottom: 20px;">Edit {{ company.name }}</h1>
-        <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+<style>
+    .edit-page {
+        padding: 28px 16px;
+    }
+
+    .edit-card {
+        max-width: 620px;
+        margin: 0 auto;
+        padding: 28px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.10);
+    }
+
+    .edit-card h1 {
+        margin: 0 0 24px;
+        color: #0f3b67;
+        font-size: 22px;
+    }
+
+    .edit-card form p {
+        margin-bottom: 18px;
+    }
+
+    .edit-card label {
+        display: block;
+        margin-bottom: 7px;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .edit-card input,
+    .edit-card select,
+    .edit-card textarea {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #0f172a;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .edit-card input:focus,
+    .edit-card select:focus,
+    .edit-card textarea:focus {
+        outline: none;
+        border-color: #2f91aa;
+        box-shadow: 0 0 0 3px rgba(47, 145, 170, 0.15);
+    }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        padding: 11px 22px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .btn-save {
+        background: #2f91aa;
+        color: #ffffff;
+    }
+
+    .btn-save:hover {
+        background: #247b91;
+    }
+
+    .btn-cancel {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .btn-cancel:hover {
+        background: #cbd5e1;
+    }
+
+    .errorlist {
+        margin: 5px 0;
+        padding-left: 18px;
+        color: #b91c1c;
+        font-size: 13px;
+    }
+</style>
+
+<div class="edit-page">
+    <div class="edit-card">
+        <h1>Edit {{ company.name }}</h1>
+
+        <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button type="submit" style="padding: 10px 20px; background-color: #28A745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-save">
                     Save Changes
                 </button>
-                <a href="{% url 'company_detail' company.id %}" style="text-decoration: none;">
-                    <button type="button" style="padding: 10px 20px; background-color: #6C757D; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                        Cancel
-                    </button>
+
+                <a href="{% url 'company_detail' company.id %}"
+                   class="btn btn-cancel">
+                    Cancel
                 </a>
             </div>
         </form>
     </div>
+</div>
 {% endblock %}

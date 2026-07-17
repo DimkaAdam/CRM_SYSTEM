@@ -219,6 +219,13 @@ urlpatterns = [
         views.supplier_shipment_report_archive_files,
         name="supplier_shipment_report_archive_files"
     ),
+    path("reports/company-group/", views.company_group_report, name="company_group_report"),
+
+    path(
+        "reports/company-group/<str:group>/",
+        views.company_group_report_detail,
+        name="company_group_report_detail"
+    ),
 
 ]
 
